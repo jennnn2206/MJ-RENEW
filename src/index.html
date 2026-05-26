@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MJ Renew</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+ 
+<!-- ═══════════════════════════════════════
+     HEADER
+════════════════════════════════════════ -->
+<header>
+  <div class="header-inner">
+    <div class="logo" onclick="showSection('login')">
+      <h1>MJ Renew</h1>
+      <span class="logo-sub">Antigüedades &amp; Restauración</span>
+    </div>
+    <div id="user-state" class="user-state hidden">
+      <span class="user-avatar" id="user-initials">U</span>
+      <span class="user-email" id="user-email-label"></span>
+      <button class="btn-signout" id="btn-signout">Salir</button>
+    </div>
+  </div>
+</header>
+ 
+<!-- ═══════════════════════════════════════
+     NAV
+════════════════════════════════════════ -->
+<nav>
+  <button onclick="showSection('login')"   data-section="login"   class="nav-btn active">Login</button>
+  <button onclick="showSection('market')"  data-section="market"  class="nav-btn">Marketplace</button>
+  <button onclick="showSection('restore')" data-section="restore" class="nav-btn">Restauración</button>
+</nav>
+ 
+<!-- ═══════════════════════════════════════
+     CONTENIDO
+════════════════════════════════════════ -->
+<div class="container">
+ 
+  <!-- LOGIN -->
+  <div id="login" class="section-panel animate-in">
+    <div class="split-layout">
+ 
+      <div class="split-left">
+        <p class="eyebrow">Bienvenido</p>
+        <h2 class="split-title">Muebles con<br><em>historia y alma</em></h2>
+        <p class="split-sub">Conectamos piezas únicas con quienes saben apreciar su valor. Restauración, valuación y marketplace en un solo lugar.</p>
+        <div class="ornament">— ✦ —</div>
+        <ul class="feature-list">
+          <li>Valuación con IA en menos de 30 segundos</li>
+          <li>Visualización antes/después de restauración</li>
+          <li>Restauradores verificados con portafolio</li>
+          <li>Pagos seguros con seguimiento por hitos</li>
+        </ul>
+      </div>
+ 
+      <div class="split-right">
+        <div class="form-card">
+          <div class="form-card-header">
+            <h3>Accede a tu cuenta</h3>
+            <p>O crea una nueva en segundos</p>
+            <div class="gold-bar"></div>
+          </div>
+          <div class="field">
+            <label for="email">Correo electrónico</label>
+            <input type="email" id="email" placeholder="tu@correo.com">
+          </div>
+          <div class="field">
+            <label for="password">Contraseña</label>
+            <input type="password" id="password" placeholder="••••••••">
+          </div>
+          <div class="btn-row">
+            <button class="btn-outline" onclick="register()">Registrarse</button>
+            <button class="btn-primary" onclick="login()">Iniciar sesión</button>
+          </div>
+          <div class="form-badges">
+            <span class="badge">Plataforma verificada</span>
+            <span class="badge">Pagos seguros</span>
+            <span class="badge">+200 restauradores</span>
+          </div>
+        </div>
+      </div>
+ 
+    </div>
+  </div>
+ 
+  <!-- MARKETPLACE -->
+  <div id="market" class="section-panel hidden">
+    <div class="section-header">
+      <p class="eyebrow">Colección disponible</p>
+      <h2>Marketplace</h2>
+    </div>
+ 
+    <div id="items">
+      <div class="empty-state">
+        <div class="empty-icon">✦</div>
+        <p class="empty-title">Aún no hay piezas publicadas</p>
+        <p class="empty-sub">Sé el primero en publicar un mueble en la colección.</p>
+      </div>
+    </div>
+ 
+    <div class="form-card add-card">
+      <div class="form-card-header">
+        <h3>Publicar mueble</h3>
+        <p>Agrega tu pieza a la colección</p>
+        <div class="gold-bar"></div>
+      </div>
+      <div class="fields-grid">
+        <div class="field">
+          <label for="name">Nombre de la pieza</label>
+          <input type="text" id="name" placeholder="Ej: Silla victoriana nogal">
+        </div>
+        <div class="field">
+          <label for="price">Precio (MXN)</label>
+          <input type="number" id="price" placeholder="Ej: 12500">
+        </div>
+      </div>
+      <div class="field">
+        <label for="image">URL de imagen</label>
+        <input type="text" id="image" placeholder="https://...">
+      </div>
+      <button class="btn-primary btn-solo" onclick="addItem()">Agregar al marketplace</button>
+    </div>
+  </div>
+ 
+  <!-- RESTAURACIÓN -->
+  <div id="restore" class="section-panel hidden">
+    <div class="section-header">
+      <p class="eyebrow">Inteligencia artificial</p>
+      <h2>Simulación de restauración</h2>
+    </div>
+ 
+    <div class="restore-layout">
+      <div class="form-card">
+        <div class="form-card-header">
+          <h3>Datos de la pieza</h3>
+          <p>Ingresa la información para estimar costos</p>
+          <div class="gold-bar"></div>
+        </div>
+        <div class="field">
+          <label for="furniture">Tipo de mueble</label>
+          <input type="text" id="furniture" placeholder="Ej: Armario, Silla, Mesa...">
+        </div>
+        <div class="field">
+          <label for="condition">Estado de conservación (1–10)</label>
+          <input type="number" id="condition" placeholder="1 = muy deteriorado · 10 = excelente" min="1" max="10">
+        </div>
+        <button class="btn-primary btn-solo" onclick="simulateAI()">Simular con IA</button>
+      </div>
+ 
+      <div id="result" class="result-placeholder">
+        <div class="empty-icon">✦</div>
+        <p class="empty-title">Tu estimación aparecerá aquí</p>
+        <p class="empty-sub">Completa los datos y presiona "Simular con IA".</p>
+      </div>
+    </div>
+  </div>
+ 
+</div><!-- /.container -->
+ 
+ 
+<!-- ═══════════════════════════════════════
+     FOOTER
+════════════════════════════════════════ -->
+<footer>
+  <div class="footer-inner">
+ 
+    <div class="footer-brand">
+      <div class="footer-logo">MJ Renew</div>
+      <p class="footer-desc">Plataforma digital especializada en muebles antiguos. Conectamos propietarios, restauradores y coleccionistas en un ecosistema confiable.</p>
+      <div class="footer-ornament">— ✦ —</div>
+    </div>
+ 
+    <div class="footer-links">
+      <div class="footer-col">
+        <h4>Plataforma</h4>
+        <ul>
+          <li><a href="#">Marketplace</a></li>
+          <li><a href="#">Restauración</a></li>
+          <li><a href="#">Valuación IA</a></li>
+          <li><a href="#">Restauradores</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Empresa</h4>
+        <ul>
+          <li><a href="#">Nosotros</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Prensa</a></li>
+          <li><a href="#">Contacto</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#">Términos de uso</a></li>
+          <li><a href="#">Privacidad</a></li>
+          <li><a href="#">Cookies</a></li>
+        </ul>
+      </div>
+    </div>
+ 
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2025 MJ Renew. Todos los derechos reservados.</p>
+    <div class="footer-bottom-badges">
+      <span>Pagos seguros</span>
+      <span>Restauradores verificados</span>
+      <span>México</span>
+    </div>
+  </div>
+</footer>
+ 
+ 
+<!-- ═══════════════════════════════════════
+     TOAST
+════════════════════════════════════════ -->
+<div id="toast" class="toast hidden"></div>
+ 
+ 
+<!-- ═══════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════ -->
+<script type="module" src="app.js"></script>
+ 
+<!-- Estado de sesión — lee la instancia de Firebase creada en app.js -->
+<script type="module">
+  import { getApps }                          from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+ 
+  function waitForApp(cb) {
+    const check = () => getApps().length ? cb(getApps()[0]) : setTimeout(check, 50);
+    check();
+  }
+ 
+  waitForApp((app) => {
+    const auth = getAuth(app);
+ 
+    onAuthStateChanged(auth, (user) => {
+      const userState  = document.getElementById('user-state');
+      const emailLabel = document.getElementById('user-email-label');
+      const initials   = document.getElementById('user-initials');
+      if (user) {
+        userState.classList.remove('hidden');
+        emailLabel.textContent = user.email;
+        initials.textContent   = user.email.charAt(0).toUpperCase();
+      } else {
+        userState.classList.add('hidden');
+      }
+    });
+ 
+    document.getElementById('btn-signout').addEventListener('click', () => {
+      signOut(auth).then(() => {
+        window.showToast('Sesión cerrada correctamente');
+        window.showSection('login');
+      });
+    });
+  });
+</script>
+ 
+<!-- Utilidades UI (navegación animada + toast) -->
+<script>
+  function showSection(id) {
+    document.querySelectorAll('.section-panel').forEach(el => {
+      el.classList.add('hidden');
+      el.classList.remove('animate-in');
+    });
+    const target = document.getElementById(id);
+    if (!target) return;
+    target.classList.remove('hidden');
+    requestAnimationFrame(() => target.classList.add('animate-in'));
+ 
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.section === id);
+    });
+  }
+ 
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className   = 'toast toast-' + type;
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.add('hidden'), 3500);
+  }
+ 
+  window.showSection = showSection;
+  window.showToast   = showToast;
+</script>
+ 
+</body>
+</html>
