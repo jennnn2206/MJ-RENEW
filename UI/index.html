@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MJ Renew — UI Completa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --br:#6B4226;--br2:#8B5A2B;--br3:#A0714F;
+  --ink:#3B2A1A;--ink2:#6B5040;
+  --gold:#B8860B;--beige:#C9A87C;
+  --bg:#F5EFE4;--bg2:#EDE3D0;--bg3:#E0D4BB;
+  --white:#FFFDF8;
+  --ok:#2E7D32;--err:#C62828;
+  --r:10px;--r2:6px;
+  --sh:0 2px 16px rgba(59,42,26,.09);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:'Playfair Display',serif}
+a{text-decoration:none;color:inherit}
+img{display:block;max-width:100%}
+button{cursor:pointer;font-family:inherit}
+
+/* NAV */
+.nav{background:var(--br);border-bottom:3px solid var(--gold);position:sticky;top:0;z-index:100}
+.nav-inner{max-width:1200px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:var(--white);cursor:pointer;display:flex;flex-direction:column;line-height:1}
+.logo span{font-family:'Inter',sans-serif;font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--beige);font-weight:300;margin-top:2px}
+.nav-links{display:flex;align-items:center;gap:4px}
+.nav-link{font-size:.8rem;font-weight:500;color:rgba(255,253,248,.7);padding:6px 12px;border-radius:var(--r2);transition:all .15s}
+.nav-link:hover{color:var(--white);background:rgba(255,255,255,.1)}
+.nav-link.act{color:var(--white)}
+.nav-btn{display:inline-flex;align-items:center;padding:8px 18px;border-radius:var(--r2);font-size:.8rem;font-weight:600;border:none;transition:all .15s;cursor:pointer}
+.btn-outline{background:transparent;color:var(--white);border:1.5px solid rgba(255,255,255,.35)}
+.btn-outline:hover{background:rgba(255,255,255,.12)}
+.btn-gold{background:var(--gold);color:var(--white)}
+.btn-gold:hover{background:#9A720A}
+.user-chip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:4px 14px 4px 4px;cursor:pointer}
+.u-av{width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--br);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700}
+.u-name{font-size:.8rem;font-weight:500;color:var(--white)}
+
+/* SCREENS */
+.screen{display:none;min-height:calc(100vh - 64px)}
+.screen.on{display:block}
+
+/* LANDING */
+.hero{background:linear-gradient(135deg,#3B2A1A 0%,#6B4226 55%,#8B5A2B 100%);min-height:86vh;display:flex;align-items:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 70% 50%,rgba(184,134,11,.15),transparent 60%)}
+.hero-c{max-width:1200px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.hero-tag{font-size:.68rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:18px}
+.hero h1{font-size:clamp(2rem,5vw,3.2rem);color:var(--white);line-height:1.15;max-width:580px;margin-bottom:18px}
+.hero h1 em{font-style:italic;color:var(--beige)}
+.hero-sub{font-size:1rem;color:rgba(255,253,248,.72);max-width:460px;line-height:1.8;margin-bottom:36px}
+.hero-btns{display:flex;gap:14px;flex-wrap:wrap}
+.hero-btn-main{background:var(--gold);color:var(--white);padding:14px 32px;border-radius:var(--r2);font-size:.95rem;font-weight:600;border:none;cursor:pointer;transition:all .2s}
+.hero-btn-main:hover{background:#9A720A;transform:translateY(-1px)}
+.hero-btn-sec{background:rgba(255,255,255,.1);color:var(--white);padding:14px 32px;border-radius:var(--r2);font-size:.95rem;font-weight:600;border:1.5px solid rgba(255,255,255,.35);cursor:pointer;transition:all .2s}
+.hero-btn-sec:hover{background:rgba(255,255,255,.18)}
+.stats-bar{background:var(--br2);display:flex;justify-content:center;gap:60px;padding:20px;border-bottom:1px solid rgba(255,255,255,.1)}
+.stat{text-align:center}
+.stat-n{font-family:'Playfair Display',serif;font-size:1.7rem;font-weight:700;color:var(--white)}
+.stat-l{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,253,248,.55);margin-top:2px}
+.sec{padding:72px 0}
+.sec.bg2{background:var(--bg2)}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+.sec-head{text-align:center;margin-bottom:48px}
+.eyebrow{font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--br3);font-weight:700;display:block;margin-bottom:8px}
+.sec-head h2{font-size:clamp(1.5rem,3vw,2.2rem);color:var(--ink)}
+.gold-bar{width:36px;height:3px;background:var(--gold);border-radius:2px;margin:12px auto 0}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative}
+.steps::before{content:'';position:absolute;top:27px;left:calc(12.5% + 24px);right:calc(12.5% + 24px);height:1px;background:var(--bg3)}
+.step{text-align:center;padding:16px}
+.step-n{width:54px;height:54px;border-radius:50%;background:var(--br);color:var(--white);font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:600;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;position:relative;z-index:1;box-shadow:0 4px 14px rgba(107,66,38,.28)}
+.step h4{font-family:'Playfair Display',serif;font-size:.98rem;color:var(--ink);margin-bottom:6px}
+.step p{font-size:.82rem;color:var(--ink2);line-height:1.6}
+.cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.ucard{background:var(--white);border-radius:var(--r);border:1px solid var(--bg3);overflow:hidden;transition:all .2s}
+.ucard:hover{transform:translateY(-3px);box-shadow:var(--sh)}
+.ucard-top{height:7px}
+.ucard-top.c1{background:var(--br)}
+.ucard-top.c2{background:var(--gold)}
+.ucard-top.c3{background:var(--br3)}
+.ucard-body{padding:26px}
+.ucard-ico{font-size:1.8rem;margin-bottom:10px}
+.ucard-body h3{font-size:1.1rem;color:var(--ink);margin-bottom:8px}
+.ucard-body p{font-size:.84rem;color:var(--ink2);line-height:1.65;margin-bottom:14px}
+.ucard-list{list-style:none;margin-bottom:18px}
+.ucard-list li{font-size:.82rem;color:var(--ink2);padding:3px 0}
+.ucard-list li::before{content:'✓ ';color:var(--ok);font-weight:700}
+.uc-btn{width:100%;padding:10px;border:none;border-radius:var(--r2);font-size:.83rem;font-weight:600;cursor:pointer;transition:all .15s}
+.uc-btn.b1{background:var(--br);color:var(--white)}.uc-btn.b1:hover{background:var(--br2)}
+.uc-btn.b2{background:var(--gold);color:var(--white)}.uc-btn.b2:hover{background:#9A720A}
+.uc-btn.b3{background:var(--br3);color:var(--white)}.uc-btn.b3:hover{background:#8B6040}
+.footer{background:var(--ink);padding:48px 0 0;border-top:3px solid var(--gold)}
+.footer-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:32px;margin-bottom:40px}
+.footer h5{font-size:.67rem;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,253,248,.4);margin-bottom:12px}
+.footer ul{list-style:none}
+.footer li{margin-bottom:8px}
+.footer a{font-size:.84rem;color:rgba(255,253,248,.55);transition:color .15s}
+.footer a:hover{color:var(--white)}
+.footer-bottom{border-top:1px solid rgba(255,255,255,.08);padding:16px 0;display:flex;justify-content:space-between;align-items:center}
+.footer-bottom p{font-size:.78rem;color:rgba(255,253,248,.3)}
+.footer-logo{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--white);display:block;margin-bottom:10px}
+.footer p.desc{font-size:.82rem;color:rgba(255,253,248,.45);line-height:1.7}
+
+/* AUTH */
+.auth-wrap{min-height:calc(100vh - 64px);background:linear-gradient(135deg,#3B2A1A,#6B4226);display:flex;align-items:center;justify-content:center;padding:40px 20px}
+.auth-card{background:var(--white);border-radius:16px;padding:44px 40px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.auth-logo{text-align:center;margin-bottom:28px}
+.auth-logo h2{color:var(--br)}
+.auth-logo p{font-size:.82rem;color:var(--ink2);margin-top:4px}
+.form-g{margin-bottom:18px}
+.form-lbl{display:block;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);margin-bottom:5px}
+.form-inp{width:100%;padding:11px 14px;border:1.5px solid var(--bg3);border-radius:var(--r2);background:var(--bg);color:var(--ink);font-size:.92rem;transition:all .15s;outline:none;font-family:'Inter',sans-serif}
+.form-inp:focus{border-color:var(--br3);background:var(--white)}
+.form-inp::placeholder{color:var(--beige)}
+.sub-btn{width:100%;padding:13px;background:var(--br);color:var(--white);border:none;border-radius:var(--r2);font-size:.92rem;font-weight:600;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+.sub-btn:hover{background:var(--br2)}
+.demo-box{background:var(--bg2);border-radius:var(--r2);padding:14px;margin-top:16px}
+.demo-box h5{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);margin-bottom:8px}
+.demo-item{padding:7px 10px;border-radius:var(--r2);background:var(--bg);border:1px solid var(--bg3);margin-bottom:5px;cursor:pointer;transition:border-color .15s}
+.demo-item:hover{border-color:var(--br)}
+.demo-item strong{font-size:.8rem;color:var(--ink);display:block}
+.demo-item span{font-size:.75rem;color:var(--ink2);font-family:monospace}
+.auth-foot{text-align:center;margin-top:16px;font-size:.83rem;color:var(--ink2)}
+.auth-foot a{color:var(--br);font-weight:600}
+
+/* DASHBOARD LAYOUT */
+.dash{display:grid;grid-template-columns:240px 1fr;min-height:calc(100vh - 64px)}
+.sidebar{background:var(--white);border-right:1px solid var(--bg3);padding:20px 0}
+.sb-user{padding:16px;border-bottom:1px solid var(--bg3);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.sb-av{width:40px;height:40px;border-radius:50%;background:var(--gold);color:var(--br);display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;flex-shrink:0}
+.sb-info .nm{font-size:.88rem;font-weight:600;color:var(--ink)}
+.sb-info .tp{font-size:.72rem;color:var(--ink2)}
+.sb-lbl{font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);font-weight:700;padding:0 14px;margin-bottom:5px;margin-top:10px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:0;color:var(--ink2);font-size:.85rem;font-weight:500;cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left}
+.sb-item:hover{background:var(--bg2);color:var(--ink)}
+.sb-item.on{background:var(--bg2);color:var(--br);font-weight:600}
+.sb-item svg{opacity:.6;width:16px;height:16px;flex-shrink:0}
+.sb-item.on svg,.sb-item:hover svg{opacity:1}
+.sb-badge{margin-left:auto;background:var(--br);color:var(--white);font-size:.65rem;font-weight:700;padding:1px 6px;border-radius:10px}
+.dash-main{padding:28px;background:var(--bg);overflow-y:auto}
+.dash-section{display:none}.dash-section.on{display:block}
+.dash-title{font-size:1.5rem;color:var(--ink);margin-bottom:4px}
+.dash-sub{color:var(--ink2);font-size:.88rem;margin-bottom:24px}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px}
+.stat-card{background:var(--white);border-radius:var(--r);padding:18px;border:1px solid var(--bg3)}
+.stat-v{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:700;color:var(--br)}
+.stat-l2{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2);font-weight:600;margin-top:2px}
+
+/* AFD TRACKER */
+.afd-wrap{background:var(--white);border-radius:var(--r);padding:22px;border:1px solid var(--bg3);margin-bottom:22px}
+.afd-title{font-family:'Playfair Display',serif;font-size:1rem;color:var(--ink);margin-bottom:2px}
+.afd-sub{font-size:.76rem;color:var(--ink2);margin-bottom:18px}
+.afd-steps{display:flex;flex-direction:column;gap:0}
+.afd-step{display:flex;align-items:flex-start;gap:12px;padding:8px 0;position:relative}
+.afd-step:not(:last-child)::after{content:'';position:absolute;left:12px;top:34px;bottom:-8px;width:1px;background:var(--bg3)}
+.afd-step.done::after{background:var(--br)}
+.afd-dot{width:26px;height:26px;border-radius:50%;border:2px solid var(--bg3);background:var(--white);display:flex;align-items:center;justify-content:center;font-size:.72rem;flex-shrink:0;z-index:1}
+.afd-step.done .afd-dot{background:var(--br);border-color:var(--br);color:var(--white)}
+.afd-step.cur .afd-dot{background:var(--gold);border-color:var(--gold);color:var(--white);animation:pulse 2s ease-in-out infinite}
+.afd-step.pend .afd-dot{background:var(--bg2);border-color:var(--bg3);color:var(--ink2)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 4px rgba(184,134,11,.2)}50%{box-shadow:0 0 0 8px rgba(184,134,11,.08)}}
+.afd-info{flex:1;padding-top:3px}
+.afd-nm{font-size:.83rem;font-weight:600;color:var(--ink)}
+.afd-step.pend .afd-nm{color:var(--ink2);font-weight:400}
+.afd-step.cur .afd-nm{color:var(--gold)}
+.afd-ph{font-size:.72rem;color:var(--ink2);margin-top:1px}
+.afd-now{font-size:.7rem;color:var(--gold);margin-top:2px;font-weight:600}
+
+/* PIECE CARDS */
+.pieces-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+.piece-card2{background:var(--white);border-radius:var(--r);border:1px solid var(--bg3);overflow:hidden}
+.pc2-img{height:140px;background:linear-gradient(135deg,var(--bg3),var(--bg2));position:relative}
+.pc2-img img{width:100%;height:100%;object-fit:cover}
+.pc2-body{padding:14px}
+.pc2-tag{font-size:.67rem;letter-spacing:.1em;text-transform:uppercase;color:var(--br3);font-weight:700;margin-bottom:3px}
+.pc2-nm{font-family:'Playfair Display',serif;font-size:1rem;color:var(--ink);margin-bottom:10px}
+.pc2-meta{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.meta-r{font-size:.77rem}.meta-lbl{color:var(--ink2)}.meta-v{font-weight:600;color:var(--ink)}
+
+/* CATALOG */
+.catalog-layout{display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:start}
+.cat-sidebar{background:var(--white);border-radius:var(--r);padding:20px;border:1px solid var(--bg3);position:sticky;top:80px}
+.cat-sidebar h4{font-family:'Playfair Display',serif;font-size:1rem;margin-bottom:16px}
+.filter-g{margin-bottom:20px}
+.filter-lbl{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--ink2);margin-bottom:8px}
+.filter-chk{display:flex;align-items:center;gap:7px;font-size:.84rem;cursor:pointer;color:var(--ink2);padding:3px 0}
+.filter-chk input{accent-color:var(--br)}
+.search-bar{display:flex;background:var(--white);border:1.5px solid var(--bg3);border-radius:var(--r);overflow:hidden;margin-bottom:20px;transition:border-color .15s}
+.search-bar:focus-within{border-color:var(--br3)}
+.search-inp{flex:1;padding:10px 14px;border:none;background:transparent;color:var(--ink);font-size:.9rem;outline:none;font-family:'Inter',sans-serif}
+.search-inp::placeholder{color:var(--beige)}
+.search-go{padding:0 16px;background:var(--br);color:var(--white);border:none;cursor:pointer;font-size:.95rem}
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px}
+.cat-card{background:var(--white);border-radius:var(--r);border:1px solid var(--bg3);overflow:hidden;cursor:pointer;transition:all .2s}
+.cat-card:hover{transform:translateY(-3px);box-shadow:var(--sh);border-color:var(--beige)}
+.cc-img{height:180px;position:relative;overflow:hidden}
+.cc-img img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.cat-card:hover .cc-img img{transform:scale(1.05)}
+.cc-era{position:absolute;bottom:8px;left:8px}
+.cc-fav{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:rgba(255,253,248,.9);border:none;cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center}
+.cc-body{padding:13px}
+.cc-tag{font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--br3);font-weight:700;margin-bottom:3px}
+.cc-nm{font-family:'Playfair Display',serif;font-size:.98rem;color:var(--ink);margin-bottom:6px}
+.cc-price{font-size:1.05rem;font-weight:700;color:var(--br);margin-top:6px}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:12px;font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.badge-br{background:#F0E8DE;color:var(--br)}.badge-gold{background:#FBF3DC;color:#7A5900}
+.badge-ok{background:#E8F5E9;color:var(--ok)}.badge-warn{background:#FFF3E0;color:#E65100}
+.badge-err{background:#FFEBEE;color:var(--err)}
+
+/* RESTAURADOR CARDS */
+.req-card{background:var(--white);border-radius:var(--r);border:1px solid var(--bg3);padding:18px;margin-bottom:14px}
+.req-h{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
+.req-img{width:72px;height:54px;border-radius:6px;object-fit:cover;flex-shrink:0}
+.req-title{font-family:'Playfair Display',serif;font-size:.98rem;color:var(--ink);margin-bottom:3px}
+.req-p{font-size:.8rem;color:var(--ink2)}
+.req-desc{font-size:.83rem;color:var(--ink2);margin-bottom:10px;line-height:1.55}
+.req-actions{display:flex;gap:8px;flex-wrap:wrap}
+.act-btn{padding:7px 14px;border-radius:var(--r2);font-size:.8rem;font-weight:600;border:none;cursor:pointer;transition:all .15s}
+.act-btn.pri{background:var(--br);color:var(--white)}.act-btn.pri:hover{background:var(--br2)}
+.act-btn.sec{background:var(--bg2);color:var(--ink);border:1px solid var(--bg3)}.act-btn.sec:hover{background:var(--bg3)}
+.act-btn.err{background:#FFEBEE;color:var(--err)}.act-btn.err:hover{background:#FFDADA}
+.prog-wrap{background:var(--bg2);border-radius:20px;height:5px;overflow:hidden;margin-bottom:4px}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--br),var(--gold));border-radius:20px;transition:width .5s}
+
+/* BUTTONS */
+.btn-primary{background:var(--br);color:var(--white);padding:10px 22px;border:none;border-radius:var(--r2);font-size:.85rem;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-primary:hover{background:var(--br2)}
+.btn-ghost{background:var(--bg2);color:var(--ink);padding:10px 22px;border:1px solid var(--bg3);border-radius:var(--r2);font-size:.85rem;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-ghost:hover{background:var(--bg3)}
+
+/* AI SECTION */
+.ai-zone{border:2px dashed var(--bg3);border-radius:var(--r);padding:40px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg2)}
+.ai-zone:hover{border-color:var(--br3);background:var(--bg)}
+.ai-result{background:var(--white);border-radius:var(--r);border:1px solid var(--bg3);overflow:hidden}
+.ai-result-hd{background:var(--br);color:var(--white);padding:14px 18px;display:flex;align-items:center;gap:10px;font-family:'Playfair Display',serif;font-size:.98rem}
+.ai-result-body{padding:18px}
+.ai-field{margin-bottom:12px}
+.ai-fl{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;font-weight:700;color:var(--ink2);margin-bottom:1px}
+.ai-fv{font-size:.92rem;font-weight:600;color:var(--ink)}
+.ai-est{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid var(--bg3)}
+.ai-ei{background:var(--bg);border-radius:var(--r2);padding:12px;text-align:center}
+.ai-ev{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:600;color:var(--br)}
+.ai-el{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2);margin-top:2px}
+
+/* PIECE DETAIL */
+.piece-detail{display:grid;grid-template-columns:1fr 370px;gap:36px;align-items:start}
+.gallery img{width:100%;height:380px;object-fit:cover;border-radius:var(--r);margin-bottom:10px}
+.thumbs{display:flex;gap:8px}
+.thumb{width:72px;height:54px;border-radius:6px;object-fit:cover;cursor:pointer;border:2px solid transparent;transition:border-color .15s}
+.thumb:hover,.thumb.on{border-color:var(--br)}
+.info-panel{background:var(--white);border-radius:var(--r);padding:26px;border:1px solid var(--bg3);position:sticky;top:80px}
+.info-price{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--br);margin-bottom:14px}
+.specs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.spec-lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--ink2);display:block}
+.spec-v{font-size:.88rem;font-weight:500;color:var(--ink)}
+.info-actions{display:flex;flex-direction:column;gap:9px;margin-top:16px}
+.ia-btn{padding:13px;border:none;border-radius:var(--r2);font-size:.88rem;font-weight:600;cursor:pointer;transition:all .15s}
+.ia-btn.main{background:var(--gold);color:var(--white)}.ia-btn.main:hover{background:#9A720A}
+.ia-btn.sec2{background:transparent;color:var(--br);border:1.5px solid var(--br)}.ia-btn.sec2:hover{background:var(--bg2)}
+.ia-btn.ghost2{background:var(--bg2);color:var(--ink);border:1px solid var(--bg3)}.ia-btn.ghost2:hover{background:var(--bg3)}
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.ba-item{text-align:center}
+.ba-item img{width:100%;height:130px;object-fit:cover;border-radius:6px;margin-bottom:5px}
+.ba-lbl{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2)}
+
+/* TOAST */
+.toast-wrap{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--ink);color:var(--white);padding:12px 18px;border-radius:var(--r2);font-size:.85rem;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.2);animation:slideIn .3s ease both;max-width:300px}
+.toast.ok{background:var(--ok)}.toast.err{background:var(--err)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* QUICK ACTIONS */
+.qa-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+.qa-card{background:var(--white);border-radius:var(--r);border:1px solid var(--bg3);padding:18px;cursor:pointer;transition:all .2s;border-left:3px solid transparent}
+.qa-card.q1{border-left-color:var(--br)}.qa-card.q2{border-left-color:var(--gold)}.qa-card.q3{border-left-color:var(--br3)}
+.qa-card:hover{box-shadow:var(--sh)}
+.qa-ico{font-size:1.6rem;margin-bottom:8px}
+.qa-t{font-family:'Playfair Display',serif;font-size:.95rem;color:var(--ink);margin-bottom:4px}
+.qa-d{font-size:.78rem;color:var(--ink2);line-height:1.5}
+
+@media(max-width:900px){
+  .dash{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .catalog-layout{grid-template-columns:1fr}
+  .cat-sidebar{display:none}
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .cards3{grid-template-columns:1fr}
+  .steps{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="logo" onclick="go('landing')" style="cursor:pointer">MJ Renew<span>Antigüedades · Restauración</span></div>
+    <div class="nav-links" id="nav-links">
+      <a class="nav-link" onclick="go('landing');smoothTo('como')">Cómo funciona</a>
+      <a class="nav-link" onclick="go('catalogo')">Catálogo</a>
+      <a class="nav-link" onclick="go('landing');smoothTo('nosotros')">Nosotros</a>
+      <button class="nav-btn btn-outline" onclick="go('login')">Iniciar sesión</button>
+      <button class="nav-btn btn-gold" onclick="go('registro')">Registrarme</button>
+    </div>
+    <div class="nav-links" id="nav-user" style="display:none">
+      <div class="user-chip" id="u-chip" onclick="goToDash()">
+        <div class="u-av" id="u-av"></div>
+        <span class="u-name" id="u-name"></span>
+      </div>
+      <button class="nav-btn btn-outline" onclick="logout()">Salir</button>
+    </div>
+  </div>
+</nav>
+
+<div id="toast-wrap" class="toast-wrap"></div>
+
+<!-- LANDING -->
+<div id="s-landing" class="screen on">
+  <div class="hero">
+    <div class="hero-c">
+      <p class="hero-tag">Plataforma especializada en muebles antiguos</p>
+      <h1>Renueva la historia.<br><em>Dale una nueva vida<br>a tus piezas.</em></h1>
+      <p class="hero-sub">Conectamos muebles antiguos con restauradores profesionales, diseñadores y nuevos propietarios para conservar su historia y devolverles su valor.</p>
+      <div class="hero-btns">
+        <button class="hero-btn-main" onclick="go('registro')">Quiero restaurar mi pieza</button>
+        <button class="hero-btn-sec" onclick="go('catalogo')">Explorar catálogo</button>
+      </div>
+    </div>
+  </div>
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-n">+200</div><div class="stat-l">Piezas restauradas</div></div>
+    <div class="stat"><div class="stat-n">48</div><div class="stat-l">Restauradores verificados</div></div>
+    <div class="stat"><div class="stat-n">3</div><div class="stat-l">Ciudades</div></div>
+    <div class="stat"><div class="stat-n" style="color:var(--gold)">98%</div><div class="stat-l">Satisfacción</div></div>
+  </div>
+
+  <div class="sec bg2" id="como">
+    <div class="container">
+      <div class="sec-head">
+        <span class="eyebrow">El proceso</span>
+        <h2>¿Cómo funciona MJ Renew?</h2>
+        <div class="gold-bar"></div>
+      </div>
+      <div class="steps">
+        <div class="step"><div class="step-n">1</div><h4>Analiza tu pieza</h4><p>Sube fotos y nuestra IA identifica tipo, materiales, estado y valor potencial.</p></div>
+        <div class="step"><div class="step-n">2</div><h4>Elige tu restaurador</h4><p>Te conectamos con restauradores verificados y recibes una cotización formal.</p></div>
+        <div class="step"><div class="step-n">3</div><h4>Sigue el proceso</h4><p>Ve el avance en tiempo real: fotos, actualizaciones y comunicación directa.</p></div>
+        <div class="step"><div class="step-n">4</div><h4>Recibe tu pieza</h4><p>Te la entregamos restaurada. O publícala en nuestro catálogo curado.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="container">
+      <div class="sec-head">
+        <span class="eyebrow">Para cada usuario</span>
+        <h2>Una plataforma. Tres formas de vivir la historia.</h2>
+        <div class="gold-bar"></div>
+      </div>
+      <div class="cards3">
+        <div class="ucard"><div class="ucard-top c1"></div><div class="ucard-body">
+          <div class="ucard-ico">🏡</div><h3>Propietarios</h3>
+          <p>¿Tienes un mueble antiguo olvidado? Descubre su valor real y dale una segunda vida.</p>
+          <ul class="ucard-list"><li>Análisis con IA</li><li>Cotización gratuita</li><li>Pago seguro en escrow</li><li>Seguimiento en tiempo real</li></ul>
+          <button class="uc-btn b1" onclick="setUser('propietario');go('propietario')">Quiero restaurar</button>
+        </div></div>
+        <div class="ucard"><div class="ucard-top c2"></div><div class="ucard-body">
+          <div class="ucard-ico">🔨</div><h3>Restauradores</h3>
+          <p>Muestra tu experiencia y gestiona proyectos de manera profesional.</p>
+          <ul class="ucard-list"><li>Perfil profesional</li><li>Solicitudes verificadas</li><li>Pagos garantizados</li><li>Portafolio digital</li></ul>
+          <button class="uc-btn b2" onclick="setUser('restaurador');go('restaurador')">Soy restaurador</button>
+        </div></div>
+        <div class="ucard"><div class="ucard-top c3"></div><div class="ucard-body">
+          <div class="ucard-ico">🛒</div><h3>Compradores</h3>
+          <p>Encuentra muebles únicos con historia verificada para tu hogar o proyecto.</p>
+          <ul class="ucard-list"><li>Catálogo curado</li><li>Historia de restauración</li><li>Certificado de autenticidad</li><li>Pago seguro Stripe</li></ul>
+          <button class="uc-btn b3" onclick="go('catalogo')">Explorar piezas</button>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec bg2" id="nosotros">
+    <div class="container">
+      <div style="max-width:640px;margin:0 auto;text-align:center">
+        <span class="eyebrow">Quiénes somos</span>
+        <h2 style="margin-bottom:16px">Modernizando el mercado de antigüedades</h2>
+        <div class="gold-bar"></div>
+        <p style="color:var(--ink2);line-height:1.8;margin-top:20px">MJ Renew nace de la convicción de que cada mueble antiguo tiene una historia que merece preservarse. Usamos inteligencia artificial, plataformas digitales y una red de restauradores verificados para crear un ecosistema confiable y transparente.</p>
+        <div style="display:flex;gap:16px;justify-content:center;margin-top:28px">
+          <button class="btn-primary" onclick="go('registro')">Comenzar ahora</button>
+          <button class="btn-ghost" onclick="go('catalogo')">Ver el catálogo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div><span class="footer-logo">MJ Renew</span><p class="desc">Plataforma digital para muebles antiguos. Conectamos propietarios, restauradores y compradores.</p></div>
+        <div><h5>Plataforma</h5><ul><li><a onclick="go('catalogo')">Catálogo</a></li><li><a onclick="go('registro')">Restaurar mi pieza</a></li><li><a onclick="go('registro')">Soy restaurador</a></li></ul></div>
+        <div><h5>Empresa</h5><ul><li><a>Quiénes somos</a></li><li><a>Cómo funciona</a></li><li><a>Blog</a></li><li><a>Contacto</a></li></ul></div>
+        <div><h5>Legal</h5><ul><li><a>Términos de uso</a></li><li><a>Privacidad</a></li><li><a>Cookies</a></li></ul></div>
+      </div>
+    </div>
+    <div class="container"><div class="footer-bottom"><p>© 2025 MJ Renew · Proyecto TecniA / Hub Anáhuac Mayab</p><p>Hecho con ♥ en Mérida, Yucatán</p></div></div>
+  </footer>
+</div>
+
+<!-- LOGIN -->
+<div id="s-login" class="screen">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo"><h2>MJ Renew</h2><p>Inicia sesión en tu cuenta</p></div>
+      <div class="form-g"><label class="form-lbl">Correo electrónico</label><input class="form-inp" id="l-email" type="email" placeholder="tu@correo.com"></div>
+      <div class="form-g"><label class="form-lbl">Contraseña</label><input class="form-inp" id="l-pass" type="password" placeholder="••••••••"></div>
+      <button class="sub-btn" onclick="doLogin()">Iniciar sesión</button>
+      <div class="demo-box">
+        <h5>🔑 Cuentas de demostración</h5>
+        <div class="demo-item" onclick="fillLogin('jennifer@mjrenew.mx','123456','propietario')"><strong>Propietario</strong><span>jennifer@mjrenew.mx / 123456</span></div>
+        <div class="demo-item" onclick="fillLogin('rafael@mjrenew.mx','123456','restaurador')"><strong>Restaurador</strong><span>rafael@mjrenew.mx / 123456</span></div>
+        <div class="demo-item" onclick="fillLogin('ana@mjrenew.mx','123456','comprador')"><strong>Comprador</strong><span>ana@mjrenew.mx / 123456</span></div>
+      </div>
+      <div class="auth-foot">¿No tienes cuenta? <a onclick="go('registro')">Regístrate gratis</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTRO -->
+<div id="s-registro" class="screen">
+  <div class="auth-wrap">
+    <div class="auth-card" style="max-width:480px">
+      <div class="auth-logo"><h2>MJ Renew</h2><p>Crea tu cuenta gratuita</p></div>
+      <div id="reg-s1">
+        <p style="font-size:.82rem;color:var(--ink2);margin-bottom:16px;font-weight:600">Paso 1 de 2 — Tus datos</p>
+        <div class="form-g"><label class="form-lbl">Nombre completo</label><input class="form-inp" id="r-name" placeholder="Jennifer Torres"></div>
+        <div class="form-g"><label class="form-lbl">Correo</label><input class="form-inp" id="r-email" type="email" placeholder="tu@correo.com"></div>
+        <div class="form-g"><label class="form-lbl">Contraseña</label><input class="form-inp" id="r-pass" type="password" placeholder="Mínimo 6 caracteres"></div>
+        <button class="sub-btn" onclick="regStep2()">Continuar →</button>
+      </div>
+      <div id="reg-s2" style="display:none">
+        <p style="font-size:.82rem;color:var(--ink2);margin-bottom:16px;font-weight:600">Paso 2 de 2 — ¿Cómo usarás MJ Renew?</p>
+        <div id="tipo-opts" style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
+          <label style="display:flex;align-items:center;gap:12px;padding:12px;border:2px solid var(--bg3);border-radius:var(--r2);cursor:pointer;transition:border-color .15s" id="opt-prop">
+            <input type="radio" name="tipo" value="propietario" style="display:none">
+            <span style="font-size:1.3rem">🏡</span>
+            <div><strong style="font-size:.88rem;color:var(--ink)">Quiero restaurar una pieza</strong><br><span style="font-size:.78rem;color:var(--ink2)">Tengo un mueble antiguo para restaurar</span></div>
+          </label>
+          <label style="display:flex;align-items:center;gap:12px;padding:12px;border:2px solid var(--bg3);border-radius:var(--r2);cursor:pointer;transition:border-color .15s" id="opt-rest">
+            <input type="radio" name="tipo" value="restaurador" style="display:none">
+            <span style="font-size:1.3rem">🔨</span>
+            <div><strong style="font-size:.88rem;color:var(--ink)">Soy restaurador profesional</strong><br><span style="font-size:.78rem;color:var(--ink2)">Restauro muebles y busco clientes</span></div>
+          </label>
+          <label style="display:flex;align-items:center;gap:12px;padding:12px;border:2px solid var(--bg3);border-radius:var(--r2);cursor:pointer;transition:border-color .15s" id="opt-comp">
+            <input type="radio" name="tipo" value="comprador" style="display:none">
+            <span style="font-size:1.3rem">🛒</span>
+            <div><strong style="font-size:.88rem;color:var(--ink)">Quiero comprar muebles</strong><br><span style="font-size:.78rem;color:var(--ink2)">Busco piezas únicas restauradas</span></div>
+          </label>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn-ghost" style="flex:1" onclick="regBack()">← Atrás</button>
+          <button class="sub-btn" style="flex:2" onclick="doRegistro()">Crear cuenta</button>
+        </div>
+      </div>
+      <div class="auth-foot" style="margin-top:16px">¿Ya tienes cuenta? <a onclick="go('login')">Inicia sesión</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- PROPIETARIO DASHBOARD -->
+<div id="s-propietario" class="screen">
+  <div class="dash">
+    <aside class="sidebar">
+      <div class="sb-user">
+        <div class="sb-av" id="prop-av"></div>
+        <div class="sb-info"><div class="nm" id="prop-nm"></div><div class="tp">Propietario</div></div>
+      </div>
+      <div class="sb-lbl">Mi cuenta</div>
+      <button class="sb-item on" onclick="showDash('prop','inicio')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg> Inicio</button>
+      <button class="sb-item" onclick="showDash('prop','piezas')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg> Mis piezas</button>
+      <button class="sb-item" onclick="showDash('prop','analizar')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Analizar pieza</button>
+      <button class="sb-item" onclick="showDash('prop','mensajes')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> Mensajes <span class="sb-badge">2</span></button>
+      <div class="sb-lbl" style="margin-top:12px">Explorar</div>
+      <button class="sb-item" onclick="go('catalogo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg> Catálogo</button>
+      <button class="sb-item" onclick="logout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Salir</button>
+    </aside>
+    <main class="dash-main">
+      <div id="prop-inicio" class="dash-section on">
+        <h1 class="dash-title" id="prop-welcome"></h1>
+        <p class="dash-sub">¿Qué quieres hacer hoy?</p>
+        <div class="qa-grid">
+          <div class="qa-card q1" onclick="showDash('prop','analizar')"><div class="qa-ico">🤖</div><div class="qa-t">Analizar mi mueble</div><div class="qa-d">Sube fotos y la IA evalúa tu pieza</div></div>
+          <div class="qa-card q2" onclick="showDash('prop','piezas')"><div class="qa-ico">🔧</div><div class="qa-t">Ver restauraciones</div><div class="qa-d">Sigue el progreso en tiempo real</div></div>
+          <div class="qa-card q3" onclick="go('catalogo')"><div class="qa-ico">🛒</div><div class="qa-t">Explorar catálogo</div><div class="qa-d">Descubre piezas únicas disponibles</div></div>
+        </div>
+        <div class="stats-row" style="grid-template-columns:repeat(3,1fr)">
+          <div class="stat-card"><div class="stat-v">2</div><div class="stat-l2">Piezas activas</div></div>
+          <div class="stat-card"><div class="stat-v">1</div><div class="stat-l2">En restauración</div></div>
+          <div class="stat-card"><div class="stat-v" style="color:var(--gold)">$46k</div><div class="stat-l2">Valor estimado</div></div>
+        </div>
+        <div id="afd-home"></div>
+      </div>
+
+      <div id="prop-piezas" class="dash-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+          <div><h2 class="dash-title">Mis piezas</h2><p class="dash-sub">Seguimiento de tus restauraciones</p></div>
+          <button class="btn-primary" onclick="showDash('prop','analizar')">+ Agregar pieza</button>
+        </div>
+        <div id="pieces-list"></div>
+      </div>
+
+      <div id="prop-analizar" class="dash-section">
+        <h2 class="dash-title">Analiza tu mueble con IA</h2>
+        <p class="dash-sub">Sube fotografías y recibirás una evaluación en segundos</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start">
+          <div>
+            <div class="ai-zone" id="ai-zone" onclick="document.getElementById('fi').click()">
+              <div style="font-size:2.2rem;margin-bottom:10px">📷</div>
+              <p style="color:var(--ink);font-weight:600">Haz clic o arrastra tus fotografías</p>
+              <p style="font-size:.8rem;color:var(--ink2);margin-top:6px">JPG, PNG · hasta 10MB</p>
+              <input type="file" id="fi" accept="image/*" style="display:none" onchange="handleImg(this)">
+            </div>
+            <img id="ai-prev" style="display:none;width:100%;height:200px;object-fit:cover;border-radius:var(--r);margin-top:12px">
+            <div class="form-g" style="margin-top:16px"><label class="form-lbl">Describe tu pieza (opcional)</label><textarea class="form-inp" rows="3" placeholder="Ej. Cómoda de madera que heredé de mi abuela…"></textarea></div>
+            <button class="sub-btn" onclick="doAnalysis()">🤖 Analizar mi pieza</button>
+          </div>
+          <div id="ai-out">
+            <div style="text-align:center;padding:40px 20px;color:var(--ink2)"><div style="font-size:2.5rem;margin-bottom:12px">🪑</div><p>Sube una fotografía para comenzar el análisis</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="prop-mensajes" class="dash-section">
+        <h2 class="dash-title" style="margin-bottom:20px">Mensajes</h2>
+        <div style="background:var(--white);border-radius:var(--r);border:1px solid var(--bg3);overflow:hidden">
+          <div style="padding:14px;border-bottom:1px solid var(--bg3);background:var(--bg2);font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2)">Rafael Mendoza · Vitrina colonial de nogal</div>
+          <div style="padding:18px;display:flex;flex-direction:column;gap:12px;min-height:240px">
+            <div style="display:flex;flex-direction:column;gap:3px">
+              <div style="background:var(--bg2);padding:10px 13px;border-radius:4px 12px 12px 12px;font-size:.84rem;max-width:80%">Buenos días, aquí le envío fotos del avance de su vitrina. Ya terminamos la primera capa de sellador.</div>
+              <div style="font-size:.68rem;color:var(--ink2)">Rafael · Hoy 9:14 AM</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+              <div style="background:var(--br);color:var(--white);padding:10px 13px;border-radius:12px 4px 12px 12px;font-size:.84rem;max-width:80%">¡Gracias Rafael! Se ve muy bien. ¿Cuándo estará lista?</div>
+              <div style="font-size:.68rem;color:var(--ink2)">Tú · Hoy 9:32 AM</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:3px">
+              <div style="background:var(--bg2);padding:10px 13px;border-radius:4px 12px 12px 12px;font-size:.84rem;max-width:80%">Para el 1 de abril. El acabado final tarda 4 días de secado.</div>
+              <div style="font-size:.68rem;color:var(--ink2)">Rafael · Hoy 9:45 AM</div>
+            </div>
+          </div>
+          <div style="padding:10px;border-top:1px solid var(--bg3);display:flex;gap:8px">
+            <input class="form-inp" placeholder="Escribe un mensaje…" style="margin:0">
+            <button class="btn-primary" onclick="toast('Mensaje enviado','ok')">→</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- RESTAURADOR DASHBOARD -->
+<div id="s-restaurador" class="screen">
+  <div class="dash">
+    <aside class="sidebar">
+      <div class="sb-user">
+        <div class="sb-av" id="rest-av" style="background:var(--gold);color:var(--br)"></div>
+        <div class="sb-info"><div class="nm" id="rest-nm"></div><div class="tp">Restaurador <span class="badge badge-gold">Verificado</span></div></div>
+      </div>
+      <div class="sb-lbl">Trabajo</div>
+      <button class="sb-item on" onclick="showDash('rest','inicio')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg> Inicio</button>
+      <button class="sb-item" onclick="showDash('rest','solicitudes')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 014.5 12a19.79 19.79 0 01-3.07-8.67A2 2 0 013.44 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L7.91 8.4a16 16 0 006.72 6.72l1.77-1.77a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg> Solicitudes <span class="sb-badge">2</span></button>
+      <button class="sb-item" onclick="showDash('rest','activas')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg> En proceso</button>
+      <button class="sb-item" onclick="showDash('rest','perfil')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Mi perfil</button>
+      <div class="sb-lbl" style="margin-top:12px">Cuenta</div>
+      <button class="sb-item" onclick="logout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Salir</button>
+    </aside>
+    <main class="dash-main">
+      <div id="rest-inicio" class="dash-section on">
+        <h1 class="dash-title" id="rest-welcome"></h1>
+        <p class="dash-sub">Tienes <strong>2</strong> solicitudes nuevas esperando tu respuesta.</p>
+        <div class="stats-row">
+          <div class="stat-card"><div class="stat-v">2</div><div class="stat-l2">Solicitudes nuevas</div></div>
+          <div class="stat-card"><div class="stat-v">1</div><div class="stat-l2">En proceso</div></div>
+          <div class="stat-card"><div class="stat-v">31</div><div class="stat-l2">Completadas</div></div>
+          <div class="stat-card"><div class="stat-v" style="color:var(--gold)">4.9 ★</div><div class="stat-l2">Calificación</div></div>
+        </div>
+        <h3 style="font-family:'Playfair Display',serif;font-size:1.05rem;margin-bottom:12px">Solicitudes pendientes</h3>
+        <div id="req-home"></div>
+      </div>
+      <div id="rest-solicitudes" class="dash-section">
+        <h2 class="dash-title">Solicitudes pendientes</h2>
+        <p class="dash-sub">Revisa cada pieza y decide si aceptas</p>
+        <div id="req-list"></div>
+      </div>
+      <div id="rest-activas" class="dash-section">
+        <h2 class="dash-title">En proceso</h2>
+        <p class="dash-sub">Actualiza el avance de tus restauraciones activas</p>
+        <div id="act-list"></div>
+      </div>
+      <div id="rest-perfil" class="dash-section">
+        <h2 class="dash-title" style="margin-bottom:20px">Mi perfil profesional</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div style="background:var(--white);border-radius:var(--r);padding:22px;border:1px solid var(--bg3)">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--bg3)">
+              <div class="sb-av" id="rest-pf-av" style="width:52px;height:52px;font-size:1.1rem;background:var(--gold);color:var(--br)"></div>
+              <div><h3 style="font-family:'Playfair Display',serif;font-size:1rem" id="rest-pf-nm"></h3><span class="badge badge-gold">Restaurador verificado</span></div>
+            </div>
+            <div class="form-g"><label class="form-lbl">Especialidad</label><input class="form-inp" value="Ebanistería y restauración de madera"></div>
+            <div class="form-g"><label class="form-lbl">Ubicación</label><input class="form-inp" value="Mérida, Yucatán"></div>
+            <div class="form-g"><label class="form-lbl">Experiencia</label><input class="form-inp" value="12 años"></div>
+            <button class="btn-primary" onclick="toast('Perfil actualizado','ok')">Guardar cambios</button>
+          </div>
+          <div>
+            <div style="background:var(--white);border-radius:var(--r);padding:18px;border:1px solid var(--bg3);margin-bottom:14px">
+              <h4 style="font-family:'Playfair Display',serif;font-size:.95rem;margin-bottom:12px">Estadísticas</h4>
+              <div style="display:flex;flex-direction:column;gap:8px;font-size:.83rem">
+                <div style="display:flex;justify-content:space-between"><span style="color:var(--ink2)">Proyectos completados</span><strong>31</strong></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:var(--ink2)">Calificación promedio</span><strong>4.9 / 5.0 ★</strong></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:var(--ink2)">Tiempo de respuesta</span><strong>&lt; 24 horas</strong></div>
+              </div>
+            </div>
+            <div style="background:var(--white);border-radius:var(--r);padding:18px;border:1px solid var(--bg3)">
+              <h4 style="font-family:'Playfair Display',serif;font-size:.95rem;margin-bottom:10px">Especialidades</h4>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                <span class="badge badge-br">Ebanistería</span><span class="badge badge-br">Dorado al pan</span><span class="badge badge-br">Marquetería</span><span class="badge badge-br">Laqueado</span><span class="badge badge-br">Tapicería</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- CATÁLOGO -->
+<div id="s-catalogo" class="screen">
+  <div style="background:var(--br);padding:32px 0;border-bottom:3px solid var(--gold)">
+    <div class="container">
+      <h1 style="color:var(--white);font-size:1.7rem">Catálogo de piezas</h1>
+      <p style="color:var(--beige);font-size:.88rem">Muebles restaurados con historia verificada</p>
+    </div>
+  </div>
+  <div class="container" style="padding-top:28px;padding-bottom:60px">
+    <div class="search-bar" style="max-width:520px;margin-bottom:22px">
+      <input class="search-inp" id="cat-search" placeholder="Busca por tipo, material, época…" oninput="filterCat()">
+      <button class="search-go">🔍</button>
+    </div>
+    <div class="catalog-layout">
+      <aside class="cat-sidebar">
+        <h4>Filtros</h4>
+        <div class="filter-g">
+          <div class="filter-lbl">Categoría</div>
+          <label class="filter-chk"><input type="checkbox" value="Escritorios" onchange="filterCat()"> Escritorios</label>
+          <label class="filter-chk"><input type="checkbox" value="Vitrinas" onchange="filterCat()"> Vitrinas</label>
+          <label class="filter-chk"><input type="checkbox" value="Comedores" onchange="filterCat()"> Comedores</label>
+          <label class="filter-chk"><input type="checkbox" value="Sillones" onchange="filterCat()"> Sillones</label>
+          <label class="filter-chk"><input type="checkbox" value="Cómodas" onchange="filterCat()"> Cómodas</label>
+          <label class="filter-chk"><input type="checkbox" value="Mesas" onchange="filterCat()"> Mesas</label>
+        </div>
+        <div class="filter-g">
+          <div class="filter-lbl">Estado</div>
+          <label class="filter-chk"><input type="checkbox" value="Restaurado" onchange="filterCat()"> Restaurado</label>
+          <label class="filter-chk"><input type="checkbox" value="En restauración" onchange="filterCat()"> En restauración</label>
+        </div>
+        <div class="filter-g">
+          <div class="filter-lbl">Precio máx</div>
+          <input type="range" id="price-r" min="5000" max="100000" value="100000" step="5000" oninput="document.getElementById('prv').textContent='$'+Number(this.value).toLocaleString('es-MX');filterCat()" style="width:100%;accent-color:var(--br)">
+          <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--ink2);margin-top:4px"><span>$5k</span><strong id="prv" style="color:var(--br)">$100,000</strong></div>
+        </div>
+        <button class="btn-ghost" style="width:100%;justify-content:center;display:flex" onclick="clearFilters()">Limpiar filtros</button>
+      </aside>
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <p id="cat-count" style="font-size:.84rem;color:var(--ink2)">Mostrando 8 piezas</p>
+          <select class="form-inp" style="width:auto;margin:0;font-size:.83rem" onchange="sortCat(this.value)">
+            <option value="">Orden: Destacados</option>
+            <option value="asc">Precio: menor a mayor</option>
+            <option value="desc">Precio: mayor a menor</option>
+          </select>
+        </div>
+        <div class="cat-grid" id="cat-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PIEZA DETALLE -->
+<div id="s-pieza" class="screen">
+  <div style="background:var(--bg2);border-bottom:1px solid var(--bg3);padding:11px 0">
+    <div class="container" style="display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--ink2)">
+      <a onclick="go('landing')">Inicio</a><span>›</span><a onclick="go('catalogo')">Catálogo</a><span>›</span><span id="pieza-bc" style="color:var(--ink)"></span>
+    </div>
+  </div>
+  <div class="container" style="padding:36px 24px 60px">
+    <div class="piece-detail">
+      <div class="gallery">
+        <img id="main-img" src="" alt="">
+        <div class="thumbs" id="thumbs"></div>
+        <div class="ba" id="ba-section"></div>
+      </div>
+      <div class="info-panel">
+        <div style="margin-bottom:10px">
+          <span class="eyebrow" id="p-cat"></span>
+          <h2 style="font-size:1.5rem;margin-bottom:6px" id="p-nm"></h2>
+          <span id="p-est"></span>
+        </div>
+        <div class="info-price" id="p-price"></div>
+        <div class="specs" id="p-specs"></div>
+        <hr style="border:none;border-top:1px solid var(--bg3);margin:14px 0">
+        <h4 style="margin-bottom:8px;font-size:.9rem">Historia de la pieza</h4>
+        <p id="p-desc" style="font-size:.84rem;color:var(--ink2);line-height:1.7"></p>
+        <div class="info-actions">
+          <button class="ia-btn main" onclick="toast('¡Gracias! Te contactaremos en menos de 24h','ok')">🛒 Comprar pieza</button>
+          <button class="ia-btn sec2" onclick="toast('Mensaje enviado al vendedor','ok')">💬 Contactar vendedor</button>
+          <button class="ia-btn ghost2" onclick="toast('Agregado a favoritos ♥','ok')">♡ Agregar a favoritos</button>
+        </div>
+        <div style="margin-top:14px;padding:10px;background:var(--bg2);border-radius:var(--r2);font-size:.75rem;color:var(--ink2);text-align:center">🔒 Pago seguro Stripe · Certificado de autenticidad incluido</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// DATA
+var CATALOG=[
+  {id:1,nombre:'Escritorio Colonial',cat:'Escritorios',epoca:'Colonial · ~1890s',mat:'Cedro macizo',estado:'Restaurado',precio:38000,ubi:'Mérida, Yucatán',desc:'Escritorio de cedro macizo con herrajes originales de bronce. Pieza de finales del siglo XIX proveniente de una hacienda henequenera yucateca.',img:'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&q=80',before:'https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=400&q=70',after:'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&q=70',rest:'Rafael Mendoza',dim:'140 × 70 × 80 cm'},
+  {id:2,nombre:'Vitrina Victoriana',cat:'Vitrinas',epoca:'Victoriano · ~1880s',mat:'Nogal con vidrio biselado',estado:'Restaurado',precio:52000,ubi:'Ciudad de México',desc:'Vitrina de nogal con vidrio biselado original. Herrajes de hierro forjado artesanal en tiradores y bisagras. Restauración mínima respetando la pátina original.',img:'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&q=80',before:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=70',after:'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&q=70',rest:'Ana Berzunza',dim:'90 × 45 × 195 cm'},
+  {id:3,nombre:'Comedor Art Nouveau',cat:'Comedores',epoca:'Art Nouveau · ~1905',mat:'Caoba con incrustaciones',estado:'Restaurado',precio:89000,ubi:'Guadalajara, Jalisco',desc:'Juego de comedor Art Nouveau en caoba con incrustaciones de marquetería floral. Mesa para 8 personas con 6 sillas tapizadas en terciopelo vino.',img:'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=600&q=80',before:'https://images.unsplash.com/photo-1505409628601-edc9af17fda6?w=400&q=70',after:'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=400&q=70',rest:'Carlos Estrada',dim:'200 × 100 × 78 cm'},
+  {id:4,nombre:'Buró Art Déco',cat:'Escritorios',epoca:'Art Déco · ~1928',mat:'Roble con herrajes niquelados',estado:'Restaurado',precio:18500,ubi:'Monterrey, N.L.',desc:'Buró de noche Art Déco con dos cajones y compartimiento inferior. Herrajes originales niquelados en perfecto estado.',img:'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?w=600&q=80',before:'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&q=70',after:'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?w=400&q=70',rest:'Rafael Mendoza',dim:'50 × 40 × 70 cm'},
+  {id:5,nombre:'Sillón Luis XV',cat:'Sillones',epoca:'Estilo Luis XV · ~1890s',mat:'Nogal tallado, tapiz brocado',estado:'Restaurado',precio:24000,ubi:'Mérida, Yucatán',desc:'Sillón estilo Luis XV en nogal tallado a mano. Retapizado con tela brocada en tonos dorados. Patas cabriola originales con detalle de flor de lis.',img:'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=600&q=80',before:'https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=400&q=70',after:'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=400&q=70',rest:'Ana Berzunza',dim:'70 × 65 × 95 cm'},
+  {id:6,nombre:'Cómoda Porfiriato',cat:'Cómodas',epoca:'Porfiriato · ~1900s',mat:'Cedro con jaladeras de bronce',estado:'En restauración',precio:31000,ubi:'Ciudad de México',desc:'Cómoda de cuatro cajones época Porfiriato con jaladeras originales de bronce. Actualmente en proceso de restauración. Disponible en 3-4 semanas.',img:'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&q=80',before:'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&q=70',after:null,rest:'Carlos Estrada',dim:'110 × 55 × 90 cm'},
+  {id:7,nombre:'Aparador Inglés',cat:'Cómodas',epoca:'Eduardiano · ~1870s',mat:'Caoba con espejo biselado',estado:'Restaurado',precio:67000,ubi:'Guadalajara, Jalisco',desc:'Aparador inglés de estilo Eduardiano con espejo biselado original y tres compartimientos. Caoba maciza en condición excepcional.',img:'https://images.unsplash.com/photo-1618220179428-22790b461013?w=600&q=80',before:'https://images.unsplash.com/photo-1505409628601-edc9af17fda6?w=400&q=70',after:'https://images.unsplash.com/photo-1618220179428-22790b461013?w=400&q=70',rest:'Rafael Mendoza',dim:'160 × 55 × 200 cm'},
+  {id:8,nombre:'Mesa de Centro Colonial',cat:'Mesas',epoca:'Colonial · ~1850s',mat:'Madera tallada, hierro forjado',estado:'Restaurado',precio:22500,ubi:'Oaxaca, Oaxaca',desc:'Mesa de centro colonial con base de hierro forjado artesanal y tablero de madera tallada con motivos florales oaxaqueños. Pieza única.',img:'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=600&q=80',before:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=70',after:'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&q=70',rest:'Ana Berzunza',dim:'120 × 60 × 48 cm'},
+];
+
+var OWNER_PIECES=[
+  {id:'p1',nombre:'Vitrina colonial de nogal',estado:'q9',img:'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&q=70',costo:'$14,500 MXN',tiempo:'2 semanas',rest:'Rafael Mendoza'},
+  {id:'p2',nombre:'Sillón tapizado Luis XV',estado:'q3',img:'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=400&q=70',costo:'$8,200 MXN',tiempo:'4–6 semanas',rest:'Ana Berzunza'},
+];
+
+var AFD_V5=[
+  {id:'q0',nm:'Pieza capturada',ph:'Captura'},
+  {id:'q1',nm:'En evaluación',ph:'Evaluación'},
+  {id:'q2',nm:'Calculando presupuesto',ph:'Evaluación'},
+  {id:'q3',nm:'Presupuesto presentado',ph:'Evaluación'},
+  {id:'q4',nm:'Pago en escrow',ph:'Evaluación'},
+  {id:'q5',nm:'Solicitud fecha y hora recolección',ph:'Logística ida'},
+  {id:'q6',nm:'En recolección',ph:'Logística ida'},
+  {id:'q7',nm:'Recibido en taller',ph:'Logística ida'},
+  {id:'q8',nm:'En restauración',ph:'Restauración'},
+  {id:'q9',nm:'Avance publicado',ph:'Restauración'},
+  {id:'q10',nm:'Restauración lista',ph:'Restauración'},
+  {id:'q11',nm:'Decisión en taller [MVP]',ph:'Restauración'},
+  {id:'q12',nm:'Horario entrega agendado',ph:'Logística vuelta'},
+  {id:'q13',nm:'En devolución',ph:'Logística vuelta'},
+  {id:'q14',nm:'Entregado al dueño',ph:'Logística vuelta'},
+  {id:'qF1',nm:'Restauración completada ✓',ph:'Finalizado',ok:true},
+];
+
+var AI_RESULTS=[
+  {tipo:'Cómoda antigua',mat:'Madera de caoba',estilo:'Colonial',estado:'Regular — daños moderados',rec:'Restauración estructural + acabado lacado',cmin:4500,cmax:6500,tmin:3,tmax:5,val:28000},
+  {tipo:'Sillón de época',mat:'Nogal con tapiz deteriorado',estilo:'Luis XV',estado:'Bueno — requiere tapizado',rec:'Retapizado + limpieza de madera',cmin:3200,cmax:4800,tmin:2,tmax:4,val:18500},
+  {tipo:'Mesa de comedor',mat:'Cedro macizo',estilo:'Art Déco',estado:'Regular — fisuras en tablero',rec:'Consolidación estructural + barnizado',cmin:5000,cmax:7500,tmin:4,tmax:6,val:35000},
+];
+
+var REQ=[
+  {id:'r1',pieza:'Cómoda victoriana con marquetería',prop:'Patricia García',fecha:'20 mar 2025',img:'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&q=70',desc:'Cómoda de finales del siglo XIX con marquetería deteriorada. Requiere consolidación estructural y restauración de superficies.',pres:'$12,000–$16,000 MXN'},
+  {id:'r2',pieza:'Mesa de centro Art Déco',prop:'Roberto Suárez',fecha:'19 mar 2025',img:'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=200&q=70',desc:'Mesa con tablero de mármol y base en hierro forjado. Presenta oxidación y una fisura en el mármol.',pres:'$6,000–$9,000 MXN'},
+];
+
+// STATE
+var curUser=null;
+var curCatalog=[...CATALOG];
+
+function init(n,a){
+  document.getElementById('u-av').textContent=a;
+  document.getElementById('u-name').textContent=n.split(' ')[0];
+  document.getElementById('nav-links').style.display='none';
+  document.getElementById('nav-user').style.display='flex';
+}
+
+function setUser(tipo){
+  var names={propietario:{n:'Jennifer Torres',a:'JT'},restaurador:{n:'Rafael Mendoza',a:'RM'},comprador:{n:'Ana García',a:'AG'}};
+  curUser={tipo:tipo,...names[tipo]};
+  init(curUser.n,curUser.a);
+}
+
+function logout(){
+  curUser=null;
+  document.getElementById('nav-links').style.display='flex';
+  document.getElementById('nav-user').style.display='none';
+  go('landing');
+}
+
+function go(s){
+  document.querySelectorAll('.screen').forEach(function(el){el.classList.remove('on');});
+  var el=document.getElementById('s-'+s);
+  if(el)el.classList.add('on');
+  window.scrollTo(0,0);
+  if(s==='propietario')initProp();
+  if(s==='restaurador')initRest();
+  if(s==='catalogo')renderCat(CATALOG);
+}
+
+function goToDash(){
+  if(!curUser)return;
+  go(curUser.tipo);
+}
+
+function smoothTo(id){
+  setTimeout(function(){var el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth'});},100);
+}
+
+// LOGIN
+function fillLogin(e,p,t){
+  document.getElementById('l-email').value=e;
+  document.getElementById('l-pass').value=p;
+  if(t)window._loginTipo=t;
+}
+
+function doLogin(){
+  var e=document.getElementById('l-email').value;
+  if(!e){toast('Ingresa tu correo','err');return;}
+  var tipo=window._loginTipo||'propietario';
+  var names={propietario:{n:'Jennifer Torres',a:'JT'},restaurador:{n:'Rafael Mendoza',a:'RM'},comprador:{n:'Ana García',a:'AG'}};
+  var nm=names[tipo]||{n:'Usuario',a:'U'};
+  curUser={tipo:tipo,n:nm.n,a:nm.a};
+  init(nm.n,nm.a);
+  toast('Bienvenido/a, '+nm.n.split(' ')[0]+'!','ok');
+  go(tipo);
+}
+
+// REGISTRO
+var regTipo=null;
+function regStep2(){
+  var n=document.getElementById('r-name').value.trim();
+  var e=document.getElementById('r-email').value.trim();
+  if(!n||!e){toast('Completa tus datos','err');return;}
+  document.getElementById('reg-s1').style.display='none';
+  document.getElementById('reg-s2').style.display='block';
+}
+function regBack(){
+  document.getElementById('reg-s2').style.display='none';
+  document.getElementById('reg-s1').style.display='block';
+}
+// Handle radio click styles
+document.querySelectorAll('#tipo-opts label').forEach(function(lbl){
+  lbl.addEventListener('click',function(){
+    document.querySelectorAll('#tipo-opts label').forEach(function(l){l.style.borderColor='var(--bg3)';});
+    this.style.borderColor='var(--br)';
+    regTipo=this.querySelector('input').value;
+  });
+});
+function doRegistro(){
+  var t=document.querySelector('input[name="tipo"]:checked');
+  if(!t){toast('Selecciona cómo usarás MJRenew','err');return;}
+  var tipo=t.value;
+  var n=document.getElementById('r-name').value.trim();
+  curUser={tipo:tipo,n:n,a:n.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase()};
+  init(n,curUser.a);
+  toast('Cuenta creada. Bienvenido/a, '+n.split(' ')[0]+'!','ok');
+  go(tipo);
+}
+
+// PROPIETARIO
+function initProp(){
+  var av=document.getElementById('prop-av');
+  var nm=document.getElementById('prop-nm');
+  var wl=document.getElementById('prop-welcome');
+  if(curUser){av.textContent=curUser.a;nm.textContent=curUser.n;wl.textContent='Hola, '+curUser.n.split(' ')[0]+' 👋';}
+  else{av.textContent='JT';nm.textContent='Jennifer Torres';wl.textContent='Hola, Jennifer 👋';}
+  renderAFD();
+  renderPieces();
+  renderReqHome();
+}
+
+function showDash(scope,sec){
+  var prefix=scope+'-';
+  document.querySelectorAll('.dash-section').forEach(function(el){el.classList.remove('on');});
+  var el=document.getElementById(prefix+sec);
+  if(el)el.classList.add('on');
+  document.querySelectorAll('.sb-item').forEach(function(b){b.classList.remove('on');});
+  var match=[...document.querySelectorAll('.sb-item')].find(function(b){return b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+sec+"'");});
+  if(match)match.classList.add('on');
+}
+
+function renderAFD(){
+  var p1=OWNER_PIECES[0];
+  var curIdx=AFD_V5.findIndex(function(s){return s.id===p1.estado;});
+  var html='<div class="afd-wrap"><div class="afd-title">'+p1.nombre+'</div><div class="afd-sub">Estado actual: <strong style="color:var(--gold)">'+(AFD_V5[curIdx]?AFD_V5[curIdx].nm:'')+'</strong></div><div class="afd-steps">';
+  AFD_V5.forEach(function(st,i){
+    var cls=i<curIdx?'done':i===curIdx?'cur':'pend';
+    var dot=i<curIdx?'✓':st.id.replace('qF','F');
+    html+='<div class="afd-step '+cls+'"><div class="afd-dot">'+dot+'</div><div class="afd-info"><div class="afd-nm">'+st.nm+'</div><div class="afd-ph">'+st.ph+'</div>'+(i===curIdx?'<div class="afd-now">● En proceso ahora</div>':'')+'</div></div>';
+  });
+  html+='</div></div>';
+  var el=document.getElementById('afd-home');
+  if(el)el.innerHTML=html;
+}
+
+function renderPieces(){
+  var pl=document.getElementById('pieces-list');
+  if(!pl)return;
+  var html='';
+  OWNER_PIECES.forEach(function(p){
+    var idx=AFD_V5.findIndex(function(s){return s.id===p.estado;});
+    var stNm=AFD_V5[idx]?AFD_V5[idx].nm:p.estado;
+    html+='<div style="background:var(--white);border-radius:var(--r);border:1px solid var(--bg3);overflow:hidden;margin-bottom:16px"><div style="display:grid;grid-template-columns:150px 1fr;gap:0">';
+    html+='<img src="'+p.img+'" style="width:150px;height:130px;object-fit:cover">';
+    html+='<div style="padding:16px"><div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px"><div><span class="eyebrow">Restauración activa</span><h4 style="font-family:\'Playfair Display\',serif;color:var(--ink);margin-bottom:4px">'+p.nombre+'</h4><span class="badge badge-warn">'+stNm+'</span></div></div>';
+    html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:.78rem"><div><span style="color:var(--ink2)">Costo</span><br><strong>'+p.costo+'</strong></div><div><span style="color:var(--ink2)">Tiempo rest.</span><br><strong>'+p.tiempo+'</strong></div><div><span style="color:var(--ink2)">Restaurador</span><br><strong>'+p.rest+'</strong></div></div>';
+    // mini tracker
+    html+='<div style="display:flex;align-items:center;gap:3px;margin-top:12px;flex-wrap:wrap">';
+    ['q0','q4','q7','q8','q9','q10','qF1'].forEach(function(sid,i,arr){
+      var si=AFD_V5.findIndex(function(s){return s.id===sid;});
+      var ci=AFD_V5.findIndex(function(s){return s.id===p.estado;});
+      var done=si<ci,active=si===ci;
+      html+='<div style="display:flex;align-items:center;gap:2px"><div style="width:20px;height:20px;border-radius:50%;background:'+(done?'var(--br)':active?'var(--gold)':'var(--bg3)')+';display:flex;align-items:center;justify-content:center;font-size:.6rem;color:'+(done||active?'white':'var(--ink2)')+';">'+(done?'✓':i+1)+'</div></div>';
+      if(i<arr.length-1)html+='<div style="width:12px;height:1px;background:'+(si<ci?'var(--br)':'var(--bg3)')+'"></div>';
+    });
+    html+='</div></div></div></div>';
+  });
+  pl.innerHTML=html;
+}
+
+// ANÁLISIS IA
+function handleImg(input){
+  if(!input.files[0])return;
+  var r=new FileReader();
+  r.onload=function(e){
+    var prev=document.getElementById('ai-prev');
+    prev.src=e.target.result;prev.style.display='block';
+    document.getElementById('ai-zone').style.display='none';
+  };
+  r.readAsDataURL(input.files[0]);
+}
+
+function doAnalysis(){
+  var out=document.getElementById('ai-out');
+  out.innerHTML='<div style="text-align:center;padding:40px"><div style="width:48px;height:48px;border:3px solid var(--bg3);border-top-color:var(--br);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 12px"></div><p style="color:var(--ink2)">Analizando tu pieza…</p></div>';
+  var style=document.createElement('style');
+  style.textContent='@keyframes spin{to{transform:rotate(360deg)}}';
+  document.head.appendChild(style);
+  setTimeout(function(){
+    var r=AI_RESULTS[Math.floor(Math.random()*AI_RESULTS.length)];
+    out.innerHTML='<div class="ai-result"><div class="ai-result-hd">✅ Análisis completado</div><div class="ai-result-body"><div class="ai-field"><div class="ai-fl">Tipo de mueble</div><div class="ai-fv">'+r.tipo+'</div></div><div class="ai-field"><div class="ai-fl">Material</div><div class="ai-fv">'+r.mat+'</div></div><div class="ai-field"><div class="ai-fl">Estilo</div><div class="ai-fv">'+r.estilo+'</div></div><div class="ai-field"><div class="ai-fl">Estado</div><div class="ai-fv">'+r.estado+'</div></div><div class="ai-field"><div class="ai-fl">Restauración recomendada</div><div class="ai-fv">'+r.rec+'</div></div><div class="ai-est"><div class="ai-ei"><div class="ai-ev">$'+r.cmin.toLocaleString()+'–$'+r.cmax.toLocaleString()+'</div><div class="ai-el">Costo estimado MXN</div></div><div class="ai-ei"><div class="ai-ev">'+r.tmin+'–'+r.tmax+' sem.</div><div class="ai-el">Tiempo estimado</div></div><div class="ai-ei" style="grid-column:1/-1"><div class="ai-ev" style="color:var(--ok)">$'+r.val.toLocaleString()+' MXN</div><div class="ai-el">Valor potencial restaurado</div></div></div><button class="sub-btn" style="margin-top:14px" onclick="toast(\'¡Solicitud enviada! Te contactaremos pronto\',\'ok\')">Solicitar restauración</button><p style="font-size:.73rem;color:var(--ink2);text-align:center;margin-top:6px">* Análisis preliminar. Un restaurador confirmará el diagnóstico.</p></div></div>';
+  },2800);
+}
+
+// RESTAURADOR
+function initRest(){
+  var av=document.getElementById('rest-av');
+  var nm=document.getElementById('rest-nm');
+  var wl=document.getElementById('rest-welcome');
+  var pfav=document.getElementById('rest-pf-av');
+  var pfnm=document.getElementById('rest-pf-nm');
+  var name=curUser?curUser.n:'Rafael Mendoza';
+  var ini=curUser?curUser.a:'RM';
+  if(av)av.textContent=ini;
+  if(nm)nm.textContent=name;
+  if(wl)wl.textContent='Hola, '+name.split(' ')[0]+' 👋';
+  if(pfav)pfav.textContent=ini;
+  if(pfnm)pfnm.textContent=name;
+  renderReqs();
+  renderActive();
+}
+
+function renderReqCard(r){
+  return '<div class="req-card"><div class="req-h"><img class="req-img" src="'+r.img+'" alt=""><div><div class="req-title">'+r.pieza+'</div><div class="req-p">Propietario: '+r.prop+' · '+r.fecha+'</div></div><span class="badge badge-warn" style="margin-left:auto">Pendiente</span></div><p class="req-desc">'+r.desc+'</p><div style="background:var(--bg);border-radius:var(--r2);padding:10px;margin-bottom:10px;font-size:.8rem;color:var(--ink2)">🤖 IA detectó: estructura estable, daños moderados en superficie. '+r.pres+'</div><div class="req-actions"><button class="act-btn pri" onclick="toast(\'Solicitud aceptada. Envía tu cotización.\',\'ok\')">Aceptar y cotizar</button><button class="act-btn sec" onclick="toast(\'Fotos cargadas\',\'ok\')">Ver fotos</button><button class="act-btn err" onclick="toast(\'Solicitud rechazada\',\'err\')">Rechazar</button></div></div>';
+}
+
+function renderReqs(){
+  var html=REQ.map(renderReqCard).join('');
+  var el1=document.getElementById('req-list');
+  var el2=document.getElementById('req-home');
+  if(el1)el1.innerHTML=html;
+  if(el2)el2.innerHTML=html;
+}
+
+function renderActive(){
+  var el=document.getElementById('act-list');
+  if(!el)return;
+  el.innerHTML='<div class="req-card"><div style="display:grid;grid-template-columns:100px 1fr;gap:14px;align-items:start"><img src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&q=70" style="width:100%;height:75px;object-fit:cover;border-radius:6px"><div><div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><strong style="font-family:\'Playfair Display\',serif">Vitrina colonial de nogal</strong><br><span style="font-size:.8rem;color:var(--ink2)">Jennifer Torres</span></div><span class="badge badge-warn">q9 — Avance publicado</span></div><div style="margin-top:10px"><div style="display:flex;justify-content:space-between;font-size:.78rem;color:var(--ink2);margin-bottom:4px"><span>Progreso</span><span>65%</span></div><div class="prog-wrap"><div class="prog-fill" style="width:65%"></div></div></div></div></div><hr style="border:none;border-top:1px solid var(--bg3);margin:12px 0"><div class="req-actions"><button class="act-btn pri" onclick="toast(\'Avance publicado. Jennifer puede verlo ahora.\',\'ok\')">📸 Subir avance</button><button class="act-btn sec" onclick="toast(\'Mensaje enviado\',\'ok\')">💬 Mensaje</button><button class="act-btn sec" onclick="toast(\'Restauración marcada como terminada\',\'ok\')">✅ Marcar terminada</button></div></div>';
+}
+
+function renderReqHome(){
+  // handled by initRest/renderReqs
+}
+
+// CATÁLOGO
+function renderCat(list){
+  var grid=document.getElementById('cat-grid');
+  if(!grid)return;
+  document.getElementById('cat-count').textContent='Mostrando '+list.length+' pieza'+(list.length!==1?'s':'');
+  grid.innerHTML=list.map(function(p){
+    return '<div class="cat-card" onclick="viewPieza('+p.id+')">'+'<div class="cc-img"><img src="'+p.img+'" alt="'+p.nombre+'" loading="lazy"><span class="cc-era"><span class="badge badge-br">'+p.epoca.split('·')[0].trim()+'</span></span><button class="cc-fav" onclick="event.stopPropagation();this.textContent=this.textContent===\'♡\'?\'♥\':\'♡\';toast(\'Favorito actualizado\',\'ok\')">♡</button></div><div class="cc-body"><div class="cc-tag">'+p.cat+' · '+p.mat+'</div><h4 class="cc-nm">'+p.nombre+'</h4><div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px"><div class="cc-price">$'+p.precio.toLocaleString('es-MX')+' MXN</div><span class="badge '+(p.estado==='Restaurado'?'badge-ok':'badge-warn')+'">'+p.estado+'</span></div><div style="font-size:.72rem;color:var(--ink2);margin-top:3px">📍 '+p.ubi+'</div></div></div>';
+  }).join('');
+}
+
+function filterCat(){
+  var q=document.getElementById('cat-search').value.toLowerCase();
+  var maxP=parseInt(document.getElementById('price-r').value);
+  var cats=[...document.querySelectorAll('.cat-sidebar .filter-chk input[type=checkbox]:checked')].map(function(cb){return cb.value;});
+  var stateCats=cats.filter(function(c){return c==='Restaurado'||c==='En restauración';});
+  var typeCats=cats.filter(function(c){return c!=='Restaurado'&&c!=='En restauración';});
+  var r=CATALOG.filter(function(p){
+    var mq=!q||p.nombre.toLowerCase().includes(q)||p.cat.toLowerCase().includes(q)||p.mat.toLowerCase().includes(q)||p.epoca.toLowerCase().includes(q);
+    var mc=!typeCats.length||typeCats.includes(p.cat);
+    var ms=!stateCats.length||stateCats.includes(p.estado);
+    var mp=p.precio<=maxP;
+    return mq&&mc&&ms&&mp;
+  });
+  curCatalog=r;
+  renderCat(r);
+}
+
+function clearFilters(){
+  document.querySelectorAll('.cat-sidebar .filter-chk input').forEach(function(cb){cb.checked=false;});
+  document.getElementById('price-r').value=100000;
+  document.getElementById('prv').textContent='$100,000';
+  document.getElementById('cat-search').value='';
+  renderCat(CATALOG);
+}
+
+function sortCat(v){
+  var list=[...curCatalog];
+  if(v==='asc')list.sort(function(a,b){return a.precio-b.precio;});
+  else if(v==='desc')list.sort(function(a,b){return b.precio-a.precio;});
+  renderCat(list);
+}
+
+// PIEZA DETAIL
+function viewPieza(id){
+  var p=CATALOG.find(function(x){return x.id===id;});
+  if(!p)return;
+  document.getElementById('pieza-bc').textContent=p.nombre;
+  document.getElementById('main-img').src=p.img;
+  document.getElementById('main-img').alt=p.nombre;
+  document.getElementById('p-cat').textContent=p.cat+' · '+p.epoca;
+  document.getElementById('p-nm').textContent=p.nombre;
+  document.getElementById('p-est').innerHTML='<span class="badge '+(p.estado==='Restaurado'?'badge-ok':'badge-warn')+'">'+p.estado+'</span>';
+  document.getElementById('p-price').textContent='$'+p.precio.toLocaleString('es-MX')+' MXN';
+  document.getElementById('p-desc').textContent=p.desc;
+  document.getElementById('p-specs').innerHTML='<div><span class="spec-lbl">Material</span><span class="spec-v">'+p.mat+'</span></div><div><span class="spec-lbl">Época</span><span class="spec-v">'+p.epoca+'</span></div><div><span class="spec-lbl">Dimensiones</span><span class="spec-v">'+p.dim+'</span></div><div><span class="spec-lbl">Restaurador</span><span class="spec-v">🔨 '+p.rest+'</span></div><div><span class="spec-lbl">Ubicación</span><span class="spec-v">📍 '+p.ubi+'</span></div><div><span class="spec-lbl">Estado</span><span class="spec-v">'+p.estado+'</span></div>';
+  // Thumbs
+  var thumbs='<img src="'+p.img+'" class="thumb on" onclick="document.getElementById(\'main-img\').src=\''+p.img+'\'"><img src="'+p.before+'" class="thumb" onclick="document.getElementById(\'main-img\').src=\''+p.before+'\'">';
+  if(p.after)thumbs+='<img src="'+p.after+'" class="thumb" onclick="document.getElementById(\'main-img\').src=\''+p.after+'\'">';
+  document.getElementById('thumbs').innerHTML=thumbs;
+  // Before/After
+  document.getElementById('ba-section').innerHTML=p.before?'<div class="ba"><div class="ba-item"><img src="'+p.before+'" alt="Antes"><div class="ba-lbl">Antes</div></div><div class="ba-item"><img src="'+(p.after||p.img)+'" alt="Después"><div class="ba-lbl">Después</div></div></div>':'';
+  go('pieza');
+}
+
+// TOAST
+function toast(msg,type){
+  var wrap=document.getElementById('toast-wrap');
+  var t=document.createElement('div');
+  t.className='toast '+(type||'');
+  t.textContent=msg;
+  wrap.appendChild(t);
+  setTimeout(function(){t.style.opacity='0';t.style.transform='translateX(20px)';t.style.transition='all .3s';setTimeout(function(){t.remove();},300);},3200);
+}
+
+// INIT
+renderCat(CATALOG);
+</script>
+</body>
+</html>
