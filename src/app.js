@@ -580,11 +580,11 @@ function renderCatalogGrid(containerId, pieces, onCardClick) {
       <div class="piece-card-body">
         <div class="piece-card-tag">${p.categoria} · ${p.material}</div>
         <h4>${p.nombre}</h4>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+        <div class="piece-card-meta">
           <span class="piece-card-price">${Utils.formatCurrency(p.precio)}</span>
           <span class="badge ${p.estado === 'Restaurado' ? 'badge-green' : 'badge-orange'}">${p.estado}</span>
         </div>
-        <div style="font-size:0.75rem;color:var(--ink2);margin-top:4px">📍 ${p.ubicacion}</div>
+        <div class="piece-card-loc">📍 ${p.ubicacion}</div>
       </div>
     </div>
   `).join('');

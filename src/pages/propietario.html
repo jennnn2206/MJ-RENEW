@@ -28,7 +28,6 @@
       <button class="sidebar-nav-item" onclick="showSection('mis-piezas')"><span class="nav-icon">🪑</span> Mis piezas</button>
       <button class="sidebar-nav-item" onclick="showSection('analizar')"><span class="nav-icon">🤖</span> Analizar pieza</button>
       <button class="sidebar-nav-item" onclick="showSection('historial')"><span class="nav-icon">📋</span> Historial</button>
-      <button class="sidebar-nav-item" onclick="showSection('mensajes')"><span class="nav-icon">💬</span> Mensajes <span class="sidebar-badge">2</span></button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">Explorar</div>
@@ -175,33 +174,6 @@
       </div>
     </div>
 
-    <!-- MENSAJES -->
-    <div id="section-mensajes" class="dash-section" style="display:none">
-      <h2 style="font-size:1.5rem;margin-bottom:24px">Mensajes</h2>
-      <div style="background:var(--white);border-radius:var(--radius);border:1px solid var(--bg3);overflow:hidden">
-        <div style="padding:16px;border-bottom:1px solid var(--bg3);background:var(--bg2);font-size:0.82rem;font-weight:600;color:var(--ink2);letter-spacing:0.08em;text-transform:uppercase">
-          Conversación con Rafael Mendoza · Vitrina colonial
-        </div>
-        <div style="padding:20px;display:flex;flex-direction:column;gap:14px;min-height:260px">
-          <div style="display:flex;flex-direction:column;gap:4px">
-            <div class="chat-bubble them">Buenos días Jennifer, aquí le envío fotos del avance de su vitrina. Ya terminamos la primera capa de sellador.</div>
-            <div class="chat-time">Rafael · Hoy 9:14 AM</div>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-            <div class="chat-bubble me">¡Gracias Rafael! Se ve muy bien. ¿Cuándo estima que estará lista?</div>
-            <div class="chat-time">Tú · Hoy 9:32 AM</div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:4px">
-            <div class="chat-bubble them">Para el 1 de abril, dos semanas más. El acabado final tardará unos 4 días de secado.</div>
-            <div class="chat-time">Rafael · Hoy 9:45 AM</div>
-          </div>
-        </div>
-        <div style="padding:12px;border-top:1px solid var(--bg3);display:flex;gap:8px">
-          <input class="form-control" placeholder="Escribe un mensaje..." style="margin-top:0">
-          <button class="btn btn-primary" onclick="Toast.show('Mensaje enviado','success')">→</button>
-        </div>
-      </div>
-    </div>
 
   </main>
 </div>
