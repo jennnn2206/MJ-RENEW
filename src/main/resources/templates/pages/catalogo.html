@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo — MJ Renew</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<header class="site-header" id="site-header"></header>
+
+<!-- Page Header -->
+<div class="page-header">
+  <div class="container">
+    <div class="page-header-inner">
+      <div>
+        <h1>Catálogo de piezas</h1>
+        <p>Muebles restaurados con historia verificada</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="container" style="padding-top:32px;padding-bottom:60px">
+  <!-- Search -->
+  <div style="max-width:540px;margin-bottom:28px">
+    <div class="search-bar">
+      <input class="search-input" id="search-input" placeholder="Busca por tipo, material, época o estilo..." oninput="filterCatalog()">
+      <button class="search-btn" onclick="filterCatalog()">🔍</button>
+    </div>
+  </div>
+
+  <!-- Active filters -->
+  <div id="active-filters" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px"></div>
+
+  <div class="catalog-layout">
+    <!-- Sidebar Filters -->
+    <aside class="catalog-sidebar">
+      <h4 style="font-family:'Playfair Display',serif;margin-bottom:20px;font-size:1.05rem">Filtros</h4>
+
+      <div class="filter-group">
+        <div class="filter-label">Categoría</div>
+        <div class="filter-options">
+          <label class="filter-check"><input type="checkbox" value="Escritorios" onchange="filterCatalog()"> Escritorios</label>
+          <label class="filter-check"><input type="checkbox" value="Vitrinas" onchange="filterCatalog()"> Vitrinas</label>
+          <label class="filter-check"><input type="checkbox" value="Comedores" onchange="filterCatalog()"> Comedores</label>
+          <label class="filter-check"><input type="checkbox" value="Burós" onchange="filterCatalog()"> Burós</label>
+          <label class="filter-check"><input type="checkbox" value="Sillas y sillones" onchange="filterCatalog()"> Sillas y sillones</label>
+          <label class="filter-check"><input type="checkbox" value="Cómodas" onchange="filterCatalog()"> Cómodas</label>
+          <label class="filter-check"><input type="checkbox" value="Aparadores" onchange="filterCatalog()"> Aparadores</label>
+          <label class="filter-check"><input type="checkbox" value="Mesas" onchange="filterCatalog()"> Mesas</label>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">Estado</div>
+        <div class="filter-options">
+          <label class="filter-check"><input type="checkbox" value="Restaurado" onchange="filterCatalog()"> Restaurado</label>
+          <label class="filter-check"><input type="checkbox" value="En restauración" onchange="filterCatalog()"> En restauración</label>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">Precio máximo</div>
+        <input type="range" id="price-range" min="5000" max="100000" value="100000" step="5000"
+          oninput="document.getElementById('price-val').textContent='$'+Number(this.value).toLocaleString('es-MX');filterCatalog()"
+          style="width:100%;accent-color:var(--brown);margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--ink2)">
+          <span>$5,000</span>
+          <span id="price-val" style="font-weight:600;color:var(--brown)">$100,000</span>
+        </div>
+      </div>
+
+      <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:8px" onclick="clearFilters()">
+        Limpiar filtros
+      </button>
+
+      <hr class="divider">
+
+      <div style="background:var(--bg2);border-radius:8px;padding:14px;font-size:0.82rem;color:var(--ink2);text-align:center">
+        <div style="font-size:1.2rem;margin-bottom:6px">🔍</div>
+        <strong style="display:block;margin-bottom:4px;color:var(--ink)">¿Buscas algo específico?</strong>
+        Contáctanos y te ayudamos a encontrar la pieza ideal.
+        <div style="margin-top:10px"><a href="mailto:hola@mjrenew.mx" class="btn btn-ghost btn-sm" style="width:100%;justify-content:center">Contactar</a></div>
+      </div>
+    </aside>
+
+    <!-- Catalog Grid -->
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+        <p id="results-count" style="font-size:0.88rem;color:var(--ink2)">Mostrando 8 piezas</p>
+        <select class="form-control" style="width:auto;margin:0;font-size:0.85rem" onchange="sortCatalog(this.value)">
+          <option value="default">Ordenar por: Destacados</option>
+          <option value="precio-asc">Precio: menor a mayor</option>
+          <option value="precio-desc">Precio: mayor a menor</option>
+          <option value="nombre">Nombre A-Z</option>
+        </select>
+      </div>
+      <div class="catalog-grid" id="catalog-grid"></div>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer" style="margin-top:0">
+  <div class="footer-bottom">
+    <div class="container">
+      <div class="footer-bottom">
+        <p>© 2025 MJ Renew</p>
+        <p><a href="../index.html" style="color:rgba(255,253,248,0.45)">Volver al inicio</a></p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="../app.js"></script>
+<script>
+  renderHeader(false);
+
+  let currentCatalog = [...CATALOG];
+
+  function renderGrid() {
+    const count = currentCatalog.length;
+    document.getElementById('results-count').textContent = `Mostrando ${count} pieza${count !== 1 ? 's' : ''}`;
+    renderCatalogGrid('catalog-grid', currentCatalog);
+  }
+
+  function filterCatalog() {
+    const search = document.getElementById('search-input').value.toLowerCase().trim();
+    const cats   = [...document.querySelectorAll('.filter-options input[type=checkbox]:checked')].map(cb => cb.value);
+    const maxP   = parseInt(document.getElementById('price-range').value);
+
+    let result = CATALOG;
+    if (search) result = result.filter(p =>
+      p.nombre.toLowerCase().includes(search) || p.categoria.toLowerCase().includes(search) ||
+      p.material.toLowerCase().includes(search) || p.epoca.toLowerCase().includes(search) ||
+      p.tags.some(t => t.includes(search))
+    );
+    const stateCats = cats.filter(c => ['Restaurado','En restauración'].includes(c));
+    const typeCats  = cats.filter(c => !['Restaurado','En restauración'].includes(c));
+    if (typeCats.length)  result = result.filter(p => typeCats.includes(p.categoria));
+    if (stateCats.length) result = result.filter(p => stateCats.includes(p.estado));
+    result = result.filter(p => p.precio <= maxP);
+
+    currentCatalog = result;
+    renderGrid();
+    renderActiveFilters(typeCats, stateCats, search);
+  }
+
+  function renderActiveFilters(cats, states, search) {
+    const af = document.getElementById('active-filters');
+    const all = [...cats, ...states, ...(search ? [`"${search}"`] : [])];
+    af.innerHTML = all.map(f => `<span class="badge badge-brown" style="gap:6px">${f} <span style="cursor:pointer;opacity:0.7" onclick="clearFilters()">×</span></span>`).join('');
+  }
+
+  function clearFilters() {
+    document.querySelectorAll('.filter-options input[type=checkbox]').forEach(cb => cb.checked = false);
+    document.getElementById('price-range').value = 100000;
+    document.getElementById('price-val').textContent = '$100,000';
+    document.getElementById('search-input').value = '';
+    document.getElementById('active-filters').innerHTML = '';
+    currentCatalog = [...CATALOG];
+    renderGrid();
+  }
+
+  function sortCatalog(type) {
+    if (type === 'precio-asc')  currentCatalog.sort((a,b) => a.precio - b.precio);
+    else if (type === 'precio-desc') currentCatalog.sort((a,b) => b.precio - a.precio);
+    else if (type === 'nombre') currentCatalog.sort((a,b) => a.nombre.localeCompare(b.nombre));
+    else currentCatalog = [...CATALOG];
+    renderGrid();
+  }
+
+  // Override viewPiece to use correct path
+  window.viewPiece = (id) => { window.location.href = `./pieza.html?id=${id}`; };
+
+  renderGrid();
+</script>
+</body>
+</html>
