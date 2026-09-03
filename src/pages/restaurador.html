@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Restaurador — MJ Renew</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<header class="site-header" id="site-header"></header>
+
+<div class="dashboard-layout">
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-section">
+      <div style="padding:16px 12px 20px;border-bottom:1px solid var(--bg3);margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="user-avatar" id="sb-avatar" style="width:42px;height:42px;font-size:1rem;background:var(--gold);color:var(--brown)"></div>
+          <div>
+            <div style="font-weight:600;font-size:0.9rem;color:var(--ink)" id="sb-name"></div>
+            <div style="font-size:0.72rem;color:var(--ink2)">Restaurador <span class="badge badge-gold" style="font-size:0.6rem">Verificado</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-label">Trabajo</div>
+      <button class="sidebar-nav-item active" onclick="showSection('inicio')"><span class="nav-icon">🏠</span> Inicio</button>
+      <button class="sidebar-nav-item" onclick="showSection('solicitudes')"><span class="nav-icon">📥</span> Solicitudes <span class="sidebar-badge" id="req-badge">2</span></button>
+      <button class="sidebar-nav-item" onclick="showSection('activas')"><span class="nav-icon">🔧</span> En proceso</button>
+      <button class="sidebar-nav-item" onclick="showSection('terminadas')"><span class="nav-icon">✅</span> Terminadas</button>
+      <button class="sidebar-nav-item" onclick="showSection('perfil')"><span class="nav-icon">👤</span> Mi perfil</button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Cuenta</div>
+      <button class="sidebar-nav-item" onclick="Auth.logout();window.location.href='../index.html'"><span class="nav-icon">👋</span> Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <main class="dashboard-main">
+
+    <!-- INICIO -->
+    <div id="section-inicio" class="dash-section">
+      <div style="margin-bottom:28px">
+        <h2 id="welcome-title" style="font-size:1.8rem"></h2>
+        <p style="color:var(--ink2)">Tienes <strong id="req-count">2</strong> solicitudes nuevas esperando tu respuesta.</p>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card"><span class="stat-card-value">2</span><div class="stat-card-label">Solicitudes nuevas</div></div>
+        <div class="stat-card"><span class="stat-card-value">1</span><div class="stat-card-label">En proceso</div></div>
+        <div class="stat-card"><span class="stat-card-value">31</span><div class="stat-card-label">Completadas</div></div>
+      </div>
+
+      <div style="margin-top:28px">
+        <h3 style="font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:16px">Nuevas solicitudes</h3>
+        <div id="quick-requests"></div>
+      </div>
+    </div>
+
+    <!-- SOLICITUDES -->
+    <div id="section-solicitudes" class="dash-section" style="display:none">
+      <div style="margin-bottom:24px">
+        <h2 style="font-size:1.5rem">Solicitudes pendientes</h2>
+        <p style="color:var(--ink2)">Revisa cada pieza y decide si aceptas el proyecto</p>
+      </div>
+      <div id="requests-list"></div>
+    </div>
+
+    <!-- ACTIVAS -->
+    <div id="section-activas" class="dash-section" style="display:none">
+      <div style="margin-bottom:24px">
+        <h2 style="font-size:1.5rem">Restauraciones en proceso</h2>
+        <p style="color:var(--ink2)">Actualiza el avance y comunícate con el propietario</p>
+      </div>
+      <div id="active-list"></div>
+    </div>
+
+    <!-- TERMINADAS -->
+    <div id="section-terminadas" class="dash-section" style="display:none">
+      <h2 style="font-size:1.5rem;margin-bottom:24px">Trabajos terminados</h2>
+      <div class="empty-state">
+        <span class="empty-state-icon">🎉</span>
+        <h3>Tu historial aparecerá aquí</h3>
+        <p>Completa restauraciones para ver tu portafolio acumulado.</p>
+      </div>
+    </div>
+
+    <!-- PERFIL -->
+    <div id="section-perfil" class="dash-section" style="display:none">
+      <div style="margin-bottom:24px"><h2 style="font-size:1.5rem">Mi perfil profesional</h2><p style="color:var(--ink2)">Así te ven los clientes potenciales</p></div>
+      <div class="grid-2" style="align-items:start;gap:24px">
+        <div class="card-elevated">
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--bg3)">
+            <div class="user-avatar" id="profile-avatar" style="width:60px;height:60px;font-size:1.4rem;background:var(--gold);color:var(--brown)"></div>
+            <div>
+              <h3 style="font-family:'Playfair Display',serif" id="profile-name"></h3>
+              <span class="badge badge-gold">Restaurador verificado</span>
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label">Especialidad</label><input class="form-control" value="Ebanistería y restauración de madera"></div>
+          <div class="form-group"><label class="form-label">Ubicación</label><input class="form-control" value="Mérida, Yucatán"></div>
+          <div class="form-group"><label class="form-label">Experiencia</label><input class="form-control" value="12 años"></div>
+          <div class="form-group"><label class="form-label">Descripción</label><textarea class="form-control" rows="4">Ebanista con 12 años de experiencia en restauración de mobiliario de los siglos XVIII y XIX. Especialista en técnicas de dorado al pan y talla en madera.</textarea></div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-primary" onclick="Toast.show('Perfil actualizado correctamente','success')">Guardar cambios</button>
+            <button class="btn btn-ghost">Cancelar</button>
+          </div>
+        </div>
+        <div>
+          <div class="card-elevated" style="margin-bottom:16px">
+            <h4 style="font-family:'Playfair Display',serif;margin-bottom:12px">Mis estadísticas</h4>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div class="meta-item"><span class="meta-label">Proyectos completados</span><span class="meta-value">31</span></div>
+              <div class="meta-item"><span class="meta-label">Calificación promedio</span><span class="meta-value">4.9 / 5.0 ★</span></div>
+              <div class="meta-item"><span class="meta-label">Tiempo respuesta</span><span class="meta-value">< 24 horas</span></div>
+            </div>
+          </div>
+          <div class="card-elevated">
+            <h4 style="font-family:'Playfair Display',serif;margin-bottom:12px">Especialidades</h4>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <span class="badge badge-brown">Ebanistería</span>
+              <span class="badge badge-brown">Talla en madera</span>
+              <span class="badge badge-brown">Dorado al pan</span>
+              <span class="badge badge-brown">Marquetería</span>
+              <span class="badge badge-brown">Laqueado</span>
+              <span class="badge badge-brown">Tapicería</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL: Cotización -->
+<div class="modal-overlay" id="modal-quote">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 style="font-family:'Playfair Display',serif">Enviar cotización</h3>
+      <button class="modal-close" onclick="Modal.close('modal-quote')">×</button>
+    </div>
+    <div id="modal-quote-piece" style="background:var(--bg2);border-radius:8px;padding:12px;margin-bottom:20px;font-size:0.88rem;color:var(--ink2)"></div>
+    <div class="form-group"><label class="form-label">Costo de restauración (MXN)</label><input type="number" id="q-costo" class="form-control" placeholder="Ej. 14500"></div>
+    <div class="grid-2">
+      <div class="form-group"><label class="form-label">Tiempo estimado</label><input id="q-tiempo" class="form-control" placeholder="Ej. 3-4 semanas"></div>
+      <div class="form-group"><label class="form-label">Materiales adicionales</label><input id="q-materiales" class="form-control" placeholder="Ej. Barniz, madera de cedro"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Descripción del proceso</label><textarea id="q-desc" class="form-control" rows="3" placeholder="Describe el proceso de restauración que realizarías..."></textarea></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="sendQuote()">Enviar cotización</button>
+      <button class="btn btn-ghost" onclick="Modal.close('modal-quote')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Actualizar avance -->
+<div class="modal-overlay" id="modal-progress">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 style="font-family:'Playfair Display',serif">Actualizar avance</h3>
+      <button class="modal-close" onclick="Modal.close('modal-progress')">×</button>
+    </div>
+    <div class="form-group"><label class="form-label">Descripción del avance</label><textarea id="p-desc" class="form-control" rows="3" placeholder="Describe el progreso realizado..."></textarea></div>
+    <div class="form-group"><label class="form-label">Porcentaje completado</label><input type="range" id="p-pct" min="0" max="100" value="65" oninput="document.getElementById('p-pct-val').textContent=this.value+'%'" style="width:100%;accent-color:var(--brown)"><span id="p-pct-val" style="font-weight:700;color:var(--brown)">65%</span></div>
+    <div class="form-group"><label class="form-label">Subir fotografías del avance</label><input type="file" class="form-control" accept="image/*" multiple></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="saveProgress()">Publicar avance</button>
+      <button class="btn btn-ghost" onclick="Modal.close('modal-progress')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script src="../app.js"></script>
+<script>
+  const user = Auth.requireAuth('./login.html');
+  if (user) {
+    document.getElementById('welcome-title').textContent = `Hola, ${user.name.split(' ')[0]} 👋`;
+    document.getElementById('sb-name').textContent = user.name;
+    document.getElementById('sb-avatar').textContent = Utils.initials(user.name);
+    const pa = document.getElementById('profile-avatar');
+    if (pa) { pa.textContent = Utils.initials(user.name); }
+    const pn = document.getElementById('profile-name');
+    if (pn) { pn.textContent = user.name; }
+    renderHeader(false);
+  }
+
+  function showSection(id) {
+    document.querySelectorAll('.dash-section').forEach(s => s.style.display = 'none');
+    document.getElementById('section-' + id).style.display = 'block';
+    document.querySelectorAll('.sidebar-nav-item').forEach(b => b.classList.remove('active'));
+    const btn = [...document.querySelectorAll('.sidebar-nav-item')].find(b => b.onclick?.toString().includes(`'${id}'`));
+    if (btn) btn.classList.add('active');
+  }
+
+  // Render requests
+  function renderRequests() {
+    const requests = RESTAURADOR_REQUESTS_DEFAULT;
+    const html = requests.map(r => `
+      <div class="request-card" style="margin-bottom:16px">
+        <div class="request-card-header">
+          <div style="display:flex;gap:14px;align-items:flex-start;flex:1">
+            <img src="${r.img}" alt="${r.pieza}" style="width:80px;height:60px;object-fit:cover;border-radius:6px;flex-shrink:0">
+            <div>
+              <span class="eyebrow">${r.fecha}</span>
+              <h4 style="font-family:'Playfair Display',serif">${r.pieza}</h4>
+              <p style="font-size:0.82rem;color:var(--ink2);margin-top:4px">Propietario: ${r.propietario}</p>
+            </div>
+          </div>
+          <span class="badge badge-orange">Pendiente</span>
+        </div>
+        <p style="font-size:0.85rem;color:var(--ink2);margin-bottom:12px">${r.descripcion}</p>
+        <div class="request-card-meta">
+          <span class="badge badge-blue">Presupuesto estimado: ${r.presupuesto_estimado}</span>
+        </div>
+        <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
+          <div style="font-size:0.78rem;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Análisis IA disponible</div>
+          <div style="font-size:0.82rem;color:var(--ink2)">🤖 La IA detectó: madera deteriorada en superficie, herrajes originales en buen estado, estructura estable. Requiere limpieza y consolidación.</div>
+        </div>
+        <div class="request-card-actions">
+          <button class="btn btn-primary btn-sm" onclick="openQuoteModal('${r.id}','${r.pieza}')">Enviar cotización</button>
+          <button class="btn btn-ghost btn-sm">Ver fotos completas</button>
+          <button class="btn btn-sm" style="background:#FFEBEE;color:#C62828" onclick="rejectRequest('${r.id}')">Rechazar</button>
+        </div>
+      </div>
+    `).join('');
+    document.getElementById('requests-list').innerHTML = html;
+    document.getElementById('quick-requests').innerHTML = html;
+  }
+
+  // Render active restorations
+  function renderActive() {
+    const active = RESTAURADOR_ACTIVE_DEFAULT;
+    const html = active.map(a => `
+      <div class="request-card" style="margin-bottom:20px">
+        <div style="display:grid;grid-template-columns:120px 1fr;gap:16px;align-items:start">
+          <img src="${a.img}" style="width:100%;height:90px;object-fit:cover;border-radius:8px">
+          <div>
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+              <div>
+                <h4 style="font-family:'Playfair Display',serif">${a.pieza}</h4>
+                <p style="font-size:0.82rem;color:var(--ink2)">Propietario: ${a.propietario}</p>
+              </div>
+              <span class="badge badge-orange">En proceso · ${AFD_STATES[a.estado_afd]?.label}</span>
+            </div>
+            <div style="margin:12px 0">
+              <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--ink2);margin-bottom:4px">
+                <span>Progreso</span><span>${a.progreso}%</span>
+              </div>
+              <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${a.progreso}%"></div></div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <div class="meta-item" style="font-size:0.78rem"><div class="meta-label">Inicio</div><div>${a.inicio}</div></div>
+              <div class="meta-item" style="font-size:0.78rem"><div class="meta-label">Fin estimado</div><div>${a.fin_estimado}</div></div>
+            </div>
+          </div>
+        </div>
+        <hr class="divider">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" onclick="Modal.open('modal-progress')">📸 Subir avance</button>
+          <button class="btn btn-ghost btn-sm" onclick="showSection('mensajes')">💬 Mensaje al propietario</button>
+          <button class="btn btn-sm btn-success" onclick="Toast.show('Restauración marcada como terminada','success')">✅ Marcar terminada</button>
+        </div>
+      </div>
+    `).join('');
+    document.getElementById('active-list').innerHTML = html;
+  }
+
+  let currentRequestId = '';
+  function openQuoteModal(id, pieza) {
+    currentRequestId = id;
+    document.getElementById('modal-quote-piece').innerHTML = `<strong>Pieza:</strong> ${pieza}`;
+    Modal.open('modal-quote');
+  }
+
+  function sendQuote() {
+    const costo = document.getElementById('q-costo').value;
+    if (!costo) { Toast.show('Ingresa el costo de restauración','error'); return; }
+    Modal.close('modal-quote');
+    Toast.show('Cotización enviada al propietario', 'success', 4000);
+    // Move to active simulation
+    setTimeout(() => showSection('activas'), 800);
+  }
+
+  function rejectRequest(id) {
+    Toast.show('Solicitud rechazada. El propietario será notificado.', 'info');
+  }
+
+  function saveProgress() {
+    const desc = document.getElementById('p-desc').value;
+    if (!desc) { Toast.show('Describe el avance realizado','error'); return; }
+    Modal.close('modal-progress');
+    Toast.show('Avance publicado. El propietario puede verlo ahora.', 'success');
+  }
+
+  renderRequests();
+  renderActive();
+</script>
+</body>
+</html>

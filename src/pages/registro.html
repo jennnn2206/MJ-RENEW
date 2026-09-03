@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crear cuenta — MJ Renew</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<div class="auth-page">
+  <div class="auth-card" style="max-width:520px">
+    <div class="auth-logo">
+      <h2>MJ Renew</h2>
+      <p>Crea tu cuenta gratuita</p>
+    </div>
+
+    <!-- STEP 1: Datos personales -->
+    <div id="step1">
+      <h3 style="font-size:1.2rem;color:var(--ink);margin-bottom:4px">Paso 1 de 2 — Tus datos</h3>
+      <p style="font-size:0.85rem;color:var(--ink2);margin-bottom:20px">Ingresa tu información básica</p>
+
+      <div class="form-group">
+        <label class="form-label" for="nombre">Nombre completo</label>
+        <div class="input-wrap" id="nombre-wrap">
+          <input type="text" id="nombre" class="form-control" placeholder="Ej. Jennifer Torres" required aria-describedby="nombre-error">
+          <span class="field-alert" aria-hidden="true">⚠️</span>
+        </div>
+        <div class="form-error" id="nombre-error" role="alert">Ingresa tu nombre.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="email">Correo electrónico</label>
+        <div class="input-wrap" id="email-wrap">
+          <input type="email" id="email" class="form-control" placeholder="tu@correo.com" required aria-describedby="email-error">
+          <span class="field-alert" aria-hidden="true">⚠️</span>
+        </div>
+        <div class="form-error" id="email-error" role="alert">Ingresa un correo válido.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Contraseña</label>
+        <div class="input-wrap" id="password-wrap">
+          <input type="password" id="password" class="form-control" placeholder="Mínimo 6 caracteres" required aria-describedby="password-error">
+          <span class="field-alert" aria-hidden="true">⚠️</span>
+        </div>
+        <div class="form-hint">Usa al menos 6 caracteres, puedes usar #$%& </div>
+        <div class="form-error" id="password-error" role="alert">La contraseña debe tener al menos 6 caracteres.</div>
+      </div>
+
+      <button onclick="goStep2()" class="btn btn-primary btn-lg" style="width:100%;justify-content:center">
+        Continuar →
+      </button>
+    </div>
+
+    <!-- STEP 2: Tipo de usuario -->
+    <div id="step2" style="display:none">
+      <h3 style="font-size:1.2rem;color:var(--ink);margin-bottom:4px">Paso 2 de 2 — ¿Cómo usarás MJ Renew?</h3>
+      <p style="font-size:0.85rem;color:var(--ink2);margin-bottom:20px">Esto determina tu experiencia en la plataforma</p>
+
+      <div class="user-type-select" id="user-type-select">
+        <label class="user-type-option" data-tipo="propietario">
+          <input type="radio" name="tipo" value="propietario">
+          <span class="user-type-option-icon">🏡</span>
+          <div class="user-type-option-text">
+            <h4>Quiero restaurar una pieza</h4>
+            <p>Tengo un mueble antiguo y quiero restaurarlo o venderlo</p>
+          </div>
+        </label>
+        <label class="user-type-option" data-tipo="restaurador">
+          <input type="radio" name="tipo" value="restaurador">
+          <span class="user-type-option-icon">🔨</span>
+          <div class="user-type-option-text">
+            <h4>Soy restaurador profesional</h4>
+            <p>Restauro muebles y quiero encontrar nuevos clientes</p>
+          </div>
+        </label>
+        <label class="user-type-option" data-tipo="comprador">
+          <input type="radio" name="tipo" value="comprador">
+          <span class="user-type-option-icon">🛒</span>
+          <div class="user-type-option-text">
+            <h4>Quiero comprar muebles</h4>
+            <p>Busco piezas únicas restauradas para mi hogar o proyecto</p>
+          </div>
+        </label>
+      </div>
+
+      <div class="form-error" id="tipo-error" style="margin-bottom:12px">Selecciona una opción.</div>
+      <div id="register-error" class="form-error" style="margin-bottom:12px"></div>
+
+      <div style="display:flex;gap:10px">
+        <button onclick="goStep1()" class="btn btn-ghost" style="flex:1;justify-content:center">← Atrás</button>
+        <button onclick="submitRegistro()" class="btn btn-primary" style="flex:2;justify-content:center" id="submit-btn">
+          Crear cuenta
+        </button>
+      </div>
+    </div>
+
+    <p style="text-align:center;margin-top:20px;font-size:0.85rem;color:var(--ink2)">
+      ¿Ya tienes cuenta? <a href="./login.html" style="color:var(--brown);font-weight:600">Inicia sesión</a>
+    </p>
+    <p style="text-align:center;margin-top:8px">
+      <a href="../index.html" style="font-size:0.8rem;color:var(--ink2)">← Volver al inicio</a>
+    </p>
+  </div>
+</div>
+
+<script src="../app.js"></script>
+<script>
+  Auth.redirectIfLoggedIn();
+
+  // Pre-select type from URL param
+  const urlParams = new URLSearchParams(window.location.search);
+  const preselect = urlParams.get('tipo') || localStorage.getItem('mjrenew_tipo_preselect');
+  if (preselect) {
+    const opt = document.querySelector(`.user-type-option[data-tipo="${preselect}"]`);
+    if (opt) { opt.classList.add('selected'); opt.querySelector('input').checked = true; }
+  }
+
+  // Type option click handler
+  document.querySelectorAll('.user-type-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.user-type-option').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+    });
+  });
+
+  // Al escribir, quita la marca de error de ese campo
+  ['nombre', 'email', 'password'].forEach(field => {
+    document.getElementById(field).addEventListener('input', () => clearError(field));
+  });
+
+  function setError(field, msg) {
+    const input = document.getElementById(field);
+    const wrap  = document.getElementById(field + '-wrap');
+    const err   = document.getElementById(field + '-error');
+    input.classList.add('error');
+    input.setAttribute('aria-invalid', 'true');
+    if (wrap) wrap.classList.add('error');
+    err.textContent = msg;
+    err.classList.add('visible');
+  }
+
+  function clearError(field) {
+    const input = document.getElementById(field);
+    const wrap  = document.getElementById(field + '-wrap');
+    const err   = document.getElementById(field + '-error');
+    input.classList.remove('error');
+    input.removeAttribute('aria-invalid');
+    if (wrap) wrap.classList.remove('error');
+    err.classList.remove('visible');
+  }
+
+  const NAME_PARTICLES = ['de','del','la','las','los','y','da','do','van','von','di'];
+
+  function goStep2() {
+    const nombre   = document.getElementById('nombre').value.trim();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    let valid = true;
+
+    const words = nombre ? nombre.split(/\s+/) : [];
+    const badCase = words.some(w =>
+      !NAME_PARTICLES.includes(w.toLowerCase()) && w[0] !== w[0].toUpperCase()
+    );
+    if (!nombre) {
+      setError('nombre', 'Ingresa tu nombre completo.'); valid = false;
+    } else if (words.length < 2) {
+      setError('nombre', 'Escribe tu nombre y tu apellido. Ej. Jennifer Torres'); valid = false;
+    } else if (badCase) {
+      setError('nombre', 'Necesitas usar mayúscula al inicio de cada nombre y apellido. Ej. Jennifer Torres'); valid = false;
+    } else {
+      clearError('nombre');
+    }
+
+    if (!email || !email.includes('@') || !/.+@.+\..+/.test(email)) {
+      setError('email', 'Ingresa un correo válido, con @ y dominio. Ej. tu@correo.com'); valid = false;
+    } else {
+      clearError('email');
+    }
+
+    if (password.length < 6) {
+      setError('password', 'La contraseña necesita al menos 6 caracteres.'); valid = false;
+    } else {
+      clearError('password');
+    }
+
+    if (!valid) return;
+
+    document.getElementById('step1').style.display = 'none';
+    document.getElementById('step2').style.display = 'block';
+  }
+
+  function goStep1() {
+    document.getElementById('step2').style.display = 'none';
+    document.getElementById('step1').style.display = 'block';
+  }
+
+  function submitRegistro() {
+    const tipo = document.querySelector('input[name="tipo"]:checked')?.value;
+    if (!tipo) { document.getElementById('tipo-error').classList.add('visible'); return; }
+    document.getElementById('tipo-error').classList.remove('visible');
+
+    const nombre   = document.getElementById('nombre').value.trim();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const btn      = document.getElementById('submit-btn');
+
+    btn.disabled = true; btn.textContent = 'Creando cuenta...';
+
+    setTimeout(() => {
+      const result = Auth.register(nombre, email, password, tipo);
+      if (result.success) {
+        localStorage.removeItem('mjrenew_tipo_preselect');
+        const map = { propietario:'./propietario.html', restaurador:'./restaurador.html', comprador:'./comprador.html' };
+        window.location.href = map[tipo] || './comprador.html';
+      } else {
+        document.getElementById('register-error').textContent = result.error;
+        document.getElementById('register-error').classList.add('visible');
+        btn.disabled = false; btn.textContent = 'Crear cuenta';
+      }
+    }, 800);
+  }
+</script>
+</body>
+</html>

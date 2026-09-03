@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detalle de pieza — MJ Renew</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<header class="site-header" id="site-header"></header>
+
+<!-- Breadcrumb -->
+<div style="background:var(--bg2);border-bottom:1px solid var(--bg3);padding:12px 0">
+  <div class="container">
+    <div style="display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--ink2)">
+        <a href="../index.html" class="nav-link">Inicio</a>
+      <span>›</span>
+      <a href="./catalogo.html" style="color:var(--ink2)">Catálogo</a>
+      <span>›</span>
+      <span id="breadcrumb-name" style="color:var(--ink)"></span>
+    </div>
+  </div>
+</div>
+
+<div class="container" style="padding-top:40px;padding-bottom:60px">
+  <div id="piece-content">
+    <div class="empty-state">
+      <span class="empty-state-icon">⏳</span>
+      <h3>Cargando pieza...</h3>
+    </div>
+  </div>
+</div>
+
+<!-- Related pieces -->
+<div style="background:var(--bg2);padding:60px 0">
+  <div class="container">
+    <div class="section-header" style="margin-bottom:28px">
+      <span class="eyebrow">Explora más</span>
+      <h3 style="font-family:'Playfair Display',serif;font-size:1.4rem">Piezas relacionadas</h3>
+    </div>
+    <div class="catalog-grid" id="related-grid"></div>
+  </div>
+</div>
+
+<!-- Modal: Comprar -->
+<div class="modal-overlay" id="modal-buy">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 style="font-family:'Playfair Display',serif">Comprar pieza</h3>
+      <button class="modal-close" onclick="Modal.close('modal-buy')">×</button>
+    </div>
+    <div id="buy-piece-name" style="background:var(--bg2);border-radius:8px;padding:12px;margin-bottom:20px;font-weight:600;color:var(--ink)"></div>
+    <p style="font-size:0.88rem;color:var(--ink2);margin-bottom:20px">Completa tus datos para continuar con el proceso de compra. Te contactaremos en menos de 24 horas.</p>
+    <div class="form-group"><label class="form-label">Nombre completo</label><input class="form-control" id="buy-name" placeholder="Tu nombre"></div>
+    <div class="form-group"><label class="form-label">Correo electrónico</label><input type="email" class="form-control" id="buy-email" placeholder="tu@correo.com"></div>
+    <div class="form-group"><label class="form-label">Teléfono (opcional)</label><input class="form-control" id="buy-phone" placeholder="+52 999 000 0000"></div>
+    <div class="form-group"><label class="form-label">Mensaje (opcional)</label><textarea class="form-control" id="buy-msg" rows="2" placeholder="¿Algo que quieras saber sobre la pieza?"></textarea></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-gold btn-lg" onclick="confirmPurchase()" style="flex:2;justify-content:center">Confirmar interés</button>
+      <button class="btn btn-ghost" onclick="Modal.close('modal-buy')" style="flex:1;justify-content:center">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Contactar vendedor -->
+<div class="modal-overlay" id="modal-contact">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 style="font-family:'Playfair Display',serif">Contactar vendedor</h3>
+      <button class="modal-close" onclick="Modal.close('modal-contact')">×</button>
+    </div>
+    <div class="form-group"><label class="form-label">Tu correo</label><input type="email" class="form-control" placeholder="tu@correo.com"></div>
+    <div class="form-group"><label class="form-label">Mensaje</label><textarea class="form-control" rows="4" placeholder="Escribe tu pregunta sobre esta pieza..."></textarea></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="Modal.close('modal-contact');Toast.show('Mensaje enviado al vendedor','success')">Enviar mensaje</button>
+      <button class="btn btn-ghost" onclick="Modal.close('modal-contact')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer" style="margin-top:0">
+  <div class="footer-bottom">
+    <div class="container"><div class="footer-bottom">
+      <p>© 2025 MJ Renew</p>
+      <p><a href="./catalogo.html" style="color:rgba(255,253,248,0.45)">← Volver al catálogo</a></p>
+    </div></div>
+  </div>
+</footer>
+
+<script src="../app.js"></script>
+<script>
+  renderHeader(false);
+
+  const params = new URLSearchParams(window.location.search);
+  const pieceId = parseInt(params.get('id'));
+  const piece = getPieceById(pieceId);
+
+  if (!piece) {
+    document.getElementById('piece-content').innerHTML = `
+      <div class="empty-state">
+        <span class="empty-state-icon">❌</span>
+        <h3>Pieza no encontrada</h3>
+        <p>Esta pieza ya no está disponible o el enlace es incorrecto.</p>
+        <a href="./catalogo.html" class="btn btn-primary">Ver el catálogo</a>
+      </div>
+    `;
+  } else {
+    document.title = `${piece.nombre} — MJ Renew`;
+    document.getElementById('breadcrumb-name').textContent = piece.nombre;
+
+    const favs = JSON.parse(localStorage.getItem('mjrenew_favs') || '[]');
+    const isFav = favs.includes(piece.id);
+
+    document.getElementById('piece-content').innerHTML = `
+      <div class="piece-detail-layout">
+        <!-- Gallery -->
+        <div class="piece-gallery">
+          <img id="main-img" src="${piece.img}" alt="${piece.nombre}" class="piece-main-img">
+          ${piece.imgBefore && piece.imgAfter ? `
+            <div class="piece-thumbs">
+              <img src="${piece.img}" alt="Principal" class="piece-thumb active" onclick="switchImg(this,'${piece.img}')">
+              <img src="${piece.imgBefore}" alt="Antes" class="piece-thumb" onclick="switchImg(this,'${piece.imgBefore}')">
+              ${piece.imgAfter ? `<img src="${piece.imgAfter}" alt="Después" class="piece-thumb" onclick="switchImg(this,'${piece.imgAfter}')">` : ''}
+            </div>
+          ` : ''}
+
+          <!-- Before / After -->
+          ${piece.imgBefore ? `
+            <div class="card-elevated" style="margin-top:20px">
+              <h4 style="font-family:'Playfair Display',serif;margin-bottom:12px">Proceso de restauración</h4>
+              <div class="before-after">
+                <div class="ba-item">
+                  <img src="${piece.imgBefore}" alt="Antes" class="ba-img">
+                  <div class="ba-label">Antes</div>
+                </div>
+                <div class="ba-item">
+                  <img src="${piece.imgAfter || piece.img}" alt="Después" class="ba-img">
+                  <div class="ba-label">Después</div>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- Info Panel -->
+        <div class="piece-info-panel">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px">
+            <div>
+              <span class="eyebrow">${piece.categoria} · ${piece.epoca}</span>
+              <h2 style="font-size:1.7rem;margin-bottom:0">${piece.nombre}</h2>
+            </div>
+            <button class="btn-icon" onclick="toggleFavBtn(${piece.id}, this)" style="flex-shrink:0;font-size:1.3rem;${isFav ? 'color:var(--error)' : ''}">
+              ${isFav ? '♥' : '♡'}
+            </button>
+          </div>
+
+          <div class="piece-info-price">${Utils.formatCurrency(piece.precio)}</div>
+
+          <span class="badge ${piece.estado === 'Restaurado' ? 'badge-green' : 'badge-orange'}" style="margin-bottom:16px;display:inline-flex">
+            ${piece.estado}
+          </span>
+
+          <div class="piece-specs">
+            <div class="spec-item"><div class="spec-label">Material</div><div class="spec-value">${piece.material}</div></div>
+            <div class="spec-item"><div class="spec-label">Época</div><div class="spec-value">${piece.epoca}</div></div>
+            <div class="spec-item"><div class="spec-label">Dimensiones</div><div class="spec-value">${piece.dimensiones}</div></div>
+            <div class="spec-item"><div class="spec-label">Peso</div><div class="spec-value">${piece.peso}</div></div>
+            <div class="spec-item"><div class="spec-label">Ubicación</div><div class="spec-value">📍 ${piece.ubicacion}</div></div>
+            <div class="spec-item"><div class="spec-label">Restaurador</div><div class="spec-value">🔨 ${piece.restaurador}</div></div>
+          </div>
+
+          <hr class="divider">
+
+          <h4 style="margin-bottom:8px">Historia de la pieza</h4>
+          <p style="font-size:0.88rem">${piece.descripcion}</p>
+
+          <hr class="divider">
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <button class="btn btn-gold btn-lg" style="width:100%;justify-content:center" onclick="openBuyModal()">
+              🛒 Comprar pieza
+            </button>
+            <button class="btn btn-secondary btn-lg" style="width:100%;justify-content:center" onclick="Modal.open('modal-contact')">
+              💬 Contactar vendedor
+            </button>
+            <button class="btn btn-ghost btn-lg" style="width:100%;justify-content:center" id="fav-btn-main" onclick="toggleFavBtn(${piece.id}, this)">
+              ${isFav ? '♥ En favoritos' : '♡ Agregar a favoritos'}
+            </button>
+          </div>
+
+          <div style="margin-top:16px;padding:12px;background:var(--bg2);border-radius:8px;font-size:0.78rem;color:var(--ink2);text-align:center">
+            🔒 Pago seguro · Certificado de autenticidad incluido · Envío coordinado
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Related pieces
+    const related = CATALOG.filter(p => p.id !== piece.id && (p.categoria === piece.categoria || p.epoca.includes(piece.epoca.split('·')[0].trim()))).slice(0, 4);
+    renderCatalogGrid('related-grid', related.length ? related : CATALOG.slice(0, 4));
+  }
+
+  function switchImg(thumb, src) {
+    document.getElementById('main-img').src = src;
+    document.querySelectorAll('.piece-thumb').forEach(t => t.classList.remove('active'));
+    thumb.classList.add('active');
+  }
+
+  function openBuyModal() {
+    if (piece) {
+      document.getElementById('buy-piece-name').textContent = `${piece.nombre} · ${Utils.formatCurrency(piece.precio)}`;
+    }
+    Modal.open('modal-buy');
+  }
+
+  function confirmPurchase() {
+    const name  = document.getElementById('buy-name').value.trim();
+    const email = document.getElementById('buy-email').value.trim();
+    if (!name || !email) { Toast.show('Completa tu nombre y correo','error'); return; }
+    Modal.close('modal-buy');
+    Toast.show('¡Gracias! Te contactaremos en menos de 24 horas para coordinar la compra.', 'success', 5000);
+  }
+
+  function toggleFavBtn(id, btn) {
+    let favs = JSON.parse(localStorage.getItem('mjrenew_favs') || '[]');
+    const idx = favs.indexOf(id);
+    if (idx === -1) {
+      favs.push(id);
+      btn.textContent = btn.classList.contains('btn-ghost') ? '♥ En favoritos' : '♥';
+      btn.style.color = 'var(--error)';
+      Toast.show('Agregado a favoritos','success');
+    } else {
+      favs.splice(idx, 1);
+      btn.textContent = btn.classList.contains('btn-ghost') ? '♡ Agregar a favoritos' : '♡';
+      btn.style.color = '';
+      Toast.show('Eliminado de favoritos','info');
+    }
+    localStorage.setItem('mjrenew_favs', JSON.stringify(favs));
+  }
+</script>
+</body>
+</html>
