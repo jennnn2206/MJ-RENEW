@@ -354,7 +354,7 @@ const Auth = {
     catch { return null; }
   },
 
-  requireAuth(redirectTo = '../pages/login.html') {
+  requireAuth(redirectTo = '/login') {
     const user = this.getCurrentUser();
     if (!user) { window.location.href = redirectTo; return null; }
     return user;
@@ -363,8 +363,8 @@ const Auth = {
   redirectIfLoggedIn() {
     const user = this.getCurrentUser();
     if (!user) return;
-    const map = { propietario:'./propietario.html', restaurador:'./restaurador.html', comprador:'./comprador.html' };
-    window.location.href = map[user.tipo] || './comprador.html';
+    const map = { propietario:'/propietario', restaurador:'/restaurador', comprador:'/comprador' };
+    window.location.href = map[user.tipo] || '/comprador';
   },
 };
 
@@ -384,7 +384,7 @@ const Utils = {
   },
 
   getPath(isRoot = false) {
-    return isRoot ? './pages/' : './';
+    return '/';
   },
 };
 
@@ -434,39 +434,39 @@ function renderHeader(isRoot = false) {
   const header = document.getElementById('site-header');
   if (!header) return;
   const user = Auth.getCurrentUser();
-  const base = isRoot ? './pages/' : './';
-  const home = isRoot ? './' : '../';
+  const base = '/';
+  const home = '/';
 
   const navLinks = isRoot ? [
     { href: '#como-funciona', text: 'Cómo funciona' },
     { href: '#restauracion',  text: 'Restauración' },
-    { href: `${base}catalogo.html`, text: 'Catálogo' },
+    { href: `${base}catalogo`, text: 'Catálogo' },
     { href: '#nosotros',      text: 'Nosotros' },
   ] : [
-    { href: `${home}index.html`, text: 'Inicio' },
-    { href: `${base}catalogo.html`, text: 'Catálogo' },
+    { href: `${home}`, text: 'Inicio' },
+    { href: `${base}catalogo`, text: 'Catálogo' },
   ];
 
   let userSection;
   if (user) {
-    const dashMap = { propietario:`${base}propietario.html`, restaurador:`${base}restaurador.html`, comprador:`${base}comprador.html` };
+    const dashMap = { propietario:`${base}propietario`, restaurador:`${base}restaurador`, comprador:`${base}comprador` };
     userSection = `
-      <div class="user-pill" onclick="window.location.href='${dashMap[user.tipo]||base+'comprador.html'}'">
+      <div class="user-pill" onclick="window.location.href='${dashMap[user.tipo]||base+'comprador'}'">
         <div class="user-avatar">${Utils.initials(user.name)}</div>
         <span class="user-pill-name">${user.name.split(' ')[0]}</span>
       </div>
-      <button class="btn nav-btn-login btn-sm" onclick="Auth.logout(); window.location.href='${home}index.html'">Salir</button>
+      <button class="btn nav-btn-login btn-sm" onclick="Auth.logout(); window.location.href='${home}'">Salir</button>
     `;
   } else {
     userSection = `
-      <a href="${base}login.html" class="btn nav-btn-login btn-sm">Iniciar sesión</a>
-      <a href="${base}registro.html" class="btn nav-btn-register btn-sm">Registrarme</a>
+      <a href="${base}login" class="btn nav-btn-login btn-sm">Iniciar sesión</a>
+          <a href="${base}registro" class="btn nav-btn-register btn-sm">Registrarme</a>
     `;
   }
 
   header.innerHTML = `
     <div class="container">
-      <a class="site-logo" href="${home}index.html">
+      <a class="site-logo" href="${home}">
         MJ Renew
         <span>Antigüedades &amp; Restauración</span>
       </a>
@@ -608,7 +608,7 @@ function toggleFav(id, btn) {
 }
 
 function viewPiece(id) {
-  window.location.href = `./pieza.html?id=${id}`;
+  window.location.href = `/pieza?id=${id}`;
 }
 
 // ── CATALOG FILTERS ────────────────────────────────────────────
