@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Comprar — MJ Renew</title>
-  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
 
@@ -26,7 +26,7 @@
       <button class="sidebar-nav-item active" onclick="showSection('catalogo')"><span class="nav-icon">🛒</span> Catálogo</button>
       <button class="sidebar-nav-item" onclick="showSection('favoritos')"><span class="nav-icon">♥</span> Favoritos</button>
       <button class="sidebar-nav-item" onclick="showSection('compras')"><span class="nav-icon">📦</span> Mis compras</button>
-      <button class="sidebar-nav-item" onclick="Auth.logout();window.location.href='../index.html'"><span class="nav-icon">👋</span> Cerrar sesión</button>
+      <button class="sidebar-nav-item" onclick="Auth.logout();window.location.href='/'"><span class="nav-icon">👋</span> Cerrar sesión</button>
     </div>
   </aside>
 
@@ -81,9 +81,9 @@
   </main>
 </div>
 
-<script src="../app.js"></script>
+<script th:src="@{/js/app.js}"></script>
 <script>
-  const user = Auth.requireAuth('./login.html');
+  const user = Auth.requireAuth('/login');
   if (user) {
     document.getElementById('welcome-title').textContent = `Hola, ${user.name.split(' ')[0]} 👋`;
     document.getElementById('sb-name').textContent = user.name;

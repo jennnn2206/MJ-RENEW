@@ -1,21 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-const firebaseConfig = {
-    apiKey: "AIzaSyARNQPIPkFuF8FUD629LhCDcJt_IoOq6M0",
-    authDomain: "mj-renew.firebaseapp.com",
-    projectId: "mj-renew",
-    storageBucket: "mj-renew.firebasestorage.app",
-    messagingSenderId: "396482481618",
-    appId: "1:396482481618:web:5a48ad19ba5223c7f44c0b",
-    measurementId: "G-EETCXNBB98"
-  };
-  
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  
-  /* ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════
    MJ RENEW — app.js
    Lógica compartida: auth, catálogo, AFD, IA simulada, utilidades
 ═══════════════════════════════════════════════════════════════ */
