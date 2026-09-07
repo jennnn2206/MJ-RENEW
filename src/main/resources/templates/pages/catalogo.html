@@ -67,7 +67,7 @@
         <input type="range" id="price-range" min="5000" max="100000" value="100000" step="5000"
           oninput="document.getElementById('price-val').textContent='$'+Number(this.value).toLocaleString('es-MX');filterCatalog()"
           style="width:100%;accent-color:var(--brown);margin-bottom:6px">
-        <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--ink2)">
+        <div style="display:flex;justify-content:space-between;font-size:1rem;color:var(--ink2)">
           <span>$5,000</span>
           <span id="price-val" style="font-weight:600;color:var(--brown)">$100,000</span>
         </div>
@@ -79,7 +79,7 @@
 
       <hr class="divider">
 
-      <div style="background:var(--bg2);border-radius:8px;padding:14px;font-size:0.82rem;color:var(--ink2);text-align:center">
+      <div style="background:var(--bg2);border-radius:8px;padding:14px;font-size:1rem;color:var(--ink2);text-align:center">
         <div style="font-size:1.2rem;margin-bottom:6px">🔍</div>
         <strong style="display:block;margin-bottom:4px;color:var(--ink)">¿Buscas algo específico?</strong>
         Contáctanos y te ayudamos a encontrar la pieza ideal.
@@ -89,8 +89,14 @@
 
     <!-- Catalog Grid -->
     <div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap: 12px;">
-        <p id="results-count" style="font-size:1rem;color:var(--ink2)">Mostrando piezas</p>
+      <div class="results-row">
+        <p id="results-count">Mostrando piezas</p>
+        <select class="sort-select" onchange="sortCatalog(this.value)" aria-label="Ordenar piezas">
+          <option value="default">Orden: Destacados</option>
+          <option value="precio-asc">Precio: menor a mayor</option>
+          <option value="precio-desc">Precio: mayor a menor</option>
+          <option value="nombre">Nombre: A–Z</option>
+        </select>
       </div>
       <div class="catalog-grid" id="catalog-grid"></div>
     </div>

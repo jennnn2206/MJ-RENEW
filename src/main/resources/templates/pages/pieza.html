@@ -13,7 +13,7 @@
 <!-- Breadcrumb -->
 <div style="background:var(--bg2);border-bottom:1px solid var(--bg3);padding:12px 0">
   <div class="container">
-    <div style="display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--ink2)">
+    <div style="display:flex;align-items:center;gap:8px;font-size:1rem;color:var(--ink2)">
       <a th:href="@{/}" class="nav-link">Inicio</a>
       <span>›</span>
       <a th:href="@{/catalogo}" style="color:var(--ink2)">Catálogo</a>
@@ -51,7 +51,7 @@
       <button class="modal-close" onclick="Modal.close('modal-buy')">×</button>
     </div>
     <div id="buy-piece-name" style="background:var(--bg2);border-radius:8px;padding:12px;margin-bottom:20px;font-weight:600;color:var(--ink)"></div>
-    <p style="font-size:0.88rem;color:var(--ink2);margin-bottom:20px">Completa tus datos para continuar con el proceso de compra. Te contactaremos en menos de 24 horas.</p>
+    <p style="font-size:1rem;color:var(--ink2);margin-bottom:20px">Completa tus datos para continuar con el proceso de compra. Te contactaremos en menos de 24 horas.</p>
     <div class="form-group"><label class="form-label">Nombre completo</label><input class="form-control" id="buy-name" placeholder="Tu nombre"></div>
     <div class="form-group"><label class="form-label">Correo electrónico</label><input type="email" class="form-control" id="buy-email" placeholder="tu@correo.com"></div>
     <div class="form-group"><label class="form-label">Teléfono (opcional)</label><input class="form-control" id="buy-phone" placeholder="+52 999 000 0000"></div>
@@ -173,7 +173,7 @@
           <hr class="divider">
 
           <h4 style="margin-bottom:8px">Historia de la pieza</h4>
-          <p style="font-size:0.88rem">${piece.descripcion}</p>
+          <p style="font-size:1rem">${piece.descripcion}</p>
 
           <hr class="divider">
 
@@ -189,7 +189,7 @@
             </button>
           </div>
 
-          <div style="margin-top:16px;padding:12px;background:var(--bg2);border-radius:8px;font-size:0.78rem;color:var(--ink2);text-align:center">
+          <div style="margin-top:16px;padding:12px;background:var(--bg2);border-radius:8px;font-size:1rem;color:var(--ink2);text-align:center">
             🔒 Pago seguro · Certificado de autenticidad incluido · Envío coordinado
           </div>
         </div>

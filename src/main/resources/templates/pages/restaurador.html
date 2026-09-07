@@ -17,8 +17,8 @@
         <div style="display:flex;align-items:center;gap:12px">
           <div class="user-avatar" id="sb-avatar" style="width:42px;height:42px;font-size:1rem;background:var(--gold);color:var(--brown)"></div>
           <div>
-            <div style="font-weight:600;font-size:0.9rem;color:var(--ink)" id="sb-name"></div>
-            <div style="font-size:0.72rem;color:var(--ink2)">Restaurador <span class="badge badge-gold" style="font-size:0.6rem">Verificado</span></div>
+            <div style="font-weight:600;font-size:1rem;color:var(--ink)" id="sb-name"></div>
+            <div style="font-size:1rem;color:var(--ink2)">Restaurador <span class="badge badge-gold" style="font-size:1rem">Verificado</span></div>
           </div>
         </div>
       </div>
@@ -139,7 +139,7 @@
       <h3 style="font-family:'Playfair Display',serif">Enviar cotización</h3>
       <button class="modal-close" onclick="Modal.close('modal-quote')">×</button>
     </div>
-    <div id="modal-quote-piece" style="background:var(--bg2);border-radius:8px;padding:12px;margin-bottom:20px;font-size:0.88rem;color:var(--ink2)"></div>
+    <div id="modal-quote-piece" style="background:var(--bg2);border-radius:8px;padding:12px;margin-bottom:20px;font-size:1rem;color:var(--ink2)"></div>
     <div class="form-group"><label class="form-label">Costo de restauración (MXN)</label><input type="number" id="q-costo" class="form-control" placeholder="Ej. 14500"></div>
     <div class="grid-2">
       <div class="form-group"><label class="form-label">Tiempo estimado</label><input id="q-tiempo" class="form-control" placeholder="Ej. 3-4 semanas"></div>
@@ -203,18 +203,18 @@
             <div>
               <span class="eyebrow">${r.fecha}</span>
               <h4 style="font-family:'Playfair Display',serif">${r.pieza}</h4>
-              <p style="font-size:0.82rem;color:var(--ink2);margin-top:4px">Propietario: ${r.propietario}</p>
+              <p style="font-size:1rem;color:var(--ink2);margin-top:4px">Propietario: ${r.propietario}</p>
             </div>
           </div>
           <span class="badge badge-orange">Pendiente</span>
         </div>
-        <p style="font-size:0.85rem;color:var(--ink2);margin-bottom:12px">${r.descripcion}</p>
+        <p style="font-size:1rem;color:var(--ink2);margin-bottom:12px">${r.descripcion}</p>
         <div class="request-card-meta">
           <span class="badge badge-blue">Presupuesto estimado: ${r.presupuesto_estimado}</span>
         </div>
         <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
-          <div style="font-size:0.78rem;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Análisis IA disponible</div>
-          <div style="font-size:0.82rem;color:var(--ink2)">🤖 La IA detectó: madera deteriorada en superficie, herrajes originales en buen estado, estructura estable. Requiere limpieza y consolidación.</div>
+          <div style="font-size:1rem;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Análisis IA disponible</div>
+          <div style="font-size:1rem;color:var(--ink2)">🤖 La IA detectó: madera deteriorada en superficie, herrajes originales en buen estado, estructura estable. Requiere limpieza y consolidación.</div>
         </div>
         <div class="request-card-actions">
           <button class="btn btn-primary btn-sm" onclick="openQuoteModal('${r.id}','${r.pieza}')">Enviar cotización</button>
@@ -238,19 +238,19 @@
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
               <div>
                 <h4 style="font-family:'Playfair Display',serif">${a.pieza}</h4>
-                <p style="font-size:0.82rem;color:var(--ink2)">Propietario: ${a.propietario}</p>
+                <p style="font-size:1rem;color:var(--ink2)">Propietario: ${a.propietario}</p>
               </div>
               <span class="badge badge-orange">En proceso · ${AFD_STATES[a.estado_afd]?.label}</span>
             </div>
             <div style="margin:12px 0">
-              <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--ink2);margin-bottom:4px">
+              <div style="display:flex;justify-content:space-between;font-size:1rem;color:var(--ink2);margin-bottom:4px">
                 <span>Progreso</span><span>${a.progreso}%</span>
               </div>
               <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${a.progreso}%"></div></div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <div class="meta-item" style="font-size:0.78rem"><div class="meta-label">Inicio</div><div>${a.inicio}</div></div>
-              <div class="meta-item" style="font-size:0.78rem"><div class="meta-label">Fin estimado</div><div>${a.fin_estimado}</div></div>
+              <div class="meta-item" style="font-size:1rem"><div class="meta-label">Inicio</div><div>${a.inicio}</div></div>
+              <div class="meta-item" style="font-size:1rem"><div class="meta-label">Fin estimado</div><div>${a.fin_estimado}</div></div>
             </div>
           </div>
         </div>

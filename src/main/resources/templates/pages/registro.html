@@ -18,31 +18,33 @@
     <!-- STEP 1: Datos personales -->
     <div id="step1">
       <h3 style="font-size:1.2rem;color:var(--ink);margin-bottom:4px">Paso 1 de 2 — Tus datos</h3>
-      <p style="font-size:0.85rem;color:var(--ink2);margin-bottom:20px">Ingresa tu información básica</p>
+      <p style="font-size:1rem;color:var(--ink2);margin-bottom:20px">Ingresa tu información básica</p>
 
       <div class="form-group">
         <label class="form-label" for="nombre">Nombre completo</label>
         <div class="input-wrap" id="nombre-wrap">
-          <input type="text" id="nombre" class="form-control" placeholder="Ej. Jennifer Torres" required aria-describedby="nombre-error">
-          <span class="field-alert" aria-hidden="true">⚠️</span>
+          <input type="text" id="nombre" class="form-control" placeholder="Ej. Jennifer Torres" required aria-describedby="nombre-hint nombre-error">
+          <span class="field-alert" aria-hidden="true">▲</span>
         </div>
+        <div class="form-hint" id="nombre-hint">Se aceptan: letras, espacios, acentos, apóstrofo (') y guion (-). Sin números.</div>
         <div class="form-error" id="nombre-error" role="alert">Ingresa tu nombre.</div>
       </div>
       <div class="form-group">
         <label class="form-label" for="email">Correo electrónico</label>
         <div class="input-wrap" id="email-wrap">
-          <input type="email" id="email" class="form-control" placeholder="tu@correo.com" required aria-describedby="email-error">
-          <span class="field-alert" aria-hidden="true">⚠️</span>
+          <input type="email" id="email" class="form-control" placeholder="tu@correo.com" required aria-describedby="email-hint email-error">
+          <span class="field-alert" aria-hidden="true">▲</span>
         </div>
+        <div class="form-hint" id="email-hint">Formato: nombre@dominio.com. Se aceptan letras, números y . _ % + -</div>
         <div class="form-error" id="email-error" role="alert">Ingresa un correo válido.</div>
       </div>
       <div class="form-group">
         <label class="form-label" for="password">Contraseña</label>
         <div class="input-wrap" id="password-wrap">
-          <input type="password" id="password" class="form-control" placeholder="Mínimo 6 caracteres" required aria-describedby="password-error">
-          <span class="field-alert" aria-hidden="true">⚠️</span>
+          <input type="password" id="password" class="form-control" placeholder="Mínimo 6 caracteres" required aria-describedby="password-hint password-error">
+          <span class="field-alert" aria-hidden="true">▲</span>
         </div>
-        <div class="form-hint">Usa al menos 6 caracteres, puedes usar #$%& </div>
+        <div class="form-hint" id="password-hint">Mínimo 6 caracteres. Se aceptan letras, números y símbolos: ! @ # $ % &amp; * ? -</div>
         <div class="form-error" id="password-error" role="alert">La contraseña debe tener al menos 6 caracteres.</div>
       </div>
 
@@ -54,7 +56,7 @@
     <!-- STEP 2: Tipo de usuario -->
     <div id="step2" style="display:none">
       <h3 style="font-size:1.2rem;color:var(--ink);margin-bottom:4px">Paso 2 de 2 — ¿Cómo usarás MJ Renew?</h3>
-      <p style="font-size:0.85rem;color:var(--ink2);margin-bottom:20px">Esto determina tu experiencia en la plataforma</p>
+      <p style="font-size:1rem;color:var(--ink2);margin-bottom:20px">Esto determina tu experiencia en la plataforma</p>
 
       <div class="user-type-select" id="user-type-select">
         <label class="user-type-option" data-tipo="propietario">
@@ -94,11 +96,11 @@
       </div>
     </div>
 
-    <p style="text-align:center;margin-top:20px;font-size:0.85rem;color:var(--ink2)">
+    <p style="text-align:center;margin-top:20px;font-size:1rem;color:var(--ink2)">
       ¿Ya tienes cuenta? <a th:href="@{/login}" style="color:var(--brown);font-weight:600">Inicia sesión</a>
     </p>
     <p style="text-align:center;margin-top:8px">
-      <a th:href="@{/}" style="font-size:0.8rem;color:var(--ink2)">← Volver al inicio</a>
+      <a th:href="@{/}" style="font-size:1rem;color:var(--ink2)">← Volver al inicio</a>
     </p>
   </div>
 </div>
@@ -158,11 +160,14 @@
     let valid = true;
 
     const words = nombre ? nombre.split(/\s+/) : [];
+    const badChars = /[^a-záéíóúüñ' -]/i.test(nombre);
     const badCase = words.some(w =>
       !NAME_PARTICLES.includes(w.toLowerCase()) && w[0] !== w[0].toUpperCase()
     );
     if (!nombre) {
       setError('nombre', 'Ingresa tu nombre completo.'); valid = false;
+    } else if (badChars) {
+      setError('nombre', 'Solo se aceptan letras, espacios, acentos, apóstrofo (\') y guion (-). Sin números ni otros símbolos.'); valid = false;
     } else if (words.length < 2) {
       setError('nombre', 'Escribe tu nombre y tu apellido. Ej. Jennifer Torres'); valid = false;
     } else if (badCase) {
@@ -171,14 +176,16 @@
       clearError('nombre');
     }
 
-    if (!email || !email.includes('@') || !/.+@.+\..+/.test(email)) {
-      setError('email', 'Ingresa un correo válido, con @ y dominio. Ej. tu@correo.com'); valid = false;
+    if (!email || !/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(email)) {
+      setError('email', 'Ingresa un correo válido. Formato: nombre@dominio.com (letras, números y . _ % + -).'); valid = false;
     } else {
       clearError('email');
     }
 
     if (password.length < 6) {
-      setError('password', 'La contraseña necesita al menos 6 caracteres.'); valid = false;
+      setError('password', 'La contraseña necesita al menos 6 caracteres. Puedes usar letras, números y símbolos ! @ # $ % & * ? -'); valid = false;
+    } else if (/[^\x20-\x7E]/.test(password) || /["'`\\<>]/.test(password)) {
+      setError('password', 'Evita comillas, acentos y < > \\ . Se aceptan letras, números y ! @ # $ % & * ? -'); valid = false;
     } else {
       clearError('password');
     }

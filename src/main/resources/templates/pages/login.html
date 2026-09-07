@@ -16,7 +16,7 @@
     </div>
 
     <h3 style="font-size:1.3rem;color:var(--ink);margin-bottom:4px">Bienvenido de vuelta</h3>
-    <p style="font-size:0.85rem;color:var(--ink2);margin-bottom:24px">Accede a tu cuenta para continuar</p>
+    <p style="font-size:1rem;color:var(--ink2);margin-bottom:24px">Accede a tu cuenta para continuar</p>
 
     <form id="login-form" novalidate>
       <div class="form-group">
@@ -39,7 +39,7 @@
 
     <div class="auth-divider">o</div>
 
-    <div style="background:var(--bg2);border-radius:10px;padding:16px;font-size:0.82rem;color:var(--ink2);margin-bottom:20px">
+    <div style="background:var(--bg2);border-radius:10px;padding:16px;font-size:1rem;color:var(--ink2);margin-bottom:20px">
       <strong style="display:block;margin-bottom:8px;color:var(--ink2)">🔑 Cuentas de demostración:</strong>
       <div style="display:flex;flex-direction:column;gap:6px">
         <div onclick="fillDemo('jennifer@mjrenew.mx','123456')" style="cursor:pointer;padding:6px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--bg3);transition:all 0.2s" onmouseover="this.style.borderColor='var(--brown)'" onmouseout="this.style.borderColor='var(--bg3)'">
@@ -54,11 +54,11 @@
       </div>
     </div>
 
-    <p style="text-align:center;font-size:0.85rem;color:var(--ink2)">
+    <p style="text-align:center;font-size:1rem;color:var(--ink2)">
       ¿No tienes cuenta? <a th:href="@{/registro}" style="color:var(--brown);font-weight:600">Regístrate gratis</a>
     </p>
     <p style="text-align:center;margin-top:8px">
-      <a th:href="@{/}" style="font-size:0.8rem;color:var(--ink2)">← Volver al inicio</a>
+      <a th:href="@{/}" style="font-size:1rem;color:var(--ink2)">← Volver al inicio</a>
     </p>
   </div>
 </div>
@@ -106,8 +106,8 @@
     setTimeout(() => {
       const result = Auth.login(email, password);
       if (result.success) {
-        const map = { propietario:'./propietario.html', restaurador:'./restaurador.html', comprador:'./comprador.html' };
-        window.location.href = map[result.user.tipo] || './comprador.html';
+        const map = { propietario:'/propietario', restaurador:'/restaurador', comprador:'/comprador' };
+        window.location.href = map[result.user.tipo] || '/comprador';
       } else {
         const errEl = document.getElementById('login-error');
         errEl.textContent = result.error;
