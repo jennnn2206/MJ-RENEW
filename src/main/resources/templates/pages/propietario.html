@@ -24,15 +24,15 @@
         </div>
       </div>
       <div class="sidebar-label">Mi cuenta</div>
-      <button class="sidebar-nav-item active" onclick="showSection('inicio')"><span class="nav-icon">🏠</span> Inicio</button>
-      <button class="sidebar-nav-item" onclick="showSection('mis-piezas')"><span class="nav-icon">🪑</span> Mis piezas</button>
-      <button class="sidebar-nav-item" onclick="showSection('analizar')"><span class="nav-icon">🤖</span> Analizar pieza</button>
-      <button class="sidebar-nav-item" onclick="showSection('historial')"><span class="nav-icon">📋</span> Historial</button>
+      <button class="sidebar-nav-item active" onclick="showSection('inicio')"> Inicio</button>
+      <button class="sidebar-nav-item" onclick="showSection('mis-piezas')"> Mis piezas</button>
+      <button class="sidebar-nav-item" onclick="showSection('analizar')"> Analizar pieza</button>
+      <button class="sidebar-nav-item" onclick="showSection('historial')"> Historial</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">Explorar</div>
-      <button class="sidebar-nav-item" onclick="window.location.href='./catalogo.html'"><span class="nav-icon">🛒</span> Ver catálogo</button>
-      <button class="sidebar-nav-item" onclick="Auth.logout();window.location.href='../index.html'"><span class="nav-icon">👋</span> Cerrar sesión</button>
+      <button class="sidebar-nav-item" onclick="window.location.href='./catalogo.html'"> Ver catálogo</button>
+      <button class="sidebar-nav-item" onclick="Auth.logout();window.location.href='../index.html'"> Cerrar sesión</button>
     </div>
   </aside>
 
@@ -105,7 +105,6 @@
         <div>
           <!-- Upload zone -->
           <div id="upload-zone" class="ai-upload-zone">
-            <span class="ai-upload-icon">📷</span>
             <p><span>Haz clic o arrastra</span> tus fotografías aquí</p>
             <p style="font-size:1rem;margin-top:8px;color:var(--ink2)">JPG, PNG hasta 10MB · Mínimo 1, máximo 8 fotos</p>
             <input type="file" id="file-input" accept="image/*" multiple style="display:none">
@@ -167,7 +166,6 @@
       <h2 style="font-size:1.5rem;margin-bottom:8px">Historial</h2>
       <p style="color:var(--ink2);margin-bottom:24px">Piezas completadas y restauraciones anteriores</p>
       <div class="empty-state">
-        <span class="empty-state-icon">📋</span>
         <h3>Sin historial aún</h3>
         <p>Las restauraciones completadas aparecerán aquí.</p>
         <button class="btn btn-primary" onclick="showSection('analizar')">+ Agregar mi primera pieza</button>
