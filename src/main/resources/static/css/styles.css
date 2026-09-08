@@ -369,6 +369,10 @@ p  { color: var(--ink2); line-height: 1.7; }
   align-items: center;
   justify-content: space-between;
   height: 70px;
+  width: 100%;
+  max-width: 100% !important; /* Anula cualquier límite de ancho anterior */
+  padding: 0 40px;             /* Ajusta este valor para controlar qué tan pegado queda a los bordes laterales */
+  box-sizing: border-box;
 }
 .site-logo {
   font-family: 'Playfair Display', serif;
