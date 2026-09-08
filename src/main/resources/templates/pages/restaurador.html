@@ -69,7 +69,7 @@
     <div id="section-activas" class="dash-section" style="display:none">
       <div style="margin-bottom:24px">
         <h2 style="font-size:1.5rem">Restauraciones en proceso</h2>
-        <p style="color:var(--ink2)">Actualiza el avance y comunícate con el propietario</p>
+        <p style="color:var(--ink2)">Actualiza el avance </p>
       </div>
       <div id="active-list"></div>
     </div>
@@ -187,7 +187,7 @@
     document.querySelectorAll('.dash-section').forEach(s => s.style.display = 'none');
     document.getElementById('section-' + id).style.display = 'block';
     document.querySelectorAll('.sidebar-nav-item').forEach(b => b.classList.remove('active'));
-    const btn = [...document.querySelectorAll('.sidebar-nav-item')].find(b => b.onclick?.toString().includes(`'${id}'`));
+    const btn = [...document.querySelectorAll('.sidebar-nav-item')].find(b => b.onclek?.toString().includes(`'${id}'`));
     if (btn) btn.classList.add('active');
   }
 
@@ -255,9 +255,8 @@
         </div>
         <hr class="divider">
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-primary btn-sm" onclick="Modal.open('modal-progress')">📸 Subir avance</button>
-          <button class="btn btn-ghost btn-sm" onclick="showSection('mensajes')">💬 Mensaje al propietario</button>
-          <button class="btn btn-sm btn-success" onclick="Toast.show('Restauración marcada como terminada','success')">✅ Marcar terminada</button>
+          <button class="btn btn-primary btn-sm" onclick="Modal.open('modal-progress')"> Subir avance</button>
+          <button class="btn btn-sm btn-success" onclick="Toast.show('Restauración marcada como terminada','success')"> Marcar terminada</button>
         </div>
       </div>
     `).join('');
