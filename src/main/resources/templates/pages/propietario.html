@@ -185,7 +185,7 @@
 <script>
   const user = Auth.requireAuth('./login.html');
   if (user) {
-    document.getElementById('welcome-title').textContent = `Hola, ${user.name.split(' ')[0]} 👋`;
+    document.getElementById('welcome-title').textContent = `Hola, ${user.name.split(' ')[0]} `;
     document.getElementById('sb-name').textContent = user.name;
     document.getElementById('sb-avatar').textContent = Utils.initials(user.name);
     renderHeader(false);
