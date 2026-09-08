@@ -23,10 +23,10 @@
         </div>
       </div>
       <div class="sidebar-label">Explorar</div>
-      <button class="sidebar-nav-item active" onclick="showSection('catalogo')"><span class="nav-icon">🛒</span> Catálogo</button>
-      <button class="sidebar-nav-item" onclick="showSection('favoritos')"><span class="nav-icon">♥</span> Favoritos</button>
-      <button class="sidebar-nav-item" onclick="showSection('compras')"><span class="nav-icon">📦</span> Mis compras</button>
-      <button class="sidebar-nav-item" onclick="Auth.logout();window.location.href='/'"><span class="nav-icon">👋</span> Cerrar sesión</button>
+      <button class="sidebar-nav-item active" onclick="showSection('catalogo')"> Catálogo</button>
+      <button class="sidebar-nav-item" onclick="showSection('favoritos')"> Favoritos</button>
+      <button class="sidebar-nav-item" onclick="showSection('compras')"> Mis compras</button>
+      <button class="sidebar-nav-item" onclick="Auth.logout();window.location.href='/'"> Cerrar sesión</button>
     </div>
   </aside>
 
@@ -71,7 +71,7 @@
     <div id="section-compras" class="dash-section" style="display:none">
       <h2 style="font-size:1.5rem;margin-bottom:24px">Mis compras</h2>
       <div class="empty-state">
-        <span class="empty-state-icon">📦</span>
+
         <h3>Aún no tienes compras</h3>
         <p>Las piezas que adquieras aparecerán aquí con su estado de envío.</p>
         <button class="btn btn-primary" onclick="showSection('catalogo')">Explorar el catálogo</button>

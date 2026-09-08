@@ -26,7 +26,6 @@
 <div class="container" style="padding-top:40px;padding-bottom:60px">
   <div id="piece-content">
     <div class="empty-state">
-      <span class="empty-state-icon">⏳</span>
       <h3>Cargando pieza...</h3>
     </div>
   </div>
@@ -99,7 +98,6 @@
   if (!piece) {
     document.getElementById('piece-content').innerHTML = `
       <div class="empty-state">
-        <span class="empty-state-icon">❌</span>
         <h3>Pieza no encontrada</h3>
         <p>Esta pieza ya no está disponible o el enlace es incorrecto.</p>
         <a th:href="@{/catalogo}" class="btn btn-primary">Ver el catálogo</a>
