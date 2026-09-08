@@ -24,15 +24,14 @@
         </div>
       </div>
       <div class="sidebar-label">Mi cuenta</div>
-      <button class="sidebar-nav-item active" onclick="showSection('inicio')"> Inicio</button>
-      <button class="sidebar-nav-item" onclick="showSection('mis-piezas')"> Mis piezas</button>
-      <button class="sidebar-nav-item" onclick="showSection('analizar')"> Analizar pieza</button>
-      <button class="sidebar-nav-item" onclick="showSection('historial')"> Historial</button>
+      <button class="sidebar-nav-item active" onclick="showSection('inicio')">Inicio</button>
+      <button class="sidebar-nav-item" onclick="showSection('mis-piezas')">Mis piezas</button>
+      <button class="sidebar-nav-item" onclick="showSection('historial')">Historial</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">Explorar</div>
-      <button class="sidebar-nav-item" onclick="window.location.href='./catalogo.html'"> Ver catálogo</button>
-      <button class="sidebar-nav-item" onclick="Auth.logout();window.location.href='../index.html'"> Cerrar sesión</button>
+      <button class="sidebar-nav-item" onclick="window.location.href='/catalogo'">Ver catálogo</button>
+      <button class="sidebar-nav-item" onclick="Auth.logout();window.location.href='/'">Cerrar sesión</button>
     </div>
   </aside>
 
@@ -47,13 +46,12 @@
       </div>
 
       <!-- Quick actions -->
-        <div class="card" style="cursor:pointer;border-left:3px solid var(--gold)" onclick="showSection('mis-piezas')">
-          <div style="font-size:1.8rem;margin-bottom:10px"></div>
+      <div class="grid-2" style="margin-bottom:28px">
+        <div class="card" style="cursor:pointer;border-left:3px solid var(--gold);display:flex;flex-direction:column" onclick="showSection('mis-piezas')">
           <h4 style="font-family:'Playfair Display',serif;color:var(--ink);margin-bottom:4px">Ver restauraciones</h4>
           <p style="font-size:1rem">Sigue el progreso de tus piezas en el taller</p>
         </div>
-        <div class="card" style="cursor:pointer;border-left:3px solid var(--brown3)" onclick="window.location.href='./catalogo.html'">
-          <div style="font-size:1.8rem;margin-bottom:10px"></div>
+        <div class="card" style="cursor:pointer;border-left:3px solid var(--brown3);display:flex;flex-direction:column" onclick="window.location.href='/catalogo'">
           <h4 style="font-family:'Playfair Display',serif;color:var(--ink);margin-bottom:4px">Explorar catálogo</h4>
           <p style="font-size:1rem">Descubre piezas únicas disponibles</p>
         </div>
@@ -83,76 +81,8 @@
           <h2 style="font-size:1.5rem">Mis piezas</h2>
           <p style="color:var(--ink2)">Seguimiento de tus restauraciones</p>
         </div>
-        <button class="btn btn-primary" onclick="showSection('analizar')">+ Agregar pieza</button>
       </div>
       <div id="pieces-list"></div>
-    </div>
-
-    <!-- ANALIZAR PIEZA (IA) -->
-    <div id="section-analizar" class="dash-section" style="display:none">
-      <div style="margin-bottom:24px">
-        <h2 style="font-size:1.5rem">Analiza tu mueble con IA</h2>
-        <p style="color:var(--ink2)">Sube fotografías de tu pieza y recibirás una evaluación en segundos</p>
-      </div>
-
-      <div class="grid-2" style="gap:32px;align-items:start">
-        <div>
-          <!-- Upload zone -->
-          <div id="upload-zone" class="ai-upload-zone">
-            <p><span>Haz clic o arrastra</span> tus fotografías aquí</p>
-            <p style="font-size:1rem;margin-top:8px;color:var(--ink2)">JPG, PNG hasta 10MB · Mínimo 1, máximo 8 fotos</p>
-            <input type="file" id="file-input" accept="image/*" multiple style="display:none">
-          </div>
-
-          <div id="upload-preview-area" style="display:none;margin-top:16px">
-            <img id="upload-preview" class="upload-preview" alt="Vista previa">
-            <div style="display:flex;gap:10px;flex-wrap:wrap" id="photo-count"></div>
-          </div>
-
-          <!-- Form -->
-          <div id="piece-form" style="margin-top:20px">
-            <div class="form-group">
-              <label class="form-label">Describe tu pieza (opcional)</label>
-              <textarea class="form-control" id="pieza-desc" rows="3" placeholder="Ej. Cómoda de madera que heredé de mi abuela, tiene grietas en la parte superior..."></textarea>
-            </div>
-            <div class="grid-2">
-              <div class="form-group">
-                <label class="form-label">Tipo estimado</label>
-                <select class="form-control" id="pieza-tipo">
-                  <option value="">La IA lo detectará</option>
-                  <option>Silla / sillón</option>
-                  <option>Mesa</option>
-                  <option>Cómoda / aparador</option>
-                  <option>Vitrina</option>
-                  <option>Escritorio</option>
-                  <option>Otro</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Estado aproximado</label>
-                <select class="form-control" id="pieza-estado">
-                  <option value="">La IA lo evaluará</option>
-                  <option>Excelente</option>
-                  <option>Bueno</option>
-                  <option>Regular</option>
-                  <option>Malo</option>
-                </select>
-              </div>
-            </div>
-            <button class="btn btn-gold btn-lg" style="width:100%;justify-content:center" id="analyze-btn" onclick="startAnalysis()">
-              🤖 Analizar mi pieza
-            </button>
-          </div>
-        </div>
-
-        <!-- Result panel -->
-        <div id="ai-result-panel">
-          <div style="text-align:center;padding:40px 20px;color:var(--ink2)">
-            <span style="font-size:3rem;display:block;margin-bottom:12px">🪑</span>
-            <p>Sube una fotografía para comenzar el análisis</p>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- HISTORIAL -->
@@ -162,7 +92,6 @@
       <div class="empty-state">
         <h3>Sin historial aún</h3>
         <p>Las restauraciones completadas aparecerán aquí.</p>
-        <button class="btn btn-primary" onclick="showSection('analizar')">+ Agregar mi primera pieza</button>
       </div>
     </div>
 
@@ -183,9 +112,9 @@
 
 <script th:src="@{/js/app.js}"></script>
 <script>
-  const user = Auth.requireAuth('./login.html');
+  const user = Auth.requireAuth('/login');
   if (user) {
-    document.getElementById('welcome-title').textContent = `Hola, ${user.name.split(' ')[0]} `;
+    document.getElementById('welcome-title').textContent = `Hola, ${user.name.split(' ')[0]}`;
     document.getElementById('sb-name').textContent = user.name;
     document.getElementById('sb-avatar').textContent = Utils.initials(user.name);
     renderHeader(false);
@@ -247,7 +176,7 @@
             <div class="meta-item"><span class="meta-label">Estado AFD</span><span class="meta-value">${AFD_STATES[p.estado_afd]?.label || p.estado_afd}</span></div>
             <div class="meta-item"><span class="meta-label">Restaurador</span><span class="meta-value">${p.restaurador}</span></div>
           </div>
-          <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center" onclick="showSection('mis-piezas')">Ver detalle →</button>
+          <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center" onclick="showSection('mis-piezas')">Ver detalle</button>
         </div>
       </div>
     `).join('');
@@ -286,94 +215,6 @@
     document.getElementById('modal-tracker-content').innerHTML = '';
     renderAFDTracker('modal-tracker-content', piece.estado_afd, piece);
     Modal.open('modal-tracker');
-  }
-
-  // AI Analysis
-  const uploadZone = document.getElementById('upload-zone');
-  const fileInput  = document.getElementById('file-input');
-
-  uploadZone.addEventListener('click', () => fileInput.click());
-  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
-  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
-  uploadZone.addEventListener('drop', e => {
-    e.preventDefault(); uploadZone.classList.remove('dragover');
-    const files = e.dataTransfer.files;
-    if (files[0]) handleFile(files[0]);
-  });
-  fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
-
-  function handleFile(file) {
-    const reader = new FileReader();
-    reader.onload = e => {
-      document.getElementById('upload-preview').src = e.target.result;
-      document.getElementById('upload-preview-area').style.display = 'block';
-      document.getElementById('upload-zone').style.display = 'none';
-      document.getElementById('photo-count').innerHTML = `<span class="badge badge-green">1 foto lista</span>`;
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function startAnalysis() {
-    const btn = document.getElementById('analyze-btn');
-    btn.disabled = true; btn.textContent = '⏳ Analizando...';
-
-    document.getElementById('ai-result-panel').innerHTML = `
-      <div class="ai-analyzing">
-        <div class="ai-spinner"></div>
-        <h4 style="font-family:'Playfair Display',serif;color:var(--brown);margin-bottom:8px">Analizando tu pieza</h4>
-        <p style="font-size:1rem;color:var(--ink2)">Nuestra IA está identificando materiales, estado y valor potencial...</p>
-      </div>
-    `;
-
-    AIAnalyzer.analyze(null, result => {
-      showAIResult(result);
-      btn.disabled = false; btn.textContent = '🤖 Analizar de nuevo';
-    });
-  }
-
-  function showAIResult(result) {
-    document.getElementById('ai-result-panel').innerHTML = `
-      <div class="ai-result">
-        <div class="ai-result-header">
-          <span style="font-size:1.2rem">✅</span>
-          <h3>Análisis completado</h3>
-        </div>
-        <div class="ai-result-body">
-          <div class="ai-field"><div class="ai-field-label">Tipo de mueble</div><div class="ai-field-value">${result.tipo}</div></div>
-          <div class="ai-field"><div class="ai-field-label">Material identificado</div><div class="ai-field-value">${result.material}</div></div>
-          <div class="ai-field"><div class="ai-field-label">Estilo / Época</div><div class="ai-field-value">${result.estilo}</div></div>
-          <div class="ai-field"><div class="ai-field-label">Estado de conservación</div><div class="ai-field-value">${result.estado}</div></div>
-          <div class="ai-field"><div class="ai-field-label">Restauración recomendada</div><div class="ai-field-value">${result.restauracion}</div></div>
-
-          <div class="ai-estimate-grid">
-            <div class="ai-estimate-item">
-              <div class="ai-estimate-value">$${result.costo_min.toLocaleString()} – $${result.costo_max.toLocaleString()}</div>
-              <div class="ai-estimate-label">Costo estimado MXN</div>
-            </div>
-            <div class="ai-estimate-item">
-              <div class="ai-estimate-value">${result.tiempo_min} – ${result.tiempo_max} sem.</div>
-              <div class="ai-estimate-label">Tiempo estimado</div>
-            </div>
-            <div class="ai-estimate-item" style="grid-column:1/-1">
-              <div class="ai-estimate-value" style="color:var(--success)">$${result.valor_potencial.toLocaleString()} MXN</div>
-              <div class="ai-estimate-label">Valor potencial restaurado</div>
-            </div>
-          </div>
-
-          <button class="btn btn-primary btn-lg" style="width:100%;justify-content:center;margin-top:16px" onclick="requestRestoration()">
-            Solicitar restauración
-          </button>
-          <p style="font-size:1rem;color:var(--ink2);text-align:center;margin-top:8px">
-            * Este análisis es preliminar. Un restaurador confirmará el diagnóstico.
-          </p>
-        </div>
-      </div>
-    `;
-  }
-
-  function requestRestoration() {
-    Toast.show('¡Solicitud enviada! Te contactaremos pronto con cotizaciones de restauradores.', 'success', 4000);
-    setTimeout(() => showSection('mis-piezas'), 1200);
   }
 
   renderPieces();

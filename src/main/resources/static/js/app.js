@@ -1,38 +1,38 @@
 /* ═══════════════════════════════════════════════════════════════
    MJ RENEW — app.js
-   Lógica compartida: auth, catálogo, AFD, IA simulada, utilidades
+   Lógica compartida: auth, catálogo, AFD, utilidades
 ═══════════════════════════════════════════════════════════════ */
 
 'use strict';
 
 // ── AFD: ESTADOS DEL PROCESO ───────────────────────────────────
 const AFD_STATES = {
-  q0:  { id:'q0',  label:'Pieza capturada',          icon:'📷', phase:'Captura' },
-  q1:  { id:'q1',  label:'En evaluación',             icon:'🔍', phase:'Evaluación' },
-  q2:  { id:'q2',  label:'Calculando presupuesto',    icon:'💰', phase:'Evaluación' },
-  q3:  { id:'q3',  label:'Presupuesto presentado',    icon:'📋', phase:'Evaluación' },
-  q4:  { id:'q4',  label:'Pago en escrow',            icon:'🔒', phase:'Evaluación' },
-  q5:  { id:'q5',  label:'Recolección agendada',      icon:'📅', phase:'Logística ida' },
-  q6:  { id:'q6',  label:'En recolección',            icon:'🚚', phase:'Logística ida' },
-  q7:  { id:'q7',  label:'Recibido en taller',        icon:'🏭', phase:'Logística ida' },
-  q8:  { id:'q8',  label:'En restauración',           icon:'🔧', phase:'Restauración' },
-  q9:  { id:'q9',  label:'Avance publicado',          icon:'📸', phase:'Restauración' },
-  q10: { id:'q10', label:'Restauración lista',        icon:'✅', phase:'Restauración' },
-  q11: { id:'q11', label:'Decisión en taller',        icon:'🤔', phase:'Restauración' },
-  q12: { id:'q12', label:'Entrega agendada',          icon:'📅', phase:'Logística vuelta' },
-  q13: { id:'q13', label:'En devolución',             icon:'🚚', phase:'Logística vuelta' },
-  q14: { id:'q14', label:'Entregado al dueño',        icon:'🏠', phase:'Logística vuelta' },
-  q15: { id:'q15', label:'En catálogo',               icon:'🛒', phase:'Venta' },
-  q16: { id:'q16', label:'Link de pago enviado',      icon:'💳', phase:'Venta' },
-  qD1: { id:'qD1', label:'Disputa abierta',           icon:'⚠️', phase:'Disputa', cancel:true },
-  qD2: { id:'qD2', label:'En revisión admin',         icon:'👤', phase:'Disputa', cancel:true },
-  qD3: { id:'qD3', label:'Disputa resuelta',          icon:'⚖️', phase:'Disputa', cancel:true },
-  qC1: { id:'qC1', label:'No cumple requisitos',      icon:'❌', phase:'Cancelación', cancel:true },
-  qC2: { id:'qC2', label:'Dueño no quiso restaurar', icon:'🚫', phase:'Cancelación', cancel:true },
-  qC3: { id:'qC3', label:'Nadie en casa – recolección',icon:'🏚️', phase:'Cancelación', cancel:true },
-  qC4: { id:'qC4', label:'Nadie en casa – entrega',  icon:'🏚️', phase:'Cancelación', cancel:true },
-  qF1: { id:'qF1', label:'Restauración completada',  icon:'🎉', phase:'Finalizado', success:true },
-  qF2: { id:'qF2', label:'Venta completada',          icon:'🎊', phase:'Finalizado', success:true },
+  q0:  { id:'q0',  label:'Pieza capturada',           phase:'Captura' },
+  q1:  { id:'q1',  label:'En evaluación',             phase:'Evaluación' },
+  q2:  { id:'q2',  label:'Calculando presupuesto',    phase:'Evaluación' },
+  q3:  { id:'q3',  label:'Presupuesto presentado',    phase:'Evaluación' },
+  q4:  { id:'q4',  label:'Pago en escrow',            phase:'Evaluación' },
+  q5:  { id:'q5',  label:'Recolección agendada',      phase:'Logística ida' },
+  q6:  { id:'q6',  label:'En recolección',            phase:'Logística ida' },
+  q7:  { id:'q7',  label:'Recibido en taller',        phase:'Logística ida' },
+  q8:  { id:'q8',  label:'En restauración',           phase:'Restauración' },
+  q9:  { id:'q9',  label:'Avance publicado',          phase:'Restauración' },
+  q10: { id:'q10', label:'Restauración lista',        phase:'Restauración' },
+  q11: { id:'q11', label:'Decisión en taller',        phase:'Restauración' },
+  q12: { id:'q12', label:'Entrega agendada',          phase:'Logística vuelta' },
+  q13: { id:'q13', label:'En devolución',             phase:'Logística vuelta' },
+  q14: { id:'q14', label:'Entregado al dueño',        phase:'Logística vuelta' },
+  q15: { id:'q15', label:'En catálogo',               phase:'Venta' },
+  q16: { id:'q16', label:'Link de pago enviado',      phase:'Venta' },
+  qD1: { id:'qD1', label:'Disputa abierta',           phase:'Disputa', cancel:true },
+  qD2: { id:'qD2', label:'En revisión admin',         phase:'Disputa', cancel:true },
+  qD3: { id:'qD3', label:'Disputa resuelta',          phase:'Disputa', cancel:true },
+  qC1: { id:'qC1', label:'No cumple requisitos',      phase:'Cancelación', cancel:true },
+  qC2: { id:'qC2', label:'Dueño no quiso restaurar',  phase:'Cancelación', cancel:true },
+  qC3: { id:'qC3', label:'Nadie en casa – recolección', phase:'Cancelación', cancel:true },
+  qC4: { id:'qC4', label:'Nadie en casa – entrega',   phase:'Cancelación', cancel:true },
+  qF1: { id:'qF1', label:'Restauración completada',   phase:'Finalizado', success:true },
+  qF2: { id:'qF2', label:'Venta completada',          phase:'Finalizado', success:true },
 };
 
 // Secuencia visual del tracker (main happy path)
@@ -492,14 +492,13 @@ function renderAFDTracker(containerId, currentState, piece) {
     let status = 'pending';
     if (idx < currentIdx) status = 'done';
     else if (idx === currentIdx) status = 'current';
-    const isFinal = state.success;
     return `
       <div class="afd-step ${status}">
-        <div class="afd-step-dot">${status === 'done' ? '✓' : state.icon}</div>
+        <div class="afd-step-dot">${status === 'done' ? '✓' : (idx + 1)}</div>
         <div class="afd-step-info">
           <div class="afd-step-label">${state.label}</div>
           <div class="afd-step-desc">${state.phase}</div>
-          ${status === 'current' ? '<div class="afd-step-time">● En proceso</div>' : ''}
+          ${status === 'current' ? '<div class="afd-step-time">En proceso</div>' : ''}
         </div>
       </div>
     `;
@@ -514,25 +513,6 @@ function renderAFDTracker(containerId, currentState, piece) {
   `;
 }
 
-// ── IA SIMULADA ────────────────────────────────────────────────
-const AIAnalyzer = {
-  RESULTS: [
-    { tipo:'Cómoda antigua', material:'Madera de caoba', estilo:'Colonial', estado:'Regular – daños moderados', restauracion:'Restauración estructural + acabado lacado', costo_min:4500, costo_max:6500, tiempo_min:3, tiempo_max:5, valor_potencial:28000 },
-    { tipo:'Sillón de época', material:'Nogal con tapiz deteriorado', estilo:'Luis XV', estado:'Bueno – requiere tapizado', restauracion:'Retapizado + limpieza de madera', costo_min:3200, costo_max:4800, tiempo_min:2, tiempo_max:4, valor_potencial:18500 },
-    { tipo:'Mesa de comedor', material:'Cedro macizo', estilo:'Art Déco', estado:'Regular – fisuras en tablero', restauracion:'Consolidación estructural + barnizado', costo_min:5000, costo_max:7500, tiempo_min:4, tiempo_max:6, valor_potencial:35000 },
-    { tipo:'Escritorio antiguo', material:'Roble con herrajes de bronce', estilo:'Eduardiano', estado:'Malo – daños estructurales', restauracion:'Restauración completa de estructura y acabado', costo_min:8000, costo_max:12000, tiempo_min:5, tiempo_max:8, valor_potencial:45000 },
-    { tipo:'Vitrina', material:'Nogal con vidrio biselado', estilo:'Victoriano', estado:'Bueno – pátina original', restauracion:'Limpieza profunda + consolidación menor', costo_min:2500, costo_max:4000, tiempo_min:2, tiempo_max:3, valor_potencial:22000 },
-  ],
-
-  analyze(imageFile, callback) {
-    // Simulate AI analysis delay
-    setTimeout(() => {
-      const result = this.RESULTS[Math.floor(Math.random() * this.RESULTS.length)];
-      callback(result);
-    }, 2800);
-  },
-};
-
 // ── CATALOG RENDERER ───────────────────────────────────────────
 function renderCatalogGrid(containerId, pieces, onCardClick) {
   const container = document.getElementById(containerId);
@@ -541,7 +521,6 @@ function renderCatalogGrid(containerId, pieces, onCardClick) {
   if (!pieces.length) {
     container.innerHTML = `
       <div class="empty-state">
-        <span class="empty-state-icon">🔍</span>
         <h3>Sin resultados</h3>
         <p>Intenta con otros filtros o términos de búsqueda.</p>
       </div>
@@ -567,7 +546,7 @@ function renderCatalogGrid(containerId, pieces, onCardClick) {
         <div class="piece-card-meta">
           <span class="piece-card-price">${Utils.formatCurrency(p.precio)}</span>
         </div>
-        <div class="piece-card-loc">📍 ${p.ubicacion}</div>
+        <div class="piece-card-loc">${p.ubicacion}</div>
       </div>
     </div>
   `).join('');
@@ -638,7 +617,6 @@ window.Auth         = Auth;
 window.Utils        = Utils;
 window.Toast        = Toast;
 window.Modal        = Modal;
-window.AIAnalyzer   = AIAnalyzer;
 window.CATALOG      = CATALOG;
 window.RESTAURADORES= RESTAURADORES;
 window.AFD_STATES   = AFD_STATES;

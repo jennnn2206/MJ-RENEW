@@ -530,7 +530,7 @@ p  { color: var(--ink2); line-height: 1.7; }
 .how-it-works { background: var(--bg2); }
 .steps-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 0;
   position: relative;
 }
@@ -538,8 +538,8 @@ p  { color: var(--ink2); line-height: 1.7; }
   content: '';
   position: absolute;
   top: 48px;
-  left: calc(12.5% + 28px);
-  right: calc(12.5% + 28px);
+  left: calc(16.66% + 28px);
+  right: calc(16.66% + 28px);
   height: 1px;
   background: var(--bg3);
 }
@@ -1150,100 +1150,6 @@ p  { color: var(--ink2); line-height: 1.7; }
 .spec-label { color: var(--ink2); font-size: 1rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
 .spec-value { color: var(--ink); font-weight: 500; }
 
-/* ─── AI ANALYSIS PANEL ──────────────────────────────────── */
-.ai-upload-zone {
-  border: 2px dashed var(--bg3);
-  border-radius: var(--radius);
-  padding: 48px 24px;
-  text-align: center;
-  cursor: pointer;
-  transition: var(--transition);
-  background: var(--bg2);
-}
-.ai-upload-zone:hover, .ai-upload-zone.dragover {
-  border-color: var(--brown);
-  background: var(--bg);
-}
-.ai-upload-icon { font-size: 2.5rem; margin-bottom: 12px; display: block; }
-.ai-upload-zone p { font-size: 1rem; color: var(--ink2); }
-.ai-upload-zone span { color: var(--brown); font-weight: 600; }
-
-.ai-analyzing {
-  text-align: center;
-  padding: 40px 20px;
-}
-.ai-spinner {
-  width: 56px;
-  height: 56px;
-  border: 3px solid var(--bg3);
-  border-top-color: var(--brown);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 16px;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.ai-result {
-  background: var(--white);
-  border-radius: var(--radius);
-  border: 1px solid var(--bg3);
-  overflow: hidden;
-}
-.ai-result-header {
-  background: var(--brown);
-  color: var(--white);
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.ai-result-header h3 {
-  font-size: 1rem;
-  color: var(--white);
-}
-.ai-result-body { padding: 20px; }
-.ai-field { margin-bottom: 14px; }
-.ai-field-label {
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-weight: 700;
-  color: var(--ink2);
-  margin-bottom: 2px;
-}
-.ai-field-value {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--ink);
-}
-.ai-estimate-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--bg3);
-}
-.ai-estimate-item {
-  background: var(--bg);
-  border-radius: var(--radius-sm);
-  padding: 14px;
-  text-align: center;
-}
-.ai-estimate-value {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: var(--brown);
-}
-.ai-estimate-label {
-  font-size: 1rem;
-  color: var(--ink2);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-top: 2px;
-}
-
 /* ─── SEARCH BAR ─────────────────────────────────────────── */
 .search-bar {
   display: flex;
@@ -1327,14 +1233,6 @@ p  { color: var(--ink2); line-height: 1.7; }
 }
 .empty-state p { font-size: 1rem; margin-bottom: 24px; }
 
-/* ─── UPLOAD PREVIEW ─────────────────────────────────────── */
-.upload-preview {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-  border-radius: var(--radius-sm);
-  margin-bottom: 12px;
-}
 
 /* ─── NOTIFICATION DOT ───────────────────────────────────── */
 .notif-dot {
@@ -1384,7 +1282,6 @@ p  { color: var(--ink2); line-height: 1.7; }
   .about-stats     { grid-template-columns: repeat(3, 1fr); }
   .footer-grid     { grid-template-columns: 1fr; }
   .piece-specs     { grid-template-columns: 1fr; }
-  .ai-estimate-grid { grid-template-columns: 1fr 1fr; }
   h1               { font-size: 2rem; }
   .section         { padding: 48px 0; }
 }
@@ -1498,18 +1395,6 @@ p  { color: var(--ink2); line-height: 1.7; }
   border-radius: 20px;
   transition: width 0.5s;
 }
-
-/* ─── CHAT / MESSAGES ────────────────────────────────────── */
-.chat-bubble {
-  padding: 10px 14px;
-  border-radius: 12px;
-  font-size: 1rem;
-  max-width: 80%;
-  line-height: 1.5;
-}
-.chat-bubble.them { background: var(--bg2); color: var(--ink); border-radius: 4px 12px 12px 12px; }
-.chat-bubble.me   { background: var(--brown); color: var(--white); border-radius: 12px 4px 12px 12px; margin-left: auto; }
-.chat-time { font-size: 1rem; color: var(--ink2); margin-top: 3px; }
 
 /* ─── GOLD ACCENT LINE ───────────────────────────────────── */
 .accent-line { width: 3px; background: var(--gold); border-radius: 2px; flex-shrink: 0; }
