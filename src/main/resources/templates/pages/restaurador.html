@@ -23,15 +23,15 @@
         </div>
       </div>
       <div class="sidebar-label">Trabajo</div>
-      <button class="sidebar-nav-item active" onclick="showSection('inicio')"> Inicio</button>
-      <button class="sidebar-nav-item" onclick="showSection('solicitudes')"> Solicitudes <span class="sidebar-badge" id="req-badge">2</span></button>
-      <button class="sidebar-nav-item" onclick="showSection('activas')"> En proceso</button>
-      <button class="sidebar-nav-item" onclick="showSection('terminadas')"> Terminadas</button>
-      <button class="sidebar-nav-item" onclick="showSection('perfil')"> Mi perfil</button>
+      <button class="sidebar-nav-item active" onclick="showSection('inicio')">Inicio</button>
+      <button class="sidebar-nav-item" onclick="showSection('solicitudes')">Solicitudes <span class="sidebar-badge" id="req-badge">2</span></button>
+      <button class="sidebar-nav-item" onclick="showSection('activas')">En proceso</button>
+      <button class="sidebar-nav-item" onclick="showSection('terminadas')">Terminadas</button>
+      <button class="sidebar-nav-item" onclick="showSection('perfil')">Mi perfil</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">Cuenta</div>
-      <button class="sidebar-nav-item" onclick="Auth.logout();window.location.href='../index.html'"> Cerrar sesión</button>
+      <button class="sidebar-nav-item" onclick="Auth.logout();window.location.href='/'">Cerrar sesión</button>
     </div>
   </aside>
 
@@ -171,9 +171,9 @@
 
 <script th:src="@{/js/app.js}"></script>
 <script>
-  const user = Auth.requireAuth('./login.html');
+  const user = Auth.requireAuth('/login');
   if (user) {
-    document.getElementById('welcome-title').textContent = `Hola, ${user.name.split(' ')[0]} `;
+    document.getElementById('welcome-title').textContent = `Hola, ${user.name.split(' ')[0]}`;
     document.getElementById('sb-name').textContent = user.name;
     document.getElementById('sb-avatar').textContent = Utils.initials(user.name);
     const pa = document.getElementById('profile-avatar');
@@ -187,7 +187,7 @@
     document.querySelectorAll('.dash-section').forEach(s => s.style.display = 'none');
     document.getElementById('section-' + id).style.display = 'block';
     document.querySelectorAll('.sidebar-nav-item').forEach(b => b.classList.remove('active'));
-    const btn = [...document.querySelectorAll('.sidebar-nav-item')].find(b => b.onclek?.toString().includes(`'${id}'`));
+    const btn = [...document.querySelectorAll('.sidebar-nav-item')].find(b => b.onclick?.toString().includes(`'${id}'`));
     if (btn) btn.classList.add('active');
   }
 
@@ -210,10 +210,6 @@
         <p style="font-size:1rem;color:var(--ink2);margin-bottom:12px">${r.descripcion}</p>
         <div class="request-card-meta">
           <span class="badge badge-blue">Presupuesto estimado: ${r.presupuesto_estimado}</span>
-        </div>
-        <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
-          <div style="font-size:1rem;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Análisis IA disponible</div>
-          <div style="font-size:1rem;color:var(--ink2)"> La IA detectó: madera deteriorada en superficie, herrajes originales en buen estado, estructura estable. Requiere limpieza y consolidación.</div>
         </div>
         <div class="request-card-actions">
           <button class="btn btn-primary btn-sm" onclick="openQuoteModal('${r.id}','${r.pieza}')">Enviar cotización</button>
@@ -255,8 +251,8 @@
         </div>
         <hr class="divider">
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-primary btn-sm" onclick="Modal.open('modal-progress')"> Subir avance</button>
-          <button class="btn btn-sm btn-success" onclick="Toast.show('Restauración marcada como terminada','success')"> Marcar terminada</button>
+          <button class="btn btn-primary btn-sm" onclick="Modal.open('modal-progress')">Subir avance</button>
+          <button class="btn btn-sm btn-success" onclick="Toast.show('Restauración marcada como terminada','success')">Marcar terminada</button>
         </div>
       </div>
     `).join('');

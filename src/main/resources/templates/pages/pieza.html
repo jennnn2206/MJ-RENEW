@@ -62,22 +62,6 @@
   </div>
 </div>
 
-<!-- Modal: Contactar vendedor -->
-<div class="modal-overlay" id="modal-contact">
-  <div class="modal-box">
-    <div class="modal-header">
-      <h3 style="font-family:'Playfair Display',serif">Contactar vendedor</h3>
-      <button class="modal-close" onclick="Modal.close('modal-contact')">×</button>
-    </div>
-    <div class="form-group"><label class="form-label">Tu correo</label><input type="email" class="form-control" placeholder="tu@correo.com"></div>
-    <div class="form-group"><label class="form-label">Mensaje</label><textarea class="form-control" rows="4" placeholder="Escribe tu pregunta sobre esta pieza..."></textarea></div>
-    <div style="display:flex;gap:10px">
-      <button class="btn btn-primary" onclick="Modal.close('modal-contact');Toast.show('Mensaje enviado al vendedor','success')">Enviar mensaje</button>
-      <button class="btn btn-ghost" onclick="Modal.close('modal-contact')">Cancelar</button>
-    </div>
-  </div>
-</div>
-
 <footer class="site-footer" style="margin-top:0">
   <div class="footer-bottom">
     <div class="container"><div class="footer-bottom">
@@ -164,8 +148,8 @@
             <div class="spec-item"><div class="spec-label">Época</div><div class="spec-value">${piece.epoca}</div></div>
             <div class="spec-item"><div class="spec-label">Dimensiones</div><div class="spec-value">${piece.dimensiones}</div></div>
             <div class="spec-item"><div class="spec-label">Peso</div><div class="spec-value">${piece.peso}</div></div>
-            <div class="spec-item"><div class="spec-label">Ubicación</div><div class="spec-value">📍 ${piece.ubicacion}</div></div>
-            <div class="spec-item"><div class="spec-label">Restaurador</div><div class="spec-value">🔨 ${piece.restaurador}</div></div>
+            <div class="spec-item"><div class="spec-label">Ubicación</div><div class="spec-value">${piece.ubicacion}</div></div>
+            <div class="spec-item"><div class="spec-label">Restaurador</div><div class="spec-value">${piece.restaurador}</div></div>
           </div>
 
           <hr class="divider">
@@ -177,18 +161,15 @@
 
           <div style="display:flex;flex-direction:column;gap:10px">
             <button class="btn btn-gold btn-lg" style="width:100%;justify-content:center" onclick="openBuyModal()">
-              🛒 Comprar pieza
-            </button>
-            <button class="btn btn-secondary btn-lg" style="width:100%;justify-content:center" onclick="Modal.open('modal-contact')">
-              💬 Contactar vendedor
+              Comprar pieza
             </button>
             <button class="btn btn-ghost btn-lg" style="width:100%;justify-content:center" id="fav-btn-main" onclick="toggleFavBtn(${piece.id}, this)">
-              ${isFav ? '♥ En favoritos' : '♡ Agregar a favoritos'}
+              ${isFav ? 'En favoritos' : 'Agregar a favoritos'}
             </button>
           </div>
 
           <div style="margin-top:16px;padding:12px;background:var(--bg2);border-radius:8px;font-size:1rem;color:var(--ink2);text-align:center">
-            🔒 Pago seguro · Certificado de autenticidad incluido · Envío coordinado
+            Pago seguro · Certificado de autenticidad incluido · Envío coordinado
           </div>
         </div>
       </div>
@@ -225,12 +206,12 @@
     const idx = favs.indexOf(id);
     if (idx === -1) {
       favs.push(id);
-      btn.textContent = btn.classList.contains('btn-ghost') ? '♥ En favoritos' : '♥';
+      btn.textContent = btn.classList.contains('btn-ghost') ? 'En favoritos' : '♥';
       btn.style.color = 'var(--error)';
       Toast.show('Agregado a favoritos','success');
     } else {
       favs.splice(idx, 1);
-      btn.textContent = btn.classList.contains('btn-ghost') ? '♡ Agregar a favoritos' : '♡';
+      btn.textContent = btn.classList.contains('btn-ghost') ? 'Agregar a favoritos' : '♡';
       btn.style.color = '';
       Toast.show('Eliminado de favoritos','info');
     }

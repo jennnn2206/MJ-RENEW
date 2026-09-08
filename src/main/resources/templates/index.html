@@ -46,27 +46,22 @@
     <div class="section-header centered">
       <span class="eyebrow">El proceso</span>
       <h2>¿Cómo funciona MJ Renew?</h2>
-      <p style="max-width:500px;margin:12px auto 0">Cuatro pasos para transformar tu pieza antigua en una joya con nueva vida.</p>
+      <p style="max-width:500px;margin:12px auto 0">Tres pasos para transformar tu pieza antigua en una joya con nueva vida.</p>
       <div class="gold-line"></div>
     </div>
     <div class="steps-grid">
       <div class="step-item">
         <div class="step-num">1</div>
-        <h4>Analiza tu pieza</h4>
-        <p>Sube fotografías y nuestra IA identifica el tipo, materiales, estado y valor potencial de tu mueble.</p>
-      </div>
-      <div class="step-item">
-        <div class="step-num">2</div>
         <h4>Encuentra un restaurador</h4>
         <p>Te conectamos con restauradores verificados especializados en tu tipo de pieza y te enviamos una cotización.</p>
       </div>
       <div class="step-item">
-        <div class="step-num">3</div>
+        <div class="step-num">2</div>
         <h4>Restaura tu mueble</h4>
         <p>Da seguimiento en tiempo real al proceso de restauración con fotos, actualizaciones y comunicación directa.</p>
       </div>
       <div class="step-item">
-        <div class="step-num">4</div>
+        <div class="step-num">3</div>
         <h4>Véndelo o dale un nuevo espacio</h4>
         <p>Recibe tu pieza restaurada o publícala en nuestro catálogo curado para coleccionistas y diseñadores.</p>
       </div>
@@ -79,9 +74,9 @@
   <div class="container">
     <span class="eyebrow" style="color:var(--gold)">Empieza hoy</span>
     <h2 style="color:var(--white);margin-bottom:16px">¿Tienes una pieza esperando ser renovada?</h2>
-    <p style="color:rgba(255,253,248,0.7);max-width:480px;margin:0 auto 32px">Sube las fotografías de tu mueble y nuestra IA te dará un análisis completo en minutos. Sin costo, sin compromiso.</p>
+    <p style="color:rgba(255,253,248,0.7);max-width:480px;margin:0 auto 32px">Registra tu mueble y te conectamos con un restaurador verificado que te enviará una cotización. Sin costo, sin compromiso.</p>
     <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
-      <a th:href="@{/registro}" class="btn btn-gold btn-lg">Analizar mi mueble gratis</a>
+      <a th:href="@{/registro}" class="btn btn-gold btn-lg">Restaurar mi mueble gratis</a>
       <a th:href="@{/catalogo}" class="btn btn-lg" style="background:rgba(255,255,255,0.12);color:var(--white);border:1.5px solid rgba(255,255,255,0.3)">Ver el catálogo</a>
     </div>
   </div>
@@ -103,10 +98,9 @@
           <h3>Propietarios</h3>
           <p>¿Tienes un mueble antiguo olvidado? Descubre su valor real, conéctate con un restaurador de confianza y dale una segunda vida.</p>
           <ul style="font-size:1rem;color:var(--ink2);margin-bottom:20px;display:flex;flex-direction:column;gap:6px">
-            <li>✓ Análisis con IA</li>
-            <li>✓ Cotización sin costo</li>
-            <li>✓ Seguimiento en tiempo real</li>
-            <li>✓ Pago seguro en escrow</li>
+            <li>Cotización sin costo</li>
+            <li>Seguimiento en tiempo real</li>
+            <li>Pago seguro en escrow</li>
           </ul>
           <a th:href="@{/registro(tipo='propietario')}" class="btn btn-primary" style="width:100%;justify-content:center">Quiero restaurar</a>
         </div>
@@ -117,10 +111,10 @@
           <h3>Restauradores</h3>
           <p>Muestra tu experiencia y especialidad a clientes que valoran tu trabajo. Gestiona tus proyectos de forma profesional.</p>
           <ul style="font-size:1rem;color:var(--ink2);margin-bottom:20px;display:flex;flex-direction:column;gap:6px">
-            <li>✓ Perfil profesional</li>
-            <li>✓ Solicitudes verificadas</li>
-            <li>✓ Pagos garantizados</li>
-            <li>✓ Portafolio digital</li>
+            <li>Perfil profesional</li>
+            <li>Solicitudes verificadas</li>
+            <li>Pagos garantizados</li>
+            <li>Portafolio digital</li>
           </ul>
           <a th:href="@{/registro(tipo='restaurador')}" class="btn btn-primary" style="width:100%;justify-content:center;background:var(--gold)">Soy restaurador</a>
         </div>
@@ -132,10 +126,10 @@
           <h3>Compradores</h3>
           <p>Encuentra muebles únicos con historia verificada. Para coleccionistas, arquitectos, diseñadores y hoteles boutique.</p>
           <ul style="font-size:1rem;color:var(--ink2);margin-bottom:20px;display:flex;flex-direction:column;gap:6px">
-            <li>✓ Catálogo curado</li>
-            <li>✓ Historial de restauración</li>
-            <li>✓ Certificado de autenticidad</li>
-            <li>✓ Pago seguro</li>
+            <li>Catálogo curado</li>
+            <li>Historial de restauración</li>
+            <li>Certificado de autenticidad</li>
+            <li>Pago seguro</li>
           </ul>
           <a th:href="@{/catalogo}" class="btn btn-primary" style="width:100%;justify-content:center;background:var(--brown3)">Explorar piezas</a>
         </div>
@@ -168,7 +162,7 @@
         <h2>Modernizando el mercado de muebles antiguos</h2>
         <div class="gold-line" style="margin-bottom:20px"></div>
         <p style="margin-bottom:16px">MJ Renew nace de la convicción de que cada mueble antiguo tiene una historia que merece ser preservada y contada. El mercado de antigüedades en México opera de manera fragmentada, informal y sin transparencia.</p>
-        <p style="margin-bottom:16px">Utilizamos inteligencia artificial, plataformas digitales y un red verificada de restauradores para crear un ecosistema confiable donde propietarios, artesanos y compradores se encuentran.</p>
+        <p style="margin-bottom:16px">Utilizamos plataformas digitales y una red verificada de restauradores para crear un ecosistema confiable donde propietarios, artesanos y compradores se encuentran.</p>
         <p>Creemos en la economía circular, en valorar el trabajo artesanal y en que la historia de un mueble no termina cuando pierde su brillo.</p>
         <div class="about-stats">
           <div class="stat-item"><span class="stat-num">2026</span><span class="stat-label">Fundada</span></div>

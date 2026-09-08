@@ -23,10 +23,10 @@
         </div>
       </div>
       <div class="sidebar-label">Explorar</div>
-      <button class="sidebar-nav-item active" onclick="showSection('catalogo')"> Catálogo</button>
-      <button class="sidebar-nav-item" onclick="showSection('favoritos')"> Favoritos</button>
-      <button class="sidebar-nav-item" onclick="showSection('compras')"> Mis compras</button>
-      <button class="sidebar-nav-item" onclick="Auth.logout();window.location.href='/'"> Cerrar sesión</button>
+      <button class="sidebar-nav-item active" onclick="showSection('catalogo')">Catálogo</button>
+      <button class="sidebar-nav-item" onclick="showSection('favoritos')">Favoritos</button>
+      <button class="sidebar-nav-item" onclick="showSection('compras')">Mis compras</button>
+      <button class="sidebar-nav-item" onclick="Auth.logout();window.location.href='/'">Cerrar sesión</button>
     </div>
   </aside>
 
@@ -42,7 +42,7 @@
       <div style="max-width:540px;margin-bottom:20px">
         <div class="search-bar">
           <input class="search-input" id="search-input" placeholder="Busca por tipo, material, época..." oninput="filterCatalog()">
-          <button class="search-btn" onclick="filterCatalog()">🔍</button>
+          <button class="search-btn" onclick="filterCatalog()">Buscar</button>
         </div>
       </div>
 
@@ -85,7 +85,7 @@
 <script>
   const user = Auth.requireAuth('/login');
   if (user) {
-    document.getElementById('welcome-title').textContent = `Hola, ${user.name.split(' ')[0]} 👋`;
+    document.getElementById('welcome-title').textContent = `Hola, ${user.name.split(' ')[0]}`;
     document.getElementById('sb-name').textContent = user.name;
     document.getElementById('sb-avatar').textContent = Utils.initials(user.name);
     renderHeader(false);
@@ -121,7 +121,6 @@
     if (!favPieces.length) {
       document.getElementById('favs-grid').innerHTML = `
         <div class="empty-state" style="grid-column:1/-1">
-          <span class="empty-state-icon">♡</span>
           <h3>Sin favoritos aún</h3>
           <p>Guarda piezas que te gusten para verlas después.</p>
           <button class="btn btn-primary" onclick="showSection('catalogo')">Explorar el catálogo</button>
