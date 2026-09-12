@@ -65,8 +65,8 @@
       <div class="filter-group">
         <div class="filter-label">Precio máximo</div>
         <input type="range" id="price-range" min="5000" max="100000" value="100000" step="5000"
-          oninput="document.getElementById('price-val').textContent='$'+Number(this.value).toLocaleString('es-MX');filterCatalog()"
-          style="width:100%;accent-color:var(--brown);margin-bottom:6px">
+               oninput="document.getElementById('price-val').textContent='$'+Number(this.value).toLocaleString('es-MX');filterCatalog()"
+               style="width:100%;accent-color:var(--brown);margin-bottom:6px">
         <div style="display:flex;justify-content:space-between;font-size:1rem;color:var(--ink2)">
           <span>$5,000</span>
           <span id="price-val" style="font-weight:600;color:var(--brown)">$100,000</span>
@@ -102,16 +102,7 @@
   </div>
 </div>
 
-<footer class="site-footer" style="margin-top:0">
-  <div class="footer-bottom">
-    <div class="container">
-      <div class="footer-bottom">
-        <p>© 2026 MJ Renew</p>
-        <p><a th:href="@{/}" style="color:rgba(255,253,248,0.45)">Volver al inicio</a></p>
-      </div>
-    </div>
-  </div>
-</footer>
+<div th:replace="~{fragmentos/pie-pagina :: pie-pagina('/', 'Volver al inicio')}"></div>
 
 <script th:src="@{/js/app.js}"></script>
 <script>
@@ -132,9 +123,9 @@
 
     let result = CATALOG;
     if (search) result = result.filter(p =>
-      p.nombre.toLowerCase().includes(search) || p.categoria.toLowerCase().includes(search) ||
-      p.material.toLowerCase().includes(search) || p.epoca.toLowerCase().includes(search) ||
-      p.tags.some(t => t.includes(search))
+            p.nombre.toLowerCase().includes(search) || p.categoria.toLowerCase().includes(search) ||
+            p.material.toLowerCase().includes(search) || p.epoca.toLowerCase().includes(search) ||
+            p.tags.some(t => t.includes(search))
     );
     const stateCats = cats.filter(c => ['Restaurado','En restauración'].includes(c));
     const typeCats  = cats.filter(c => !['Restaurado','En restauración'].includes(c));

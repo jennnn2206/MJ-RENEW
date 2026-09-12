@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="restaurador-perfil" id="section-perfil" class="dash-section" style="display:none">
+    <div style="margin-bottom:24px"><h2 style="font-size:1.5rem">Mi perfil profesional</h2><p style="color:var(--ink2)">Así te ven los clientes potenciales</p></div>
+    <div class="grid-2" style="align-items:start;gap:24px">
+        <div class="card-elevated">
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--bg3)">
+                <div class="user-avatar" id="profile-avatar" style="width:60px;height:60px;font-size:1.4rem;background:var(--gold);color:var(--brown)"></div>
+                <div>
+                    <h3 style="font-family:'Playfair Display',serif" id="profile-name"></h3>
+                    <span class="badge badge-gold">Restaurador verificado</span>
+                </div>
+            </div>
+            <div class="form-group"><label class="form-label">Especialidad</label><input class="form-control" value="Ebanistería y restauración de madera"></div>
+            <div class="form-group"><label class="form-label">Ubicación</label><input class="form-control" value="Mérida, Yucatán"></div>
+            <div class="form-group"><label class="form-label">Experiencia</label><input class="form-control" value="12 años"></div>
+            <div class="form-group"><label class="form-label">Descripción</label><textarea class="form-control" rows="4">Ebanista con 12 años de experiencia en restauración de mobiliario de los siglos XVIII y XIX. Especialista en técnicas de dorado al pan y talla en madera.</textarea></div>
+            <div style="display:flex;gap:10px">
+                <button class="btn btn-primary" onclick="Toast.show('Perfil actualizado correctamente','success')">Guardar cambios</button>
+                <button class="btn btn-ghost">Cancelar</button>
+            </div>
+        </div>
+        <div>
+            <div class="card-elevated" style="margin-bottom:16px">
+                <h4 style="font-family:'Playfair Display',serif;margin-bottom:12px">Mis estadísticas</h4>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                    <div class="meta-item"><span class="meta-label">Proyectos completados</span><span class="meta-value">31</span></div>
+                    <div class="meta-item"><span class="meta-label">Calificación promedio</span><span class="meta-value">4.9 / 5.0 ★</span></div>
+                    <div class="meta-item"><span class="meta-label">Tiempo respuesta</span><span class="meta-value">< 24 horas</span></div>
+                </div>
+            </div>
+            <div class="card-elevated">
+                <h4 style="font-family:'Playfair Display',serif;margin-bottom:12px">Especialidades</h4>
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                    <span class="badge badge-brown">Ebanistería</span>
+                    <span class="badge badge-brown">Talla en madera</span>
+                    <span class="badge badge-brown">Dorado al pan</span>
+                    <span class="badge badge-brown">Marquetería</span>
+                    <span class="badge badge-brown">Laqueado</span>
+                    <span class="badge badge-brown">Tapicería</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

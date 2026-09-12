@@ -38,41 +38,7 @@
   <!-- MAIN -->
   <main class="dashboard-main">
 
-    <!-- INICIO -->
-    <div id="section-inicio" class="dash-section">
-      <div style="margin-bottom:28px">
-        <h2 id="welcome-title" style="font-size:1.8rem"></h2>
-        <p style="color:var(--ink2)">¿Qué quieres hacer hoy con tu pieza?</p>
-      </div>
-
-      <!-- Quick actions -->
-      <div class="grid-2" style="margin-bottom:28px">
-        <div class="card" style="cursor:pointer;border-left:3px solid var(--gold);display:flex;flex-direction:column" onclick="showSection('mis-piezas')">
-          <h4 style="font-family:'Playfair Display',serif;color:var(--ink);margin-bottom:4px">Ver restauraciones</h4>
-          <p style="font-size:1rem">Sigue el progreso de tus piezas en el taller</p>
-        </div>
-        <div class="card" style="cursor:pointer;border-left:3px solid var(--brown3);display:flex;flex-direction:column" onclick="window.location.href='/catalogo'">
-          <h4 style="font-family:'Playfair Display',serif;color:var(--ink);margin-bottom:4px">Explorar catálogo</h4>
-          <p style="font-size:1rem">Descubre piezas únicas disponibles</p>
-        </div>
-      </div>
-
-      <!-- Stats -->
-      <div class="stats-row" style="grid-template-columns:repeat(3,1fr)" id="owner-stats">
-        <div class="stat-card"><span class="stat-card-value">2</span><div class="stat-card-label">Piezas activas</div></div>
-        <div class="stat-card"><span class="stat-card-value">1</span><div class="stat-card-label">En restauración</div></div>
-        <div class="stat-card"><span class="stat-card-value" style="color:var(--gold)">$0</span><div class="stat-card-label">Valor estimado</div></div>
-      </div>
-
-      <!-- Active restoration preview -->
-      <div style="margin-top:28px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-          <h3 style="font-size:1.1rem;font-family:'Playfair Display',serif">Restauraciones activas</h3>
-          <button onclick="showSection('mis-piezas')" class="btn btn-ghost btn-sm">Ver todas</button>
-        </div>
-        <div class="grid-2" id="active-preview"></div>
-      </div>
-    </div>
+    <div th:replace="~{fragmentos/propietario-inicio :: propietario-inicio}"></div>
 
     <!-- MIS PIEZAS -->
     <div id="section-mis-piezas" class="dash-section" style="display:none">
@@ -192,10 +158,10 @@
     container.innerHTML = `
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
         ${steps.map((s, i) => {
-          let cls = 'pending';
-          if (i < currentIdx) cls = 'done';
-          else if (i === currentIdx) cls = 'current';
-          return `
+      let cls = 'pending';
+      if (i < currentIdx) cls = 'done';
+      else if (i === currentIdx) cls = 'current';
+      return `
             <div style="display:flex;align-items:center;gap:4px">
               <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
                 <div style="width:24px;height:24px;border-radius:50%;background:${cls==='done'?'var(--brown)':cls==='current'?'var(--gold)':'var(--bg3)'};color:${cls==='done'||cls==='current'?'white':'var(--ink2)'};display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700">${cls==='done'?'✓':i+1}</div>
@@ -204,7 +170,7 @@
               ${i < steps.length-1 ? `<div style="width:16px;height:1px;background:${i<currentIdx?'var(--brown)':'var(--bg3)'};margin-bottom:12px"></div>` : ''}
             </div>
           `;
-        }).join('')}
+    }).join('')}
       </div>
     `;
   }

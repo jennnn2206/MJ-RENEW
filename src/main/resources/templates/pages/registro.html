@@ -10,10 +10,7 @@
 
 <div class="auth-page">
   <div class="auth-card" style="max-width:520px">
-    <div class="auth-logo">
-      <h2>MJ Renew</h2>
-      <p>Crea tu cuenta gratuita</p>
-    </div>
+    <div th:replace="~{fragmentos/logo-autenticacion :: logo-autenticacion('Crea tu cuenta gratuita')}"></div>
 
     <!-- STEP 1: Datos personales -->
     <div id="step1">
@@ -61,7 +58,7 @@
       <div class="user-type-select" id="user-type-select">
         <label class="user-type-option" data-tipo="propietario">
           <input type="radio" name="tipo" value="propietario">
-    
+
           <div class="user-type-option-text">
             <h4>Quiero restaurar una pieza</h4>
             <p>Tengo un mueble antiguo y quiero restaurarlo o venderlo</p>
@@ -160,7 +157,7 @@
     const words = nombre ? nombre.split(/\s+/) : [];
     const badChars = /[^a-záéíóúüñ' -]/i.test(nombre);
     const badCase = words.some(w =>
-      !NAME_PARTICLES.includes(w.toLowerCase()) && w[0] !== w[0].toUpperCase()
+            !NAME_PARTICLES.includes(w.toLowerCase()) && w[0] !== w[0].toUpperCase()
     );
     if (!nombre) {
       setError('nombre', 'Ingresa tu nombre completo.'); valid = false;

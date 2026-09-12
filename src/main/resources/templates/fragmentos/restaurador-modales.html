@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="restaurador-modales">
+    <!-- MODAL: Cotización -->
+    <div class="modal-overlay" id="modal-quote">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 style="font-family:'Playfair Display',serif">Enviar cotización</h3>
+                <button class="modal-close" onclick="Modal.close('modal-quote')">×</button>
+            </div>
+            <div id="modal-quote-piece" style="background:var(--bg2);border-radius:8px;padding:12px;margin-bottom:20px;font-size:1rem;color:var(--ink2)"></div>
+            <div class="form-group"><label class="form-label">Costo de restauración (MXN)</label><input type="number" id="q-costo" class="form-control" placeholder="Ej. 14500"></div>
+            <div class="grid-2">
+                <div class="form-group"><label class="form-label">Tiempo estimado</label><input id="q-tiempo" class="form-control" placeholder="Ej. 3-4 semanas"></div>
+                <div class="form-group"><label class="form-label">Materiales adicionales</label><input id="q-materiales" class="form-control" placeholder="Ej. Barniz, madera de cedro"></div>
+            </div>
+            <div class="form-group"><label class="form-label">Descripción del proceso</label><textarea id="q-desc" class="form-control" rows="3" placeholder="Describe el proceso de restauración que realizarías..."></textarea></div>
+            <div style="display:flex;gap:10px">
+                <button class="btn btn-primary" onclick="sendQuote()">Enviar cotización</button>
+                <button class="btn btn-ghost" onclick="Modal.close('modal-quote')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Actualizar avance -->
+    <div class="modal-overlay" id="modal-progress">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 style="font-family:'Playfair Display',serif">Actualizar avance</h3>
+                <button class="modal-close" onclick="Modal.close('modal-progress')">×</button>
+            </div>
+            <div class="form-group"><label class="form-label">Descripción del avance</label><textarea id="p-desc" class="form-control" rows="3" placeholder="Describe el progreso realizado..."></textarea></div>
+            <div class="form-group"><label class="form-label">Porcentaje completado</label><input type="range" id="p-pct" min="0" max="100" value="65" oninput="document.getElementById('p-pct-val').textContent=this.value+'%'" style="width:100%;accent-color:var(--brown)"><span id="p-pct-val" style="font-weight:700;color:var(--brown)">65%</span></div>
+            <div class="form-group"><label class="form-label">Subir fotografías del avance</label><input type="file" class="form-control" accept="image/*" multiple></div>
+            <div style="display:flex;gap:10px">
+                <button class="btn btn-primary" onclick="saveProgress()">Publicar avance</button>
+                <button class="btn btn-ghost" onclick="Modal.close('modal-progress')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>
