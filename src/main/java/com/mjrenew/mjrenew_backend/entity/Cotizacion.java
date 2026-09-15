@@ -24,20 +24,20 @@ public class Cotizacion {
     @JoinColumn(name = "restaurador_id", nullable = false)
     private Usuario restaurador;
 
-    @Column(name = "costo_minimo_mxn_cotizacion", precision = 10, scale = 2)
+    @Column(name = "costo_minimo_mxn_cotizacion", nullable = false, precision = 10, scale = 2)
     private BigDecimal costoMinimoMxnCotizacion;
 
-    @Column(name = "costo_maximo_mxn_cotizacion", precision = 10, scale = 2)
+    @Column(name = "costo_maximo_mxn_cotizacion", nullable = false, precision = 10, scale = 2)
     private BigDecimal costoMaximoMxnCotizacion;
 
-    @Column(name = "tiempo_semanas_cotizacion")
+    @Column(name = "tiempo_semanas_cotizacion", nullable = false)
     private Short tiempoSemanasCotizacion;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "estado_cotizacion", nullable = false)
     private EstadoCotizacion estadoCotizacion;
 
-    @Column(name = "motivo_rechazo_cotizacion", nullable = false)
+    @Column(name = "motivo_rechazo_cotizacion")
     private String motivoRechazoCotizacion;
 
     @Column(name = "enviada_en_cotizacion", nullable = false)

@@ -19,10 +19,10 @@ public class PerfilRestaurador {
     @JoinColumn(name = "restaurador_id", nullable = false, unique = true)
     private Usuario restaurador;
 
-    @Column(name = "especialidad_restaurador", length = 150)
+    @Column(name = "especialidad_restaurador", length = 150, nullable = false)
     private String especialidadRestaurador;
 
-    @Column(name = "anos_experiencia_restaurador")
+    @Column(name = "anos_experiencia_restaurador", nullable = false)
     private Short anosExperienciaRestaurador;
 
     @Column(name = "descripcion_bio_restaurador")

@@ -31,14 +31,14 @@ public class Antiguedad {
     private TipoMueble tipoMueble;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estilo_mueble", nullable = false)
+    @Column(name = "estilo_mueble")
     private EstiloMueble estiloMueble;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "material_mueble", nullable = false)
+    @Column(name = "material_mueble")
     private MaterialMueble materialMueble;
 
-    @Column(name = "descripcion_danios_antiguedad", nullable = false)
+    @Column(name = "descripcion_danios_antiguedad")
     private String descripcionDaniosAntiguedad;
 
     @Column(name = "procedencia_mueble", length = 300)

@@ -22,7 +22,7 @@ public class FotografiaReclamo {
     @JoinColumn(name = "antiguedad_id", nullable = false)
     private Antiguedad antiguedad;
 
-    @Column(name = "descripcion_reclamo")
+    @Column(name = "descripcion_reclamo", nullable = false)
     private String descripcionReclamo;
 
     @Column(name = "url_almacen_reclamo", nullable = false, length = 300)
