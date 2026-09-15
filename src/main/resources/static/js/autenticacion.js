@@ -1,45 +1,52 @@
 
-// Logica: sesion simulada (login, registro, logout)
-
-// ── AUTENTICACIÓN SIMULADA ─────────────────────────────────────
-const DEMO_USERS = {
-    'jennifer@mjrenew.mx': { name:'Jennifer Torres', tipo:'propietario', password:'123456' },
-    'rafael@mjrenew.mx':   { name:'Rafael Mendoza',  tipo:'restaurador', password:'123456' },
-    'ana@mjrenew.mx':      { name:'Ana García',       tipo:'comprador',   password:'123456' },
-};
+// Logica: sesion real contra la API del backend (/api/auth/*)
 
 const Auth = {
-    login(email, password) {
-        // Check demo users
-        if (DEMO_USERS[email] && DEMO_USERS[email].password === password) {
-            const user = { ...DEMO_USERS[email], email };
-            localStorage.setItem('mjrenew_user', JSON.stringify(user));
+    async login(email, password) {
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ correoElectronico: email, contrasena: password }),
+            });
+            if (!res.ok) {
+                return { success: false, error: await extraerError(res, 'Correo o contraseña incorrectos.') };
+            }
+            const data = await res.json();
+            const user = guardarSesionLocal(data);
             return { success: true, user };
+        } catch {
+            return { success: false, error: 'No se pudo conectar con el servidor. Intenta de nuevo.' };
         }
-        // Check registered users
-        const users = JSON.parse(localStorage.getItem('mjrenew_users') || '{}');
-        if (users[email] && users[email].password === password) {
-            const user = { ...users[email], email };
-            localStorage.setItem('mjrenew_user', JSON.stringify(user));
-            return { success: true, user };
-        }
-        return { success: false, error: 'Correo o contraseña incorrectos.' };
     },
 
-    register(name, email, password, tipo) {
-        const users = JSON.parse(localStorage.getItem('mjrenew_users') || '{}');
-        if (DEMO_USERS[email] || users[email]) {
-            return { success: false, error: 'Este correo ya está registrado.' };
+    async register(name, email, password, tipo) {
+        try {
+            const res = await fetch('/api/auth/registro', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    nombreCompleto: name,
+                    correoElectronico: email,
+                    contrasena: password,
+                    tipoUsuario: tipo.toUpperCase(),
+                }),
+            });
+            if (!res.ok) {
+                return { success: false, error: await extraerError(res, 'No se pudo crear la cuenta.') };
+            }
+            // El registro solo crea la cuenta; iniciamos sesión justo después para obtenerla.
+            return this.login(email, password);
+        } catch {
+            return { success: false, error: 'No se pudo conectar con el servidor. Intenta de nuevo.' };
         }
-        users[email] = { name, password, tipo };
-        localStorage.setItem('mjrenew_users', JSON.stringify(users));
-        const user = { name, email, tipo };
-        localStorage.setItem('mjrenew_user', JSON.stringify(user));
-        return { success: true, user };
     },
 
     logout() {
         localStorage.removeItem('mjrenew_user');
+        fetch('/api/auth/logout', { method: 'POST', credentials: 'include', keepalive: true }).catch(() => {});
     },
 
     getCurrentUser() {
@@ -60,3 +67,24 @@ const Auth = {
         window.location.href = map[user.tipo] || '/comprador';
     },
 };
+
+function guardarSesionLocal(usuarioResponse) {
+    const user = {
+        name: usuarioResponse.nombreCompleto,
+        email: usuarioResponse.correoElectronico,
+        tipo: usuarioResponse.tipoUsuario.toLowerCase(),
+    };
+    localStorage.setItem('mjrenew_user', JSON.stringify(user));
+    return user;
+}
+
+async function extraerError(res, mensajePorDefecto) {
+    try {
+        const body = await res.json();
+        if (Array.isArray(body.detalles) && body.detalles.length) return body.detalles[0];
+        if (body.mensaje) return body.mensaje;
+    } catch {
+        // el cuerpo no era JSON, usamos el mensaje por defecto
+    }
+    return mensajePorDefecto;
+}

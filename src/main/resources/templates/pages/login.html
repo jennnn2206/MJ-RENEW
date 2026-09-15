@@ -109,8 +109,8 @@
     btn.disabled = true;
     btn.textContent = 'Verificando...';
 
-    setTimeout(() => {
-      const result = Auth.login(email, password);
+    setTimeout(async () => {
+      const result = await Auth.login(email, password);
       if (result.success) {
         const map = { propietario:'/propietario', restaurador:'/restaurador', comprador:'/comprador' };
         window.location.href = map[result.user.tipo] || '/comprador';
