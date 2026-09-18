@@ -3,44 +3,29 @@ package com.mjrenew.mjrenew_backend.propietario.mapper;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadCreateRequest;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadResponse;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
-import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 /**
- * Mapeo manual DTO <-> entidad. No asigna propietario, estado ni fechas:
+ * Mapeo DTO <-> entidad generado por MapStruct. No asigna propietario, estado ni fechas:
  * esos valores dependen del usuario autenticado y del flujo del AFD,
  * y son responsabilidad del service, no del mapper.
  */
-public final class AntiguedadMapper {
+@Mapper(componentModel = "spring")
+public interface AntiguedadMapper {
 
-    private AntiguedadMapper() {
-    }
+    @Mapping(target = "antiguedadesId", ignore = true)
+    @Mapping(target = "propietario", ignore = true)
+    @Mapping(target = "restaurador", ignore = true)
+    @Mapping(target = "estadoActualAntiguedad", ignore = true)
+    @Mapping(target = "registradaEnAntiguedad", ignore = true)
+    @Mapping(target = "restauracionInicioAntiguedad", ignore = true)
+    @Mapping(target = "restauracionFinAntiguedad", ignore = true)
+    Antiguedad toEntity(AntiguedadCreateRequest request);
 
-    public static Antiguedad toEntity(AntiguedadCreateRequest request) {
-        Antiguedad antiguedad = new Antiguedad();
-        antiguedad.setTipoMueble(request.tipoMueble());
-        antiguedad.setEstiloMueble(request.estiloMueble());
-        antiguedad.setMaterialMueble(request.materialMueble());
-        antiguedad.setDescripcionDaniosAntiguedad(request.descripcionDaniosAntiguedad());
-        antiguedad.setProcedenciaMueble(request.procedenciaMueble());
-        return antiguedad;
-    }
-
-    public static AntiguedadResponse toResponse(Antiguedad antiguedad) {
-        Usuario propietario = antiguedad.getPropietario();
-        Usuario restaurador = antiguedad.getRestaurador();
-        return new AntiguedadResponse(
-                antiguedad.getAntiguedadesId(),
-                propietario != null ? propietario.getUsuariosId() : null,
-                propietario != null ? propietario.getNombreCompletoUsuario() : null,
-                restaurador != null ? restaurador.getUsuariosId() : null,
-                restaurador != null ? restaurador.getNombreCompletoUsuario() : null,
-                antiguedad.getTipoMueble(),
-                antiguedad.getEstiloMueble(),
-                antiguedad.getMaterialMueble(),
-                antiguedad.getDescripcionDaniosAntiguedad(),
-                antiguedad.getProcedenciaMueble(),
-                antiguedad.getEstadoActualAntiguedad(),
-                antiguedad.getRegistradaEnAntiguedad()
-        );
-    }
+    @Mapping(target = "propietarioId", source = "propietario.usuariosId")
+    @Mapping(target = "nombrePropietario", source = "propietario.nombreCompletoUsuario")
+    @Mapping(target = "restauradorId", source = "restaurador.usuariosId")
+    @Mapping(target = "nombreRestaurador", source = "restaurador.nombreCompletoUsuario")
+    AntiguedadResponse toResponse(Antiguedad antiguedad);
 }

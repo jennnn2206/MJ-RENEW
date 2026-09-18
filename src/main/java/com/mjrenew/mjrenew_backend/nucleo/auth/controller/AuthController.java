@@ -19,9 +19,11 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final UsuarioMapper usuarioMapper;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, UsuarioMapper usuarioMapper) {
         this.authService = authService;
+        this.usuarioMapper = usuarioMapper;
     }
 
     @PostMapping("/registro")
@@ -32,8 +34,8 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<UsuarioResponse> iniciarSesion(@Valid @RequestBody LoginRequest request,
-                                                           HttpServletRequest httpRequest,
-                                                           HttpServletResponse httpResponse) {
+                                                         HttpServletRequest httpRequest,
+                                                         HttpServletResponse httpResponse) {
         UsuarioResponse response = authService.iniciarSesion(request, httpRequest, httpResponse);
         return ResponseEntity.ok(response);
     }
@@ -46,6 +48,6 @@ public class AuthController {
 
     @GetMapping("/yo")
     public ResponseEntity<UsuarioResponse> yo(@AuthenticationPrincipal UsuarioPrincipal principal) {
-        return ResponseEntity.ok(UsuarioMapper.toResponse(principal.getUsuario()));
+        return ResponseEntity.ok(usuarioMapper.toResponse(principal.getUsuario()));
     }
 }

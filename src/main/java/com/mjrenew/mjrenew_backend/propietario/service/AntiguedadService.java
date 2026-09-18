@@ -21,33 +21,36 @@ import java.util.UUID;
 public class AntiguedadService {
 
     private final AntiguedadRepository antiguedadRepository;
+    private final AntiguedadMapper antiguedadMapper;
     private final EstadoAntiguedadBehaviorResolver estadoBehaviorResolver;
 
     public AntiguedadService(AntiguedadRepository antiguedadRepository,
-                              EstadoAntiguedadBehaviorResolver estadoBehaviorResolver) {
+                             AntiguedadMapper antiguedadMapper,
+                             EstadoAntiguedadBehaviorResolver estadoBehaviorResolver) {
         this.antiguedadRepository = antiguedadRepository;
+        this.antiguedadMapper = antiguedadMapper;
         this.estadoBehaviorResolver = estadoBehaviorResolver;
     }
 
     @Transactional
     public AntiguedadResponse crear(AntiguedadCreateRequest request, Usuario propietario) {
-        Antiguedad antiguedad = AntiguedadMapper.toEntity(request);
+        Antiguedad antiguedad = antiguedadMapper.toEntity(request);
         antiguedad.setPropietario(propietario);
         antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.PIEZA_CAPTURADA);
         antiguedad.setRegistradaEnAntiguedad(OffsetDateTime.now());
 
         Antiguedad guardada = antiguedadRepository.save(antiguedad);
-        return AntiguedadMapper.toResponse(guardada);
+        return antiguedadMapper.toResponse(guardada);
     }
 
     public List<AntiguedadResponse> listarMias(UUID propietarioId) {
         return antiguedadRepository.findByPropietario_UsuariosId(propietarioId).stream()
-                .map(AntiguedadMapper::toResponse)
+                .map(antiguedadMapper::toResponse)
                 .toList();
     }
 
     public AntiguedadResponse obtenerPorId(UUID id) {
-        return AntiguedadMapper.toResponse(buscarOFallar(id));
+        return antiguedadMapper.toResponse(buscarOFallar(id));
     }
 
     @Transactional
@@ -65,7 +68,7 @@ public class AntiguedadService {
 
         antiguedad.setEstadoActualAntiguedad(nuevoEstado);
         Antiguedad actualizada = antiguedadRepository.save(antiguedad);
-        return AntiguedadMapper.toResponse(actualizada);
+        return antiguedadMapper.toResponse(actualizada);
     }
 
     private Antiguedad buscarOFallar(UUID id) {

@@ -3,30 +3,26 @@ package com.mjrenew.mjrenew_backend.nucleo.usuario.mapper;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.dto.UsuarioRegistroRequest;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.dto.UsuarioResponse;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 /**
- * Mapeo manual DTO <-> entidad. No incluye la contraseña: encriptarla es una
- * decisión de seguridad que le corresponde al service, no a un mapper.
+ * Mapeo DTO <-> entidad generado por MapStruct. No incluye la contraseña:
+ * encriptarla es una decisión de seguridad que le corresponde al service, no a un mapper.
  */
-public final class UsuarioMapper {
+@Mapper(componentModel = "spring")
+public interface UsuarioMapper {
 
-    private UsuarioMapper() {
-    }
+    @Mapping(target = "usuariosId", ignore = true)
+    @Mapping(target = "contrasenaHashUsuario", ignore = true)
+    @Mapping(target = "telefonoUsuario", ignore = true)
+    @Mapping(target = "direccionTextoUsuario", ignore = true)
+    @Mapping(target = "latitudUsuario", ignore = true)
+    @Mapping(target = "longitudUsuario", ignore = true)
+    @Mapping(target = "correoVerificadoUsuario", ignore = true)
+    @Mapping(target = "activoUsuario", ignore = true)
+    @Mapping(target = "registradoEnUsuario", ignore = true)
+    Usuario toEntity(UsuarioRegistroRequest request);
 
-    public static Usuario toEntity(UsuarioRegistroRequest request) {
-        Usuario usuario = new Usuario();
-        usuario.setNombreCompletoUsuario(request.nombreCompleto());
-        usuario.setCorreoElectronicoUsuario(request.correoElectronico());
-        usuario.setTipoUsuario(request.tipoUsuario());
-        return usuario;
-    }
-
-    public static UsuarioResponse toResponse(Usuario usuario) {
-        return new UsuarioResponse(
-                usuario.getUsuariosId(),
-                usuario.getNombreCompletoUsuario(),
-                usuario.getCorreoElectronicoUsuario(),
-                usuario.getTipoUsuario()
-        );
-    }
+    UsuarioResponse toResponse(Usuario usuario);
 }

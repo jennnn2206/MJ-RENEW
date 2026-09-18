@@ -28,15 +28,18 @@ import java.time.OffsetDateTime;
 public class AuthService {
 
     private final UsuarioRepository usuarioRepository;
+    private final UsuarioMapper usuarioMapper;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
 
     public AuthService(UsuarioRepository usuarioRepository,
-                        PasswordEncoder passwordEncoder,
-                        AuthenticationManager authenticationManager,
-                        SecurityContextRepository securityContextRepository) {
+                       UsuarioMapper usuarioMapper,
+                       PasswordEncoder passwordEncoder,
+                       AuthenticationManager authenticationManager,
+                       SecurityContextRepository securityContextRepository) {
         this.usuarioRepository = usuarioRepository;
+        this.usuarioMapper = usuarioMapper;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.securityContextRepository = securityContextRepository;
@@ -48,14 +51,14 @@ public class AuthService {
             throw new CorreoYaRegistradoException("Ya existe una cuenta registrada con ese correo");
         }
 
-        Usuario usuario = UsuarioMapper.toEntity(request);
+        Usuario usuario = usuarioMapper.toEntity(request);
         usuario.setContrasenaHashUsuario(passwordEncoder.encode(request.contrasena()));
         usuario.setCorreoVerificadoUsuario(false);
         usuario.setActivoUsuario(true);
         usuario.setRegistradoEnUsuario(OffsetDateTime.now());
 
         Usuario guardado = usuarioRepository.save(usuario);
-        return UsuarioMapper.toResponse(guardado);
+        return usuarioMapper.toResponse(guardado);
     }
 
     public UsuarioResponse iniciarSesion(LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
@@ -74,7 +77,7 @@ public class AuthService {
         securityContextRepository.saveContext(context, httpRequest, httpResponse);
 
         Usuario usuario = ((UsuarioPrincipal) authentication.getPrincipal()).getUsuario();
-        return UsuarioMapper.toResponse(usuario);
+        return usuarioMapper.toResponse(usuario);
     }
 
     public void cerrarSesion(HttpServletRequest httpRequest) {
