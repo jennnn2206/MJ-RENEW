@@ -15,6 +15,7 @@ public record AntiguedadCreateRequest(
 
         MaterialMueble materialMueble,
 
+        @Size(max = 1000, message = "La descripción de daños no puede superar los 1000 caracteres")
         String descripcionDaniosAntiguedad,
 
         @Size(max = 300, message = "La procedencia no puede superar los 300 caracteres")

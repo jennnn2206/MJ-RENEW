@@ -6,6 +6,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.List;
 
@@ -48,6 +49,17 @@ public class GlobalExceptionHandler {
                 detalles
         );
         return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> manejarTipoInvalido(MethodArgumentTypeMismatchException ex) {
+        String mensaje = "El valor '" + ex.getValue() + "' enviado para '" + ex.getName() + "' no tiene un formato válido";
+        return construirRespuesta(HttpStatus.BAD_REQUEST, mensaje);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> manejarErrorInesperado(Exception ex) {
+        return construirRespuesta(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrió un error inesperado en el servidor");
     }
 
     private ResponseEntity<ErrorResponse> construirRespuesta(HttpStatus status, String mensaje) {
