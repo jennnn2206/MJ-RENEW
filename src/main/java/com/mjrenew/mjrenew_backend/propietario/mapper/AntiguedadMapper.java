@@ -1,15 +1,18 @@
 package com.mjrenew.mjrenew_backend.propietario.mapper;
 
-import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadCreateRequest;
-import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadResponse;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
+import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadCreateRequest;
+import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadDetalleResponse;
+import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadResumenResponse;
+import com.mjrenew.mjrenew_backend.propietario.dto.DimensionResponse;
+import com.mjrenew.mjrenew_backend.propietario.entity.Dimension;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 /**
- * Mapeo DTO <-> entidad generado por MapStruct. No asigna propietario, estado ni fechas:
- * esos valores dependen del usuario autenticado y del flujo del AFD,
- * y son responsabilidad del service, no del mapper.
+ * Mapeo DTO <-> entidad generado por MapStruct. urlFotoPortada y dimension no
+ * son propiedades de Antiguedad (viven en tablas separadas), así que se
+ * reciben como parámetros aparte en vez de intentar sacarlos del entity.
  */
 @Mapper(componentModel = "spring")
 public interface AntiguedadMapper {
@@ -23,9 +26,19 @@ public interface AntiguedadMapper {
     @Mapping(target = "restauracionFinAntiguedad", ignore = true)
     Antiguedad toEntity(AntiguedadCreateRequest request);
 
-    @Mapping(target = "propietarioId", source = "propietario.usuariosId")
-    @Mapping(target = "nombrePropietario", source = "propietario.nombreCompletoUsuario")
-    @Mapping(target = "restauradorId", source = "restaurador.usuariosId")
-    @Mapping(target = "nombreRestaurador", source = "restaurador.nombreCompletoUsuario")
-    AntiguedadResponse toResponse(Antiguedad antiguedad);
+    @Mapping(target = "antiguedadId", source = "antiguedad.antiguedadesId")
+    @Mapping(target = "nombreRestaurador", source = "antiguedad.restaurador.nombreCompletoUsuario")
+    @Mapping(target = "urlFotoPortada", source = "urlFotoPortada")
+    AntiguedadResumenResponse toResumen(Antiguedad antiguedad, String urlFotoPortada);
+
+    @Mapping(target = "antiguedadId", source = "antiguedad.antiguedadesId")
+    @Mapping(target = "nombreCompletoRestaurador", source = "antiguedad.restaurador.nombreCompletoUsuario")
+    @Mapping(target = "dimension", source = "dimension")
+    AntiguedadDetalleResponse toDetalle(Antiguedad antiguedad, DimensionResponse dimension);
+
+    @Mapping(target = "altoCm", source = "altoCmAntiguedad")
+    @Mapping(target = "anchoCm", source = "anchoCmAntiguedad")
+    @Mapping(target = "profundidadCm", source = "profundidadCmAntiguedad")
+    @Mapping(target = "pesoKg", source = "pesoKgAntiguedad")
+    DimensionResponse toDimensionResponse(Dimension dimension);
 }

@@ -26,13 +26,13 @@ public class AuthController {
         this.usuarioMapper = usuarioMapper;
     }
 
-    @PostMapping("/registro")
+    @PostMapping("/registrarUsuario")
     public ResponseEntity<UsuarioResponse> registrar(@Valid @RequestBody UsuarioRegistroRequest request) {
         UsuarioResponse response = authService.registrar(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PostMapping("/login")
+    @PostMapping("/iniciarSesion")
     public ResponseEntity<UsuarioResponse> iniciarSesion(@Valid @RequestBody LoginRequest request,
                                                          HttpServletRequest httpRequest,
                                                          HttpServletResponse httpResponse) {
@@ -40,14 +40,14 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/logout")
+    @PostMapping("/cerrarSesion")
     public ResponseEntity<Void> cerrarSesion(HttpServletRequest httpRequest) {
         authService.cerrarSesion(httpRequest);
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/yo")
-    public ResponseEntity<UsuarioResponse> yo(@AuthenticationPrincipal UsuarioPrincipal principal) {
+    @GetMapping("/obtenerUsuarioActual")
+    public ResponseEntity<UsuarioResponse> obtenerUsuarioActual(@AuthenticationPrincipal UsuarioPrincipal principal) {
         return ResponseEntity.ok(usuarioMapper.toResponse(principal.getUsuario()));
     }
 }

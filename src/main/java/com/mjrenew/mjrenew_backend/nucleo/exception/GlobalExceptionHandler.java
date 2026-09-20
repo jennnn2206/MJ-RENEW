@@ -66,4 +66,9 @@ public class GlobalExceptionHandler {
         ErrorResponse body = new ErrorResponse(status.value(), status.getReasonPhrase(), mensaje);
         return ResponseEntity.status(status).body(body);
     }
+
+    @ExceptionHandler(SolicitudInvalidaException.class)
+    public ResponseEntity<ErrorResponse> manejarSolicitudInvalida(SolicitudInvalidaException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
 }

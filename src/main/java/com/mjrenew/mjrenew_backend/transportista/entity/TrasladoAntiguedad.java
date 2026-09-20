@@ -67,6 +67,17 @@ public class TrasladoAntiguedad {
     @Column(name = "ejecutado_en_traslado")
     private OffsetDateTime ejecutadoEnTraslado;
 
+    @Column(name = "salida_confirmada_en_traslado")
+    private OffsetDateTime salidaConfirmadaEnTraslado;
+
+    public OffsetDateTime getSalidaConfirmadaEnTraslado() {
+        return salidaConfirmadaEnTraslado;
+    }
+
+    public void setSalidaConfirmadaEnTraslado(OffsetDateTime salidaConfirmadaEnTraslado) {
+        this.salidaConfirmadaEnTraslado = salidaConfirmadaEnTraslado;
+    }
+    
 
     public UUID getTrasladosAntiguedadId() {
         return trasladosAntiguedadId;
