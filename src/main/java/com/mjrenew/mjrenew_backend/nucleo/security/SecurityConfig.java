@@ -32,7 +32,8 @@ public class SecurityConfig {
     };
 
     private static final String[] RUTAS_PUBLICAS_API = {
-            "/api/auth/registro", "/api/auth/login"
+            "/api/auth/registrarUsuario", "/api/auth/iniciarSesion",
+            "/api/catalogo/explorarCatalogo", "/api/catalogo/obtenerDetallePiezaCatalogo/**"
     };
 
     @Bean
