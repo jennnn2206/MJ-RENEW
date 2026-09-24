@@ -9,15 +9,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface AntiguedadRepository extends JpaRepository<Antiguedad, UUID> {
+public interface AntiguedadRepository
+        extends JpaRepository<Antiguedad, UUID> {
 
-    Page<Antiguedad> findByPropietario_UsuariosId(UUID propietarioId, Pageable pageable);
-
-
-    //pendiente
-    Page<Antiguedad> findByRestaurador_UsuariosIdAndEstadoActualAntiguedad(
-            UUID restauradorId,
-            EstadoAntiguedad estado,
+    Page<Antiguedad> findByPropietario_UsuariosId(
+            UUID propietarioId,
             Pageable pageable
     );
 
@@ -25,5 +21,12 @@ public interface AntiguedadRepository extends JpaRepository<Antiguedad, UUID> {
     findByAntiguedadesIdAndPropietario_UsuariosId(
             UUID antiguedadId,
             UUID propietarioId
+    );
+
+    Page<Antiguedad>
+    findByRestaurador_UsuariosIdAndEstadoActualAntiguedad(
+            UUID restauradorId,
+            EstadoAntiguedad estado,
+            Pageable pageable
     );
 }
