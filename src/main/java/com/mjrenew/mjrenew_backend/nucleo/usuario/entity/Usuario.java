@@ -36,10 +36,10 @@ public class Usuario {
     private String direccionTextoUsuario;
 
     @Column(name = "latitud_usuario", precision = 9, scale = 6)
-    private BigDecimal latitudUsuario;
+    private BigDecimal latitudUsuario; // postgre lo trae
 
     @Column(name = "longitud_usuario", precision = 9, scale = 6)
-    private BigDecimal longitudUsuario;
+    private BigDecimal longitudUsuario; // postgre lo trae
 
     @Column(name = "correo_verificado_usuario", nullable = false)
     private Boolean correoVerificadoUsuario;
@@ -48,7 +48,7 @@ public class Usuario {
     private Boolean activoUsuario;
 
     @Column(name = "registrado_en_usuario", nullable = false)
-    private OffsetDateTime registradoEnUsuario;
+    private OffsetDateTime registradoEnUsuario; // check de zona horaria con BD, mayor control de zonas horarias
 
     public UUID getUsuariosId() {
         return usuariosId;

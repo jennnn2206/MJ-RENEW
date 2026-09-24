@@ -7,3 +7,5 @@ import java.util.UUID;
 
 public interface AvanceRestauracionRepository extends JpaRepository<AvanceRestauracion, UUID> {
 }
+
+

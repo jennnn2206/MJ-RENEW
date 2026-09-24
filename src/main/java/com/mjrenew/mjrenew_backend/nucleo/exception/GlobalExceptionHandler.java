@@ -72,3 +72,5 @@ public class GlobalExceptionHandler {
         return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 }
+
+// renombrar construirRespuesta

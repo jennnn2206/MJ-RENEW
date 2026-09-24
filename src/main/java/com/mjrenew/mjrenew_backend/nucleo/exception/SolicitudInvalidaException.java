@@ -10,3 +10,6 @@ public class SolicitudInvalidaException extends RuntimeException {
         super(mensaje);
     }
 }
+
+// Especificación de excepciones.
+//

@@ -4,7 +4,7 @@
 const Auth = {
     async login(email, password) {
         try {
-            const res = await fetch('/api/auth/login', {
+            const res = await fetch('/api/auth/iniciarSesion', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -23,7 +23,7 @@ const Auth = {
 
     async register(name, email, password, tipo) {
         try {
-            const res = await fetch('/api/auth/registro', {
+            const res = await fetch('/api/auth/registrarUsuario', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -46,7 +46,7 @@ const Auth = {
 
     logout() {
         localStorage.removeItem('mjrenew_user');
-        fetch('/api/auth/logout', { method: 'POST', credentials: 'include', keepalive: true }).catch(() => {});
+        fetch('/api/auth/cerrarSesion', { method: 'POST', credentials: 'include', keepalive: true }).catch(() => {});
     },
 
     getCurrentUser() {

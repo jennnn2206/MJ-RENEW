@@ -19,3 +19,5 @@ public record DisputaAntiguedadDetalleResponse(
         List<String> fotos
 ) {
 }
+
+// anotaciones de JPA

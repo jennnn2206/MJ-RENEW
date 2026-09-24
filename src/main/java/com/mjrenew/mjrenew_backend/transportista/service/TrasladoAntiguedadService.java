@@ -30,6 +30,7 @@ import java.util.UUID;
 @Service
 public class TrasladoAntiguedadService {
 
+    //Cantidad de evidencias fotograficas minimas
     private static final int FOTOS_MINIMAS = 4;
 
     private final TrasladoAntiguedadRepository trasladoRepository;
@@ -119,7 +120,7 @@ public class TrasladoAntiguedadService {
             foto.setUrlAlmacenFotografia(url);
             foto.setSubidaEnFotografia(OffsetDateTime.now());
             fotografiaRepository.save(foto);
-        }
+        } // usar builder o check de los atributos de la entidad
     }
 
     private void validarTipo(TrasladoAntiguedad traslado, TipoTraslado esperado) {
@@ -149,6 +150,8 @@ public class TrasladoAntiguedadService {
         if (traslado.getTransportista() == null || !traslado.getTransportista().getUsuariosId().equals(transportistaId)) {
             throw new RecursoNoEncontradoException("No existe un traslado con id " + trasladoId);
         }
+
+        //
 
         return traslado;
     }

@@ -10,7 +10,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface RestauradorMapper {
 
-    @Mapping(source = "antiguedadesId", target = "antiguedadId")
+    @Mapping(source = "antiguedadesId", target = "antiguedadId") //consistencias
     @Mapping(source = "tipoMueble", target = "tipoMueble")
     @Mapping(source = "estadoActualAntiguedad", target = "estadoActualAntiguedad")
     @Mapping(target = "urlFotoPortada", ignore = true)
