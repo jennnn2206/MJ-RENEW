@@ -5,8 +5,8 @@ import com.mjrenew.mjrenew_backend.nucleo.security.UsuarioPrincipal;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadCreateRequest;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadDetalleResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadResumenResponse;
-import com.mjrenew.mjrenew_backend.propietario.dto.CambiarEstadoAntiguedadRequest;
 import com.mjrenew.mjrenew_backend.propietario.service.AntiguedadService;
+import com.mjrenew.mjrenew_backend.restaurador.service.RestauradorService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +15,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import com.mjrenew.mjrenew_backend.propietario.dto.SeleccionarRestauradorRequest;
+import com.mjrenew.mjrenew_backend.restaurador.dto.PerfilRestauradorPublicoResponse;
+import com.mjrenew.mjrenew_backend.restaurador.service.RestauradorService;
 
 import java.util.UUID;
 
@@ -23,9 +26,14 @@ import java.util.UUID;
 public class AntiguedadController {
 
     private final AntiguedadService antiguedadService;
+    private final RestauradorService restauradorService;
 
-    public AntiguedadController(AntiguedadService antiguedadService) {
+    public AntiguedadController(
+            AntiguedadService antiguedadService,
+            RestauradorService restauradorService
+    ) {
         this.antiguedadService = antiguedadService;
+        this.restauradorService = restauradorService;
     }
 
     @PostMapping("/registrarAntiguedad")
@@ -48,12 +56,31 @@ public class AntiguedadController {
         return ResponseEntity.ok(antiguedadService.obtenerDetalle(antiguedadId));
     }
 
-    // Temporal: el diseño de API reemplaza esto por endpoints atómicos por transición
-    // (seleccionarRestaurador, confirmarEvaluacionAntiguedad, etc.), todavía "mock pendiente".
-    // Lo dejo mientras esos no existen, para no perder la única forma de mover el AFD en pruebas.
-    @PatchMapping("/{antiguedadId}/estado")
-    public ResponseEntity<AntiguedadDetalleResponse> cambiarEstado(@PathVariable UUID antiguedadId,
-                                                                   @Valid @RequestBody CambiarEstadoAntiguedadRequest request) {
-        return ResponseEntity.ok(antiguedadService.cambiarEstado(antiguedadId, request.nuevoEstado()));
+    @GetMapping("/buscarRestauradores")
+    @PreAuthorize("hasRole('PROPIETARIO')")
+    public ResponseEntity<Page<PerfilRestauradorPublicoResponse>>
+    buscarRestauradores(Pageable pageable) {
+
+        return ResponseEntity.ok(
+                restauradorService.buscarRestauradoresDisponibles(pageable)
+        );
+    }
+
+    @PostMapping("/seleccionarRestaurador/{antiguedadId}")
+    @PreAuthorize("hasRole('PROPIETARIO')")
+    public ResponseEntity<AntiguedadDetalleResponse>
+    seleccionarRestaurador(
+            @PathVariable UUID antiguedadId,
+            @Valid @RequestBody SeleccionarRestauradorRequest request,
+            @AuthenticationPrincipal UsuarioPrincipal principal
+    ) {
+
+        return ResponseEntity.ok(
+                antiguedadService.seleccionarRestaurador(
+                        antiguedadId,
+                        principal.getUsuario().getUsuariosId(),
+                        request
+                )
+        );
     }
 }

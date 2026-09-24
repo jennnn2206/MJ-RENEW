@@ -10,9 +10,14 @@ import com.mjrenew.mjrenew_backend.propietario.entity.FotografiaAntiguedad;
 import com.mjrenew.mjrenew_backend.propietario.repository.FotografiaAntiguedadRepository;
 import com.mjrenew.mjrenew_backend.restaurador.dto.AntiguedadResumenResponse;
 import com.mjrenew.mjrenew_backend.restaurador.mapper.RestauradorMapper;
+import com.mjrenew.mjrenew_backend.restaurador.repository.PerfilRestauradorRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import com.mjrenew.mjrenew_backend.nucleo.enums.DisponibilidadRestaurador;
+import com.mjrenew.mjrenew_backend.restaurador.dto.PerfilRestauradorPublicoResponse;
+import com.mjrenew.mjrenew_backend.restaurador.repository.PerfilRestauradorRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -22,15 +27,18 @@ public class RestauradorService {
     private final AntiguedadRepository antiguedadRepository;
     private final FotografiaAntiguedadRepository fotografiaAntiguedadRepository;
     private final RestauradorMapper restauradorMapper;
+    private final PerfilRestauradorRepository perfilRestauradorRepository;
 
     public RestauradorService(
             AntiguedadRepository antiguedadRepository,
             FotografiaAntiguedadRepository fotografiaAntiguedadRepository,
-            RestauradorMapper restauradorMapper
+            RestauradorMapper restauradorMapper,
+            PerfilRestauradorRepository perfilRestauradorRepository
     ) {
         this.antiguedadRepository = antiguedadRepository;
         this.fotografiaAntiguedadRepository = fotografiaAntiguedadRepository;
         this.restauradorMapper = restauradorMapper;
+        this.perfilRestauradorRepository = perfilRestauradorRepository;
     }
 
     public Page<AntiguedadResumenResponse> obtenerSolicitudesAsignadas(
@@ -65,5 +73,18 @@ public class RestauradorService {
                 resumen.estadoActualAntiguedad(),
                 urlFotoPortada
         );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PerfilRestauradorPublicoResponse> buscarRestauradoresDisponibles(
+            Pageable pageable
+    ) {
+
+        return perfilRestauradorRepository
+                .findByDisponibilidadRestauradorAndAprobadoPorAdminRestauradorTrueAndRestaurador_ActivoUsuarioTrue(
+                        DisponibilidadRestaurador.DISPONIBLE,
+                        pageable
+                )
+                .map(restauradorMapper::toPerfilPublico);
     }
 }
