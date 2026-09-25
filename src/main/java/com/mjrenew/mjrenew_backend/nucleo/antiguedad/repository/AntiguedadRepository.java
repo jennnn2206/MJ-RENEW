@@ -29,4 +29,9 @@ public interface AntiguedadRepository
             EstadoAntiguedad estado,
             Pageable pageable
     );
+
+    Optional<Antiguedad> findByAntiguedadesIdAndRestaurador_UsuariosId(
+            UUID antiguedadId,
+            UUID restauradorId
+    );
 }

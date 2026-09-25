@@ -58,6 +58,9 @@ public class Antiguedad {
     @Column(name = "restauracion_fin_antiguedad")
     private OffsetDateTime restauracionFinAntiguedad;
 
+    @Column(name = "motivo_rechazo_evaluacion")
+    private String motivoRechazoEvaluacion;
+
     public UUID getAntiguedadesId() {
         return antiguedadesId;
     }
@@ -152,5 +155,13 @@ public class Antiguedad {
 
     public void setRestauracionFinAntiguedad(OffsetDateTime restauracionFinAntiguedad) {
         this.restauracionFinAntiguedad = restauracionFinAntiguedad;
+    }
+
+    public String getMotivoRechazoEvaluacion() {
+        return motivoRechazoEvaluacion;
+    }
+
+    public void setMotivoRechazoEvaluacion(String motivoRechazoEvaluacion) {
+        this.motivoRechazoEvaluacion = motivoRechazoEvaluacion;
     }
 }
