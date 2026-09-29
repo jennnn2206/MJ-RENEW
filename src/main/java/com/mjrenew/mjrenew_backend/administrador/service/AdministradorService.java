@@ -13,6 +13,11 @@ import com.mjrenew.mjrenew_backend.nucleo.usuario.dto.UsuarioResponse;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.mapper.UsuarioMapper;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.repository.UsuarioRepository;
+import com.mjrenew.mjrenew_backend.restaurador.dto.PerfilRestauradorCompletoResponse;
+import com.mjrenew.mjrenew_backend.restaurador.dto.PerfilRestauradorPublicoResponse;
+import com.mjrenew.mjrenew_backend.restaurador.entity.PerfilRestaurador;
+import com.mjrenew.mjrenew_backend.restaurador.mapper.RestauradorMapper;
+import com.mjrenew.mjrenew_backend.restaurador.repository.PerfilRestauradorRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,17 +35,45 @@ public class AdministradorService {
     private final DisputaAntiguedadMapper disputaMapper;
     private final UsuarioRepository usuarioRepository;
     private final UsuarioMapper usuarioMapper;
+    private final PerfilRestauradorRepository perfilRestauradorRepository;
+    private final RestauradorMapper restauradorMapper;
 
     public AdministradorService(DisputaAntiguedadRepository disputaRepository,
                                 FotografiaReclamoRepository fotografiaReclamoRepository,
                                 DisputaAntiguedadMapper disputaMapper,
                                 UsuarioRepository usuarioRepository,
-                                UsuarioMapper usuarioMapper) {
+                                UsuarioMapper usuarioMapper,
+                                PerfilRestauradorRepository perfilRestauradorRepository,
+                                RestauradorMapper restauradorMapper) {
         this.disputaRepository = disputaRepository;
         this.fotografiaReclamoRepository = fotografiaReclamoRepository;
         this.disputaMapper = disputaMapper;
         this.usuarioRepository = usuarioRepository;
         this.usuarioMapper = usuarioMapper;
+        this.perfilRestauradorRepository = perfilRestauradorRepository;
+        this.restauradorMapper = restauradorMapper;
+    }
+
+    public Page<PerfilRestauradorPublicoResponse> obtenerRestauradoresPendientesAprobacion(Pageable pageable) {
+        return perfilRestauradorRepository.findByAprobadoPorAdminRestauradorFalse(pageable)
+                .map(restauradorMapper::toPerfilPublico);
+    }
+
+    @Transactional
+    public PerfilRestauradorCompletoResponse aprobarRestaurador(UUID restauradorId) {
+        PerfilRestaurador perfil = perfilRestauradorRepository.findByRestaurador_UsuariosId(restauradorId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No existe un perfil de restaurador para el usuario " + restauradorId));
+
+        if (Boolean.TRUE.equals(perfil.getAprobadoPorAdminRestaurador())) {
+            throw new SolicitudInvalidaException("Este restaurador ya fue aprobado anteriormente");
+        }
+
+        perfil.setAprobadoPorAdminRestaurador(true);
+        perfil.setActualizadoEnRestaurador(OffsetDateTime.now());
+
+        PerfilRestaurador actualizado = perfilRestauradorRepository.save(perfil);
+        return restauradorMapper.toPerfilCompleto(actualizado);
     }
 
     public Page<DisputaAntiguedadResumenResponse> obtenerDisputasAbiertas(Pageable pageable) {

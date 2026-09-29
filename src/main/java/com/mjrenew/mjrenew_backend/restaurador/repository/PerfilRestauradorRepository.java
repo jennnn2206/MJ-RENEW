@@ -26,4 +26,21 @@ public interface PerfilRestauradorRepository
             UUID restauradorId,
             DisponibilidadRestaurador disponibilidad
     );
+
+    /*
+     * Sin filtro de aprobado/disponible/activo: se usa para que el propio
+     * restaurador consulte o cree su perfil (obtenerPerfilRestaurador,
+     * actualizarPerfilRestaurador, actualizarDisponibilidadRestaurador) y
+     * para que el administrador lo ubique por el id del usuario
+     * (aprobarRestaurador), sin importar el estado de aprobación.
+     */
+    @EntityGraph(attributePaths = "restaurador")
+    Optional<PerfilRestaurador> findByRestaurador_UsuariosId(
+            UUID restauradorId
+    );
+
+    @EntityGraph(attributePaths = "restaurador")
+    Page<PerfilRestaurador> findByAprobadoPorAdminRestauradorFalse(
+            Pageable pageable
+    );
 }

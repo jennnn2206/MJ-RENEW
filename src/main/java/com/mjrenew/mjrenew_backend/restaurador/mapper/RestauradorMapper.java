@@ -5,13 +5,18 @@ import com.mjrenew.mjrenew_backend.nucleo.enums.DisponibilidadRestaurador;
 import com.mjrenew.mjrenew_backend.propietario.entity.Dimension;
 import com.mjrenew.mjrenew_backend.restaurador.dto.AntiguedadResumenResponse;
 import com.mjrenew.mjrenew_backend.restaurador.dto.EvaluarAntiguedadRequest;
+import com.mjrenew.mjrenew_backend.restaurador.dto.PerfilRestauradorCompletoResponse;
 import com.mjrenew.mjrenew_backend.restaurador.dto.PerfilRestauradorPublicoResponse;
+import com.mjrenew.mjrenew_backend.restaurador.entity.AvanceRestauracion;
 import com.mjrenew.mjrenew_backend.restaurador.entity.PerfilRestaurador;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import com.mjrenew.mjrenew_backend.restaurador.dto.AvanceRestauracionResumenResponse;
 import com.mjrenew.mjrenew_backend.restaurador.dto.CotizacionResumenResponse;
 import com.mjrenew.mjrenew_backend.restaurador.dto.GenerarCotizacionRequest;
 import com.mjrenew.mjrenew_backend.restaurador.entity.Cotizacion;
+
+import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface RestauradorMapper {
@@ -201,6 +206,69 @@ public interface RestauradorMapper {
     CotizacionResumenResponse toCotizacionResumen(
             Cotizacion cotizacion
     );
+
+    /*
+     * ============================================================
+     * AVANCE DE RESTAURACIÓN -> RESUMEN
+     * ============================================================
+     *
+     * Las fotos del avance viven en FotografiaAntiguedad (tabla aparte),
+     * así que se resuelven en el service y se reciben como segundo
+     * parámetro, igual que urlFotoPortada en toResumen().
+     */
+
+    @Mapping(
+            target = "avanceId",
+            source = "avance.avancesRestauracionId"
+    )
+    @Mapping(
+            target = "publicadoEn",
+            source = "avance.publicadoEnAvance"
+    )
+    @Mapping(
+            target = "fotos",
+            source = "fotos"
+    )
+    AvanceRestauracionResumenResponse toAvanceResumen(
+            AvanceRestauracion avance,
+            List<String> fotos
+    );
+
+
+    /*
+     * ============================================================
+     * PERFIL RESTAURADOR -> PERFIL COMPLETO
+     * ============================================================
+     *
+     * A diferencia de toPerfilPublico(), incluye el correo electrónico.
+     * Se usa en:
+     *
+     * GET  /api/restaurador/obtenerPerfilRestaurador
+     * POST /api/restaurador/actualizarPerfilRestaurador
+     * POST /api/restaurador/actualizarDisponibilidadRestaurador
+     * POST /api/administrador/aprobarRestaurador/{restauradorId}
+     */
+
+    @Mapping(
+            target = "perfilId",
+            source = "perfilesRestauradorId"
+    )
+    @Mapping(
+            target = "nombreCompleto",
+            source = "restaurador.nombreCompletoUsuario"
+    )
+    @Mapping(
+            target = "correoElectronico",
+            source = "restaurador.correoElectronicoUsuario"
+    )
+    @Mapping(
+            target = "actualizadoEn",
+            source = "actualizadoEnRestaurador"
+    )
+    PerfilRestauradorCompletoResponse toPerfilCompleto(
+            PerfilRestaurador perfilRestaurador
+    );
+
 
     /*
      * ============================================================

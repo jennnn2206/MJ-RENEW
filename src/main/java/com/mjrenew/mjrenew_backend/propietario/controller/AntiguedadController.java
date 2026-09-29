@@ -1,11 +1,17 @@
 package com.mjrenew.mjrenew_backend.propietario.controller;
 
+import com.mjrenew.mjrenew_backend.catalogo.dto.CatalogoAntiguedadResumenResponse;
+import com.mjrenew.mjrenew_backend.catalogo.dto.UrlPagoStripeResponse;
 import com.mjrenew.mjrenew_backend.nucleo.security.UsuarioPrincipal;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadCreateRequest;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadDetalleResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadResumenResponse;
+import com.mjrenew.mjrenew_backend.propietario.dto.PublicarEnCatalogoRequest;
+import com.mjrenew.mjrenew_backend.propietario.dto.RechazarCotizacionRequest;
 import com.mjrenew.mjrenew_backend.propietario.dto.SeleccionarRestauradorRequest;
 import com.mjrenew.mjrenew_backend.propietario.service.AntiguedadService;
+import com.mjrenew.mjrenew_backend.restaurador.dto.AvanceRestauracionResumenResponse;
+import com.mjrenew.mjrenew_backend.restaurador.dto.CotizacionResumenResponse;
 import com.mjrenew.mjrenew_backend.restaurador.dto.PerfilRestauradorPublicoResponse;
 import com.mjrenew.mjrenew_backend.restaurador.service.RestauradorService;
 import jakarta.validation.Valid;
@@ -106,6 +112,92 @@ public class AntiguedadController {
 
         return ResponseEntity.ok(
                 antiguedadService.seleccionarRestaurador(
+                        antiguedadId,
+                        principal.getUsuario().getUsuariosId(),
+                        request
+                )
+        );
+    }
+
+    @GetMapping("/obtenerCotizacion/{antiguedadId}")
+    @PreAuthorize("hasRole('PROPIETARIO')")
+    public ResponseEntity<CotizacionResumenResponse>
+    obtenerCotizacion(
+            @PathVariable UUID antiguedadId,
+            @AuthenticationPrincipal UsuarioPrincipal principal
+    ) {
+
+        return ResponseEntity.ok(
+                antiguedadService.obtenerCotizacion(
+                        antiguedadId,
+                        principal.getUsuario().getUsuariosId()
+                )
+        );
+    }
+
+    @PostMapping("/aceptarCotizacion/{antiguedadId}")
+    @PreAuthorize("hasRole('PROPIETARIO')")
+    public ResponseEntity<UrlPagoStripeResponse>
+    aceptarCotizacion(
+            @PathVariable UUID antiguedadId,
+            @AuthenticationPrincipal UsuarioPrincipal principal
+    ) {
+
+        return ResponseEntity.ok(
+                antiguedadService.aceptarCotizacion(
+                        antiguedadId,
+                        principal.getUsuario().getUsuariosId()
+                )
+        );
+    }
+
+    @PostMapping("/rechazarCotizacion/{antiguedadId}")
+    @PreAuthorize("hasRole('PROPIETARIO')")
+    public ResponseEntity<AntiguedadDetalleResponse>
+    rechazarCotizacion(
+            @PathVariable UUID antiguedadId,
+            @Valid @RequestBody RechazarCotizacionRequest request,
+            @AuthenticationPrincipal UsuarioPrincipal principal
+    ) {
+
+        return ResponseEntity.ok(
+                antiguedadService.rechazarCotizacion(
+                        antiguedadId,
+                        principal.getUsuario().getUsuariosId(),
+                        request
+                )
+        );
+    }
+
+    @GetMapping("/obtenerAvancesRestauracion/{antiguedadId}")
+    @PreAuthorize("hasRole('PROPIETARIO')")
+    public ResponseEntity<Page<AvanceRestauracionResumenResponse>>
+    obtenerAvancesRestauracion(
+            @PathVariable UUID antiguedadId,
+            Pageable pageable,
+            @AuthenticationPrincipal UsuarioPrincipal principal
+    ) {
+
+        return ResponseEntity.ok(
+                antiguedadService.obtenerAvancesRestauracion(
+                        antiguedadId,
+                        principal.getUsuario().getUsuariosId(),
+                        pageable
+                )
+        );
+    }
+
+    @PostMapping("/publicarEnCatalogo/{antiguedadId}")
+    @PreAuthorize("hasRole('PROPIETARIO')")
+    public ResponseEntity<CatalogoAntiguedadResumenResponse>
+    publicarEnCatalogo(
+            @PathVariable UUID antiguedadId,
+            @Valid @RequestBody PublicarEnCatalogoRequest request,
+            @AuthenticationPrincipal UsuarioPrincipal principal
+    ) {
+
+        return ResponseEntity.ok(
+                antiguedadService.publicarEnCatalogo(
                         antiguedadId,
                         principal.getUsuario().getUsuariosId(),
                         request

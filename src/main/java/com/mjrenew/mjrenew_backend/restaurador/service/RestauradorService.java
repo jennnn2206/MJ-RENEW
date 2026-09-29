@@ -6,7 +6,9 @@ import com.mjrenew.mjrenew_backend.nucleo.enums.DisponibilidadRestaurador;
 import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoAntiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.enums.TipoFotografia;
 import com.mjrenew.mjrenew_backend.nucleo.exception.RecursoNoEncontradoException;
+import com.mjrenew.mjrenew_backend.nucleo.exception.SolicitudInvalidaException;
 import com.mjrenew.mjrenew_backend.nucleo.exception.TransicionEstadoInvalidaException;
+import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadDetalleResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.DimensionResponse;
 import com.mjrenew.mjrenew_backend.propietario.entity.Dimension;
@@ -14,11 +16,18 @@ import com.mjrenew.mjrenew_backend.propietario.entity.FotografiaAntiguedad;
 import com.mjrenew.mjrenew_backend.propietario.mapper.AntiguedadMapper;
 import com.mjrenew.mjrenew_backend.propietario.repository.DimensionRepository;
 import com.mjrenew.mjrenew_backend.propietario.repository.FotografiaAntiguedadRepository;
+import com.mjrenew.mjrenew_backend.restaurador.dto.ActualizarDisponibilidadRequest;
+import com.mjrenew.mjrenew_backend.restaurador.dto.ActualizarPerfilRestauradorRequest;
 import com.mjrenew.mjrenew_backend.restaurador.dto.AntiguedadResumenResponse;
+import com.mjrenew.mjrenew_backend.restaurador.dto.AvanceRestauracionResumenResponse;
 import com.mjrenew.mjrenew_backend.restaurador.dto.EvaluarAntiguedadRequest;
+import com.mjrenew.mjrenew_backend.restaurador.dto.PerfilRestauradorCompletoResponse;
 import com.mjrenew.mjrenew_backend.restaurador.dto.PerfilRestauradorPublicoResponse;
+import com.mjrenew.mjrenew_backend.restaurador.dto.PublicarAvanceRequest;
 import com.mjrenew.mjrenew_backend.restaurador.dto.RechazarEvaluacionRequest;
+import com.mjrenew.mjrenew_backend.restaurador.entity.AvanceRestauracion;
 import com.mjrenew.mjrenew_backend.restaurador.mapper.RestauradorMapper;
+import com.mjrenew.mjrenew_backend.restaurador.repository.AvanceRestauracionRepository;
 import com.mjrenew.mjrenew_backend.restaurador.repository.PerfilRestauradorRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,9 +37,12 @@ import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoCotizacion;
 import com.mjrenew.mjrenew_backend.restaurador.dto.CotizacionResumenResponse;
 import com.mjrenew.mjrenew_backend.restaurador.dto.GenerarCotizacionRequest;
 import com.mjrenew.mjrenew_backend.restaurador.entity.Cotizacion;
+import com.mjrenew.mjrenew_backend.restaurador.entity.PerfilRestaurador;
 import com.mjrenew.mjrenew_backend.restaurador.repository.CotizacionRepository;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -43,6 +55,7 @@ public class RestauradorService {
     private final DimensionRepository dimensionRepository;
     private final AntiguedadMapper antiguedadMapper;
     private final CotizacionRepository cotizacionRepository;
+    private final AvanceRestauracionRepository avanceRestauracionRepository;
 
 
     public RestauradorService(
@@ -52,7 +65,8 @@ public class RestauradorService {
             PerfilRestauradorRepository perfilRestauradorRepository,
             DimensionRepository dimensionRepository,
             AntiguedadMapper antiguedadMapper,
-            CotizacionRepository cotizacionRepository
+            CotizacionRepository cotizacionRepository,
+            AvanceRestauracionRepository avanceRestauracionRepository
     ) {
         this.antiguedadRepository = antiguedadRepository;
         this.fotografiaAntiguedadRepository = fotografiaAntiguedadRepository;
@@ -61,6 +75,7 @@ public class RestauradorService {
         this.dimensionRepository = dimensionRepository;
         this.antiguedadMapper = antiguedadMapper;
         this.cotizacionRepository = cotizacionRepository;
+        this.avanceRestauracionRepository = avanceRestauracionRepository;
     }
 
 
@@ -343,6 +358,273 @@ public class RestauradorService {
 
     /*
      * ============================================================
+     * INICIAR RESTAURACIÓN
+     * ============================================================
+     *
+     * RECIBIDO_EN_TALLER
+     *      ↓
+     * EN_RESTAURACION
+     */
+
+    @Transactional
+    public AntiguedadDetalleResponse iniciarRestauracion(
+            UUID antiguedadId,
+            UUID restauradorId
+    ) {
+
+        Antiguedad antiguedad =
+                buscarAsignadaOFallar(
+                        antiguedadId,
+                        restauradorId
+                );
+
+        validarEstado(
+                antiguedad,
+                EstadoAntiguedad.RECIBIDO_EN_TALLER
+        );
+
+        antiguedad.setRestauracionInicioAntiguedad(
+                OffsetDateTime.now()
+        );
+
+        antiguedad.setEstadoActualAntiguedad(
+                EstadoAntiguedad.EN_RESTAURACION
+        );
+
+        return construirDetalle(antiguedad);
+    }
+
+
+    /*
+     * ============================================================
+     * PUBLICAR AVANCE DE RESTAURACIÓN
+     * ============================================================
+     *
+     * EN_RESTAURACION | AVANCE_PUBLICADO
+     *      ↓
+     * AVANCE_PUBLICADO
+     */
+
+    @Transactional
+    public AvanceRestauracionResumenResponse publicarAvanceRestauracion(
+            UUID antiguedadId,
+            UUID restauradorId,
+            PublicarAvanceRequest request
+    ) {
+
+        Antiguedad antiguedad =
+                buscarAsignadaOFallar(
+                        antiguedadId,
+                        restauradorId
+                );
+
+        validarEstadoEnRestauracion(antiguedad);
+
+        if (request.fotos() == null || request.fotos().isEmpty()) {
+
+            throw new SolicitudInvalidaException(
+                    "Se requiere al menos una fotografía del avance"
+            );
+        }
+
+        AvanceRestauracion avance = new AvanceRestauracion();
+        avance.setAntiguedad(antiguedad);
+        avance.setRestaurador(antiguedad.getRestaurador());
+        avance.setDescripcionAvance(request.descripcionAvance());
+        avance.setPublicadoEnAvance(OffsetDateTime.now());
+
+        AvanceRestauracion avanceGuardado =
+                avanceRestauracionRepository.save(avance);
+
+        List<String> fotosGuardadas = new ArrayList<>();
+
+        for (String url : request.fotos()) {
+
+            FotografiaAntiguedad foto = new FotografiaAntiguedad();
+            foto.setAntiguedad(antiguedad);
+            foto.setAvance(avanceGuardado);
+            foto.setTipoFotografia(TipoFotografia.AVANCE);
+            foto.setUrlAlmacenFotografia(url);
+            foto.setSubidaEnFotografia(OffsetDateTime.now());
+
+            fotografiaAntiguedadRepository.save(foto);
+            fotosGuardadas.add(url);
+        }
+
+        antiguedad.setEstadoActualAntiguedad(
+                EstadoAntiguedad.AVANCE_PUBLICADO
+        );
+
+        return restauradorMapper.toAvanceResumen(
+                avanceGuardado,
+                fotosGuardadas
+        );
+    }
+
+
+    /*
+     * ============================================================
+     * MARCAR RESTAURACIÓN LISTA
+     * ============================================================
+     *
+     * EN_RESTAURACION | AVANCE_PUBLICADO
+     *      ↓
+     * RESTAURACION_LISTA
+     */
+
+    @Transactional
+    public AntiguedadDetalleResponse marcarRestauracionLista(
+            UUID antiguedadId,
+            UUID restauradorId
+    ) {
+
+        Antiguedad antiguedad =
+                buscarAsignadaOFallar(
+                        antiguedadId,
+                        restauradorId
+                );
+
+        validarEstadoEnRestauracion(antiguedad);
+
+        antiguedad.setRestauracionFinAntiguedad(
+                OffsetDateTime.now()
+        );
+
+        antiguedad.setEstadoActualAntiguedad(
+                EstadoAntiguedad.RESTAURACION_LISTA
+        );
+
+        return construirDetalle(antiguedad);
+    }
+
+
+    /*
+     * ============================================================
+     * PERFIL DEL RESTAURADOR AUTENTICADO
+     * ============================================================
+     */
+
+    @Transactional(readOnly = true)
+    public PerfilRestauradorCompletoResponse obtenerPerfilPropio(
+            UUID restauradorId
+    ) {
+
+        PerfilRestaurador perfil =
+                perfilRestauradorRepository
+                        .findByRestaurador_UsuariosId(restauradorId)
+                        .orElseThrow(
+                                () -> new RecursoNoEncontradoException(
+                                        "Aún no has completado tu perfil de restaurador"
+                                )
+                        );
+
+        return restauradorMapper.toPerfilCompleto(perfil);
+    }
+
+
+    /*
+     * ============================================================
+     * ACTUALIZAR PERFIL DEL RESTAURADOR
+     * ============================================================
+     *
+     * Upsert: si el restaurador todavía no tiene perfil (no se crea
+     * uno automáticamente al registrarse), se crea aquí con los
+     * valores por defecto de una solicitud nueva.
+     */
+
+    @Transactional
+    public PerfilRestauradorCompletoResponse actualizarPerfilRestaurador(
+            Usuario restaurador,
+            ActualizarPerfilRestauradorRequest request
+    ) {
+
+        PerfilRestaurador perfil =
+                perfilRestauradorRepository
+                        .findByRestaurador_UsuariosId(
+                                restaurador.getUsuariosId()
+                        )
+                        .orElseGet(() -> {
+
+                            PerfilRestaurador nuevo =
+                                    new PerfilRestaurador();
+
+                            nuevo.setRestaurador(restaurador);
+
+                            nuevo.setAprobadoPorAdminRestaurador(
+                                    false
+                            );
+
+                            nuevo.setDisponibilidadRestaurador(
+                                    DisponibilidadRestaurador.NO_DISPONIBLE
+                            );
+
+                            return nuevo;
+                        });
+
+        perfil.setEspecialidadRestaurador(
+                request.especialidadRestaurador()
+        );
+
+        perfil.setAnosExperienciaRestaurador(
+                request.anosExperienciaRestaurador()
+        );
+
+        perfil.setDescripcionBioRestaurador(
+                request.descripcionBioRestaurador()
+        );
+
+        perfil.setActualizadoEnRestaurador(
+                OffsetDateTime.now()
+        );
+
+        PerfilRestaurador guardado =
+                perfilRestauradorRepository.save(perfil);
+
+        return restauradorMapper.toPerfilCompleto(guardado);
+    }
+
+
+    /*
+     * ============================================================
+     * ACTUALIZAR DISPONIBILIDAD DEL RESTAURADOR
+     * ============================================================
+     *
+     * Requiere que el perfil ya exista: no tiene sentido publicar
+     * disponibilidad sin haber completado antes especialidad/experiencia.
+     */
+
+    @Transactional
+    public PerfilRestauradorCompletoResponse actualizarDisponibilidad(
+            UUID restauradorId,
+            ActualizarDisponibilidadRequest request
+    ) {
+
+        PerfilRestaurador perfil =
+                perfilRestauradorRepository
+                        .findByRestaurador_UsuariosId(restauradorId)
+                        .orElseThrow(
+                                () -> new RecursoNoEncontradoException(
+                                        "Debes completar tu perfil de restaurador antes de actualizar tu disponibilidad"
+                                )
+                        );
+
+        perfil.setDisponibilidadRestaurador(
+                request.disponibilidadRestaurador()
+        );
+
+        perfil.setActualizadoEnRestaurador(
+                OffsetDateTime.now()
+        );
+
+        PerfilRestaurador guardado =
+                perfilRestauradorRepository.save(perfil);
+
+        return restauradorMapper.toPerfilCompleto(guardado);
+    }
+
+
+    /*
+     * ============================================================
      * CONVERSIÓN PARA LISTADO
      * ============================================================
      */
@@ -416,6 +698,34 @@ public class RestauradorService {
             throw new TransicionEstadoInvalidaException(
                     "La antigüedad debe estar en estado "
                             + estadoEsperado.name()
+            );
+        }
+    }
+
+
+    /*
+     * ============================================================
+     * VALIDAR ESTADO EN RESTAURACIÓN
+     * ============================================================
+     *
+     * publicarAvanceRestauracion y marcarRestauracionLista aceptan
+     * dos estados de origen: EN_RESTAURACION (primer avance) o
+     * AVANCE_PUBLICADO (avances subsecuentes / cierre).
+     */
+
+    private void validarEstadoEnRestauracion(
+            Antiguedad antiguedad
+    ) {
+
+        EstadoAntiguedad estado =
+                antiguedad.getEstadoActualAntiguedad();
+
+        if (estado != EstadoAntiguedad.EN_RESTAURACION
+                && estado != EstadoAntiguedad.AVANCE_PUBLICADO) {
+
+            throw new TransicionEstadoInvalidaException(
+                    "La antigüedad debe estar en EN_RESTAURACION o AVANCE_PUBLICADO para esta acción, y está en "
+                            + estado
             );
         }
     }

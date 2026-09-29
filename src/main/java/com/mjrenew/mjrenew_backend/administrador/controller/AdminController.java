@@ -6,6 +6,8 @@ import com.mjrenew.mjrenew_backend.administrador.dto.ResolverDisputaRequest;
 import com.mjrenew.mjrenew_backend.administrador.service.AdministradorService;
 import com.mjrenew.mjrenew_backend.nucleo.security.UsuarioPrincipal;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.dto.UsuarioResponse;
+import com.mjrenew.mjrenew_backend.restaurador.dto.PerfilRestauradorCompletoResponse;
+import com.mjrenew.mjrenew_backend.restaurador.dto.PerfilRestauradorPublicoResponse;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,5 +44,15 @@ public class AdminController {
     @GetMapping("/obtenerUsuariosRegistrados")
     public ResponseEntity<Page<UsuarioResponse>> obtenerUsuariosRegistrados(Pageable pageable) {
         return ResponseEntity.ok(administradorService.obtenerUsuariosRegistrados(pageable));
+    }
+
+    @GetMapping("/obtenerRestauradoresPendientesAprobacion")
+    public ResponseEntity<Page<PerfilRestauradorPublicoResponse>> obtenerRestauradoresPendientesAprobacion(Pageable pageable) {
+        return ResponseEntity.ok(administradorService.obtenerRestauradoresPendientesAprobacion(pageable));
+    }
+
+    @PostMapping("/aprobarRestaurador/{restauradorId}")
+    public ResponseEntity<PerfilRestauradorCompletoResponse> aprobarRestaurador(@PathVariable UUID restauradorId) {
+        return ResponseEntity.ok(administradorService.aprobarRestaurador(restauradorId));
     }
 }

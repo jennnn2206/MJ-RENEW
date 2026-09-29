@@ -2,8 +2,13 @@ package com.mjrenew.mjrenew_backend.restaurador.controller;
 
 import com.mjrenew.mjrenew_backend.nucleo.security.UsuarioPrincipal;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadDetalleResponse;
+import com.mjrenew.mjrenew_backend.restaurador.dto.ActualizarDisponibilidadRequest;
+import com.mjrenew.mjrenew_backend.restaurador.dto.ActualizarPerfilRestauradorRequest;
 import com.mjrenew.mjrenew_backend.restaurador.dto.AntiguedadResumenResponse;
+import com.mjrenew.mjrenew_backend.restaurador.dto.AvanceRestauracionResumenResponse;
 import com.mjrenew.mjrenew_backend.restaurador.dto.EvaluarAntiguedadRequest;
+import com.mjrenew.mjrenew_backend.restaurador.dto.PerfilRestauradorCompletoResponse;
+import com.mjrenew.mjrenew_backend.restaurador.dto.PublicarAvanceRequest;
 import com.mjrenew.mjrenew_backend.restaurador.dto.RechazarEvaluacionRequest;
 import com.mjrenew.mjrenew_backend.restaurador.service.RestauradorService;
 import jakarta.validation.Valid;
@@ -224,6 +229,201 @@ public class RestauradorController {
                                 restauradorId,
                                 request
                         )
+        );
+    }
+
+
+    /*
+     * ============================================================
+     * INICIAR RESTAURACIÓN
+     * ============================================================
+     *
+     * Transición:
+     *
+     * RECIBIDO_EN_TALLER
+     *      ↓
+     * EN_RESTAURACION
+     *
+     * POST /api/restaurador/iniciarRestauracion/{antiguedadId}
+     */
+
+    @PostMapping("/iniciarRestauracion/{antiguedadId}")
+    @PreAuthorize("hasRole('RESTAURADOR')")
+    public ResponseEntity<AntiguedadDetalleResponse>
+    iniciarRestauracion(
+
+            @PathVariable
+            UUID antiguedadId,
+
+            @AuthenticationPrincipal
+            UsuarioPrincipal principal
+    ) {
+
+        return ResponseEntity.ok(
+                restauradorService.iniciarRestauracion(
+                        antiguedadId,
+                        principal.getUsuario().getUsuariosId()
+                )
+        );
+    }
+
+
+    /*
+     * ============================================================
+     * PUBLICAR AVANCE DE RESTAURACIÓN
+     * ============================================================
+     *
+     * Transición:
+     *
+     * EN_RESTAURACION | AVANCE_PUBLICADO
+     *      ↓
+     * AVANCE_PUBLICADO
+     *
+     * POST /api/restaurador/publicarAvanceRestauracion/{antiguedadId}
+     */
+
+    @PostMapping("/publicarAvanceRestauracion/{antiguedadId}")
+    @PreAuthorize("hasRole('RESTAURADOR')")
+    public ResponseEntity<AvanceRestauracionResumenResponse>
+    publicarAvanceRestauracion(
+
+            @PathVariable
+            UUID antiguedadId,
+
+            @Valid
+            @RequestBody
+            PublicarAvanceRequest request,
+
+            @AuthenticationPrincipal
+            UsuarioPrincipal principal
+    ) {
+
+        return ResponseEntity.ok(
+                restauradorService.publicarAvanceRestauracion(
+                        antiguedadId,
+                        principal.getUsuario().getUsuariosId(),
+                        request
+                )
+        );
+    }
+
+
+    /*
+     * ============================================================
+     * MARCAR RESTAURACIÓN LISTA
+     * ============================================================
+     *
+     * Transición:
+     *
+     * EN_RESTAURACION | AVANCE_PUBLICADO
+     *      ↓
+     * RESTAURACION_LISTA
+     *
+     * POST /api/restaurador/marcarRestauracionLista/{antiguedadId}
+     */
+
+    @PostMapping("/marcarRestauracionLista/{antiguedadId}")
+    @PreAuthorize("hasRole('RESTAURADOR')")
+    public ResponseEntity<AntiguedadDetalleResponse>
+    marcarRestauracionLista(
+
+            @PathVariable
+            UUID antiguedadId,
+
+            @AuthenticationPrincipal
+            UsuarioPrincipal principal
+    ) {
+
+        return ResponseEntity.ok(
+                restauradorService.marcarRestauracionLista(
+                        antiguedadId,
+                        principal.getUsuario().getUsuariosId()
+                )
+        );
+    }
+
+
+    /*
+     * ============================================================
+     * PERFIL DEL RESTAURADOR AUTENTICADO
+     * ============================================================
+     *
+     * GET /api/restaurador/obtenerPerfilRestaurador
+     */
+
+    @GetMapping("/obtenerPerfilRestaurador")
+    @PreAuthorize("hasRole('RESTAURADOR')")
+    public ResponseEntity<PerfilRestauradorCompletoResponse>
+    obtenerPerfilRestaurador(
+
+            @AuthenticationPrincipal
+            UsuarioPrincipal principal
+    ) {
+
+        return ResponseEntity.ok(
+                restauradorService.obtenerPerfilPropio(
+                        principal.getUsuario().getUsuariosId()
+                )
+        );
+    }
+
+
+    /*
+     * ============================================================
+     * ACTUALIZAR PERFIL DEL RESTAURADOR
+     * ============================================================
+     *
+     * POST /api/restaurador/actualizarPerfilRestaurador
+     */
+
+    @PostMapping("/actualizarPerfilRestaurador")
+    @PreAuthorize("hasRole('RESTAURADOR')")
+    public ResponseEntity<PerfilRestauradorCompletoResponse>
+    actualizarPerfilRestaurador(
+
+            @Valid
+            @RequestBody
+            ActualizarPerfilRestauradorRequest request,
+
+            @AuthenticationPrincipal
+            UsuarioPrincipal principal
+    ) {
+
+        return ResponseEntity.ok(
+                restauradorService.actualizarPerfilRestaurador(
+                        principal.getUsuario(),
+                        request
+                )
+        );
+    }
+
+
+    /*
+     * ============================================================
+     * ACTUALIZAR DISPONIBILIDAD DEL RESTAURADOR
+     * ============================================================
+     *
+     * POST /api/restaurador/actualizarDisponibilidadRestaurador
+     */
+
+    @PostMapping("/actualizarDisponibilidadRestaurador")
+    @PreAuthorize("hasRole('RESTAURADOR')")
+    public ResponseEntity<PerfilRestauradorCompletoResponse>
+    actualizarDisponibilidadRestaurador(
+
+            @Valid
+            @RequestBody
+            ActualizarDisponibilidadRequest request,
+
+            @AuthenticationPrincipal
+            UsuarioPrincipal principal
+    ) {
+
+        return ResponseEntity.ok(
+                restauradorService.actualizarDisponibilidad(
+                        principal.getUsuario().getUsuariosId(),
+                        request
+                )
         );
     }
 }

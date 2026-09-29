@@ -10,4 +10,6 @@ import java.util.UUID;
 public interface CatalogoAntiguedadRepository extends JpaRepository<CatalogoAntiguedad, UUID> {
 
     Page<CatalogoAntiguedad> findByActivaCatalogoTrue(Pageable pageable);
+
+    boolean existsByAntiguedad_AntiguedadesId(UUID antiguedadId);
 }
