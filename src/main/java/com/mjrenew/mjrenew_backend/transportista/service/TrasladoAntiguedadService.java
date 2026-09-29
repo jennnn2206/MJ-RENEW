@@ -6,13 +6,17 @@ import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoAntiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.enums.ResultadoTraslado;
 import com.mjrenew.mjrenew_backend.nucleo.enums.TipoFotografia;
 import com.mjrenew.mjrenew_backend.nucleo.enums.TipoTraslado;
+import com.mjrenew.mjrenew_backend.nucleo.enums.TipoUsuario;
 import com.mjrenew.mjrenew_backend.nucleo.exception.RecursoNoEncontradoException;
 import com.mjrenew.mjrenew_backend.nucleo.exception.SolicitudInvalidaException;
 import com.mjrenew.mjrenew_backend.nucleo.exception.TransicionEstadoInvalidaException;
+import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
+import com.mjrenew.mjrenew_backend.nucleo.usuario.repository.UsuarioRepository;
 import com.mjrenew.mjrenew_backend.propietario.entity.FotografiaAntiguedad;
 import com.mjrenew.mjrenew_backend.propietario.repository.FotografiaAntiguedadRepository;
 import com.mjrenew.mjrenew_backend.transportista.dto.ConfirmarLlegadaRequest;
 import com.mjrenew.mjrenew_backend.transportista.dto.ConfirmarSalidaRequest;
+import com.mjrenew.mjrenew_backend.transportista.dto.CrearTrasladoRequest;
 import com.mjrenew.mjrenew_backend.transportista.dto.TrasladoAntiguedadDetalleResponse;
 import com.mjrenew.mjrenew_backend.transportista.dto.TrasladoAntiguedadResumenResponse;
 import com.mjrenew.mjrenew_backend.transportista.entity.TrasladoAntiguedad;
@@ -36,16 +40,111 @@ public class TrasladoAntiguedadService {
     private final TrasladoAntiguedadRepository trasladoRepository;
     private final AntiguedadRepository antiguedadRepository;
     private final FotografiaAntiguedadRepository fotografiaRepository;
+    private final UsuarioRepository usuarioRepository;
     private final TrasladoMapper trasladoMapper;
 
     public TrasladoAntiguedadService(TrasladoAntiguedadRepository trasladoRepository,
                                      AntiguedadRepository antiguedadRepository,
                                      FotografiaAntiguedadRepository fotografiaRepository,
+                                     UsuarioRepository usuarioRepository,
                                      TrasladoMapper trasladoMapper) {
         this.trasladoRepository = trasladoRepository;
         this.antiguedadRepository = antiguedadRepository;
         this.fotografiaRepository = fotografiaRepository;
+        this.usuarioRepository = usuarioRepository;
         this.trasladoMapper = trasladoMapper;
+    }
+
+    /*
+     * ============================================================
+     * CREAR TRASLADO (agendar recolección o entrega al propietario)
+     * ============================================================
+     *
+     * Acción de logística/despacho: no hay un catálogo de disponibilidad de
+     * transportistas (a diferencia de PerfilRestaurador), así que quien
+     * coordina y asigna el transportista es un administrador.
+     *
+     * RECOLECCION:         PAGO_EN_ESCROW      -> HORARIO_RECOLECCION_AGENDADO
+     * ENTREGA_PROPIETARIO: RESTAURACION_LISTA  -> HORARIO_ENTREGA_AGENDADO
+     *
+     * ENTREGA_COMPRADOR queda fuera de alcance (ver validarOrigenYObtenerDestino).
+     */
+    @Transactional
+    public TrasladoAntiguedadDetalleResponse crearTraslado(CrearTrasladoRequest request) {
+
+        Antiguedad antiguedad = antiguedadRepository.findById(request.antiguedadId())
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No existe una antigüedad con id " + request.antiguedadId()));
+
+        Usuario transportista = usuarioRepository.findById(request.transportistaId())
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No existe un usuario con id " + request.transportistaId()));
+
+        if (transportista.getTipoUsuario() != TipoUsuario.TRANSPORTISTA
+                || !Boolean.TRUE.equals(transportista.getActivoUsuario())) {
+
+            throw new SolicitudInvalidaException(
+                    "El usuario seleccionado no es un transportista activo");
+        }
+
+        if (trasladoRepository.existsByAntiguedad_AntiguedadesIdAndTipoTraslado(
+                request.antiguedadId(), request.tipoTraslado())) {
+
+            throw new SolicitudInvalidaException(
+                    "Ya existe un traslado de tipo " + request.tipoTraslado() + " para esta antigüedad");
+        }
+
+        EstadoAntiguedad estadoDestino = validarOrigenYObtenerDestino(antiguedad, request.tipoTraslado());
+
+        TrasladoAntiguedad traslado = new TrasladoAntiguedad();
+        traslado.setAntiguedad(antiguedad);
+        traslado.setTransportista(transportista);
+        traslado.setTipoTraslado(request.tipoTraslado());
+        traslado.setDireccionOrigenTraslado(request.direccionOrigenTraslado());
+        traslado.setDireccionDestinoTraslado(request.direccionDestinoTraslado());
+        traslado.setFechaAcordadaTraslado(request.fechaAcordadaTraslado());
+        traslado.setHoraInicioAcordadaTraslado(request.horaInicioAcordadaTraslado());
+        traslado.setHoraFinAcordadaTraslado(request.horaFinAcordadaTraslado());
+        traslado.setCostoEstimadoMxnTraslado(request.costoEstimadoMxnTraslado());
+        traslado.setNumeroIntentoTraslado((short) 1);
+        traslado.setResultadoTraslado(ResultadoTraslado.PENDIENTE);
+        traslado.setAgendadoEnTraslado(OffsetDateTime.now());
+
+        TrasladoAntiguedad guardado = trasladoRepository.save(traslado);
+
+        antiguedad.setEstadoActualAntiguedad(estadoDestino);
+        antiguedadRepository.save(antiguedad);
+
+        return trasladoMapper.toDetalle(guardado);
+    }
+
+    private EstadoAntiguedad validarOrigenYObtenerDestino(Antiguedad antiguedad, TipoTraslado tipoTraslado) {
+
+        EstadoAntiguedad actual = antiguedad.getEstadoActualAntiguedad();
+
+        return switch (tipoTraslado) {
+
+            case RECOLECCION -> {
+                if (actual != EstadoAntiguedad.PAGO_EN_ESCROW) {
+                    throw new TransicionEstadoInvalidaException(
+                            "La antigüedad debe estar en PAGO_EN_ESCROW para agendar la recolección, y está en " + actual);
+                }
+                yield EstadoAntiguedad.HORARIO_RECOLECCION_AGENDADO;
+            }
+
+            case ENTREGA_PROPIETARIO -> {
+                if (actual != EstadoAntiguedad.RESTAURACION_LISTA) {
+                    throw new TransicionEstadoInvalidaException(
+                            "La antigüedad debe estar en RESTAURACION_LISTA para agendar la entrega al propietario, y está en " + actual);
+                }
+                yield EstadoAntiguedad.HORARIO_ENTREGA_AGENDADO;
+            }
+
+            // TODO: falta el flujo de confirmación de pago del comprador (más allá
+            // de LINK_PAGO_ENVIADO) del cual dependería este traslado.
+            case ENTREGA_COMPRADOR -> throw new SolicitudInvalidaException(
+                    "La creación de traslados de entrega a comprador aún no está soportada");
+        };
     }
 
     public Page<TrasladoAntiguedadResumenResponse> listarMisTraslados(UUID transportistaId, Pageable pageable) {

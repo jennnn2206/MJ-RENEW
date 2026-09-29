@@ -3,12 +3,14 @@ package com.mjrenew.mjrenew_backend.transportista.controller;
 import com.mjrenew.mjrenew_backend.nucleo.security.UsuarioPrincipal;
 import com.mjrenew.mjrenew_backend.transportista.dto.ConfirmarLlegadaRequest;
 import com.mjrenew.mjrenew_backend.transportista.dto.ConfirmarSalidaRequest;
+import com.mjrenew.mjrenew_backend.transportista.dto.CrearTrasladoRequest;
 import com.mjrenew.mjrenew_backend.transportista.dto.TrasladoAntiguedadDetalleResponse;
 import com.mjrenew.mjrenew_backend.transportista.dto.TrasladoAntiguedadResumenResponse;
 import com.mjrenew.mjrenew_backend.transportista.service.TrasladoAntiguedadService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,6 +26,17 @@ public class TransportistaController {
 
     public TransportistaController(TrasladoAntiguedadService trasladoService) {
         this.trasladoService = trasladoService;
+    }
+
+    /*
+     * Quien agenda/despacha el traslado es un administrador (no hay un
+     * catálogo de disponibilidad de transportistas como sí existe para
+     * restauradores), por eso el rol difiere del resto de este controlador.
+     */
+    @PostMapping("/crearTraslado")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<TrasladoAntiguedadDetalleResponse> crearTraslado(@Valid @RequestBody CrearTrasladoRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(trasladoService.crearTraslado(request));
     }
 
     @GetMapping("/obtenerMisTraslados")
