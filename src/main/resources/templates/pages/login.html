@@ -39,14 +39,14 @@
     <div style="background:var(--bg2);border-radius:10px;padding:16px;font-size:1rem;color:var(--ink2);margin-bottom:20px">
       <strong style="display:block;margin-bottom:8px;color:var(--ink2)">Cuentas de demostración:</strong>
       <div style="display:flex;flex-direction:column;gap:6px">
-        <div onclick="fillDemo('jennifer@mjrenew.mx','123456')" style="cursor:pointer;padding:6px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--bg3);transition:all 0.2s" onmouseover="this.style.borderColor='var(--brown)'" onmouseout="this.style.borderColor='var(--bg3)'">
-          <strong>Propietario</strong> · jennifer@mjrenew.mx / 123456
+        <div onclick="fillDemo('propietario1@test.mx','Test1234')" style="cursor:pointer;padding:6px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--bg3);transition:all 0.2s" onmouseover="this.style.borderColor='var(--brown)'" onmouseout="this.style.borderColor='var(--bg3)'">
+          <strong>Propietario</strong> · propietario1@test.mx / Test1234
         </div>
-        <div onclick="fillDemo('rafael@mjrenew.mx','123456')" style="cursor:pointer;padding:6px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--bg3);transition:all 0.2s" onmouseover="this.style.borderColor='var(--brown)'" onmouseout="this.style.borderColor='var(--bg3)'">
-          <strong>Restaurador</strong> · rafael@mjrenew.mx / 123456
+        <div onclick="fillDemo('restaurador1@test.mx','Test1234')" style="cursor:pointer;padding:6px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--bg3);transition:all 0.2s" onmouseover="this.style.borderColor='var(--brown)'" onmouseout="this.style.borderColor='var(--bg3)'">
+          <strong>Restaurador</strong> · restaurador1@test.mx / Test1234
         </div>
-        <div onclick="fillDemo('ana@mjrenew.mx','123456')" style="cursor:pointer;padding:6px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--bg3);transition:all 0.2s" onmouseover="this.style.borderColor='var(--brown)'" onmouseout="this.style.borderColor='var(--bg3)'">
-          <strong>Comprador</strong> · ana@mjrenew.mx / 123456
+        <div onclick="fillDemo('comprador1@test.mx','Test1234')" style="cursor:pointer;padding:6px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--bg3);transition:all 0.2s" onmouseover="this.style.borderColor='var(--brown)'" onmouseout="this.style.borderColor='var(--bg3)'">
+          <strong>Comprador</strong> · comprador1@test.mx / Test1234
         </div>
       </div>
     </div>
@@ -66,6 +66,7 @@
 <script th:src="@{/js/data/piezas-propietario.js}"></script>
 <script th:src="@{/js/data/panel-restaurador.js}"></script>
 <script th:src="@{/js/autenticacion.js}"></script>
+<script th:src="@{/js/api.js}"></script>
 <script th:src="@{/js/utilidades.js}"></script>
 <script th:src="@{/js/notificaciones.js}"></script>
 <script th:src="@{/js/modal.js}"></script>

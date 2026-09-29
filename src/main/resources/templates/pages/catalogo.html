@@ -27,7 +27,7 @@
   <!-- Search -->
   <div style="max-width:540px;margin-bottom:28px">
     <div class="search-bar">
-      <input class="search-input" id="search-input" placeholder="Busca por tipo, material, época o estilo..." oninput="filterCatalog()">
+      <input class="search-input" id="search-input" placeholder="Busca por tipo de mueble..." oninput="filterCatalog()">
       <button class="search-btn" onclick="filterCatalog()">Buscar</button>
     </div>
   </div>
@@ -41,34 +41,17 @@
       <h4 style="font-family:'Playfair Display',serif;margin-bottom:20px;font-size:1.05rem">Filtros</h4>
 
       <div class="filter-group">
-        <div class="filter-label">Categoría</div>
-        <div class="filter-options">
-          <label class="filter-check"><input type="checkbox" value="Escritorios" onchange="filterCatalog()"> Escritorios</label>
-          <label class="filter-check"><input type="checkbox" value="Vitrinas" onchange="filterCatalog()"> Vitrinas</label>
-          <label class="filter-check"><input type="checkbox" value="Comedores" onchange="filterCatalog()"> Comedores</label>
-          <label class="filter-check"><input type="checkbox" value="Burós" onchange="filterCatalog()"> Burós</label>
-          <label class="filter-check"><input type="checkbox" value="Sillas y sillones" onchange="filterCatalog()"> Sillas y sillones</label>
-          <label class="filter-check"><input type="checkbox" value="Cómodas" onchange="filterCatalog()"> Cómodas</label>
-          <label class="filter-check"><input type="checkbox" value="Aparadores" onchange="filterCatalog()"> Aparadores</label>
-          <label class="filter-check"><input type="checkbox" value="Mesas" onchange="filterCatalog()"> Mesas</label>
-        </div>
-      </div>
-
-      <div class="filter-group">
-        <div class="filter-label">Estado</div>
-        <div class="filter-options">
-          <label class="filter-check"><input type="checkbox" value="Restaurado" onchange="filterCatalog()"> Restaurado</label>
-          <label class="filter-check"><input type="checkbox" value="En restauración" onchange="filterCatalog()"> En restauración</label>
-        </div>
+        <div class="filter-label">Tipo de mueble</div>
+        <div class="filter-options" id="filter-tipo-options"></div>
       </div>
 
       <div class="filter-group">
         <div class="filter-label">Precio máximo</div>
-        <input type="range" id="price-range" min="5000" max="100000" value="100000" step="5000"
+        <input type="range" id="price-range" min="1000" max="100000" value="100000" step="1000"
                oninput="document.getElementById('price-val').textContent='$'+Number(this.value).toLocaleString('es-MX');filterCatalog()"
                style="width:100%;accent-color:var(--brown);margin-bottom:6px">
         <div style="display:flex;justify-content:space-between;font-size:1rem;color:var(--ink2)">
-          <span>$5,000</span>
+          <span>$1,000</span>
           <span id="price-val" style="font-weight:600;color:var(--brown)">$100,000</span>
         </div>
       </div>
@@ -89,12 +72,11 @@
     <!-- Catalog Grid -->
     <div>
       <div class="results-row">
-        <p id="results-count">Mostrando piezas</p>
+        <p id="results-count">Cargando piezas...</p>
         <select class="sort-select" onchange="sortCatalog(this.value)" aria-label="Ordenar piezas">
           <option value="default">Orden: Destacados</option>
           <option value="precio-asc">Precio: menor a mayor</option>
           <option value="precio-desc">Precio: mayor a menor</option>
-          <option value="nombre">Nombre: A–Z</option>
         </select>
       </div>
       <div class="catalog-grid" id="catalog-grid"></div>
@@ -110,6 +92,7 @@
 <script th:src="@{/js/data/piezas-propietario.js}"></script>
 <script th:src="@{/js/data/panel-restaurador.js}"></script>
 <script th:src="@{/js/autenticacion.js}"></script>
+<script th:src="@{/js/api.js}"></script>
 <script th:src="@{/js/utilidades.js}"></script>
 <script th:src="@{/js/notificaciones.js}"></script>
 <script th:src="@{/js/modal.js}"></script>
@@ -117,64 +100,101 @@
 <script>
   renderHeader(false);
 
-  let currentCatalog = [...CATALOG];
+  // Catálogo real (/api/catalogo/explorarCatalogo), no el mock CATALOG de
+  // js/data/catalogo.js que usa la landing page. Los campos disponibles son
+  // menos ricos que el mockup (no hay época, material ni tags), así que el
+  // grid se arma a mano en vez de reusar renderCatalogGrid().
+  let catalogoCompleto = [];
+  let currentCatalog = [];
+
+  async function cargarCatalogo() {
+    try {
+      const page = await Api.explorarCatalogo();
+      catalogoCompleto = page.content || [];
+    } catch (err) {
+      Toast.show('No se pudo cargar el catálogo: ' + err.message, 'error');
+      catalogoCompleto = [];
+    }
+    construirFiltroTipo();
+    currentCatalog = [...catalogoCompleto];
+    renderGrid();
+  }
+
+  function construirFiltroTipo() {
+    const tipos = [...new Set(catalogoCompleto.map(p => p.tipoMueble))];
+    document.getElementById('filter-tipo-options').innerHTML = tipos.map(t => `
+      <label class="filter-check"><input type="checkbox" value="${t}" onchange="filterCatalog()"> ${tipoMuebleLabel(t)}</label>
+    `).join('');
+  }
+
+  function piezaCardHtml(p) {
+    return `
+      <div class="piece-card" onclick="viewPiece('${p.catalogoId}')">
+        <div class="piece-card-img-wrap">
+          <img src="${fotoConFallback(p.urlFotoPortada)}" alt="${tipoMuebleLabel(p.tipoMueble)}" loading="lazy">
+          <span class="piece-card-status"><span class="badge badge-green">Restaurado</span></span>
+        </div>
+        <div class="piece-card-body">
+          <div class="piece-card-tag">${tipoMuebleLabel(p.tipoMueble)}</div>
+          <h4>${tipoMuebleLabel(p.tipoMueble)}</h4>
+          <div class="piece-card-meta">
+            <span class="piece-card-price">${Utils.formatCurrency(p.precioMxn)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
   function renderGrid() {
     const count = currentCatalog.length;
     document.getElementById('results-count').textContent = `Mostrando ${count} pieza${count !== 1 ? 's' : ''}`;
-    renderCatalogGrid('catalog-grid', currentCatalog);
+    const grid = document.getElementById('catalog-grid');
+    grid.innerHTML = currentCatalog.length
+      ? currentCatalog.map(piezaCardHtml).join('')
+      : `<div class="empty-state" style="grid-column:1/-1"><h3>Sin resultados</h3><p>Intenta con otros filtros o términos de búsqueda.</p></div>`;
   }
 
   function filterCatalog() {
     const search = document.getElementById('search-input').value.toLowerCase().trim();
-    const cats   = [...document.querySelectorAll('.filter-options input[type=checkbox]:checked')].map(cb => cb.value);
-    const maxP   = parseInt(document.getElementById('price-range').value);
+    const tipos = [...document.querySelectorAll('#filter-tipo-options input[type=checkbox]:checked')].map(cb => cb.value);
+    const maxP = parseInt(document.getElementById('price-range').value);
 
-    let result = CATALOG;
-    if (search) result = result.filter(p =>
-            p.nombre.toLowerCase().includes(search) || p.categoria.toLowerCase().includes(search) ||
-            p.material.toLowerCase().includes(search) || p.epoca.toLowerCase().includes(search) ||
-            p.tags.some(t => t.includes(search))
-    );
-    const stateCats = cats.filter(c => ['Restaurado','En restauración'].includes(c));
-    const typeCats  = cats.filter(c => !['Restaurado','En restauración'].includes(c));
-    if (typeCats.length)  result = result.filter(p => typeCats.includes(p.categoria));
-    if (stateCats.length) result = result.filter(p => stateCats.includes(p.estado));
-    result = result.filter(p => p.precio <= maxP);
+    let result = catalogoCompleto;
+    if (search) result = result.filter(p => tipoMuebleLabel(p.tipoMueble).toLowerCase().includes(search));
+    if (tipos.length) result = result.filter(p => tipos.includes(p.tipoMueble));
+    result = result.filter(p => p.precioMxn <= maxP);
 
     currentCatalog = result;
     renderGrid();
-    renderActiveFilters(typeCats, stateCats, search);
+    renderActiveFilters(tipos, search);
   }
 
-  function renderActiveFilters(cats, states, search) {
+  function renderActiveFilters(tipos, search) {
     const af = document.getElementById('active-filters');
-    const all = [...cats, ...states, ...(search ? [`"${search}"`] : [])];
+    const all = [...tipos.map(tipoMuebleLabel), ...(search ? [`"${search}"`] : [])];
     af.innerHTML = all.map(f => `<span class="badge badge-brown" style="gap:6px">${f} <span style="cursor:pointer;opacity:0.7" onclick="clearFilters()">×</span></span>`).join('');
   }
 
   function clearFilters() {
-    document.querySelectorAll('.filter-options input[type=checkbox]').forEach(cb => cb.checked = false);
+    document.querySelectorAll('#filter-tipo-options input[type=checkbox]').forEach(cb => cb.checked = false);
     document.getElementById('price-range').value = 100000;
     document.getElementById('price-val').textContent = '$100,000';
     document.getElementById('search-input').value = '';
     document.getElementById('active-filters').innerHTML = '';
-    currentCatalog = [...CATALOG];
+    currentCatalog = [...catalogoCompleto];
     renderGrid();
   }
 
   function sortCatalog(type) {
-    if (type === 'precio-asc')  currentCatalog.sort((a,b) => a.precio - b.precio);
-    else if (type === 'precio-desc') currentCatalog.sort((a,b) => b.precio - a.precio);
-    else if (type === 'nombre') currentCatalog.sort((a,b) => a.nombre.localeCompare(b.nombre));
-    else currentCatalog = [...CATALOG];
+    if (type === 'precio-asc') currentCatalog.sort((a, b) => a.precioMxn - b.precioMxn);
+    else if (type === 'precio-desc') currentCatalog.sort((a, b) => b.precioMxn - a.precioMxn);
+    else currentCatalog = [...catalogoCompleto];
     renderGrid();
   }
 
-  // Override viewPiece to use correct path
   window.viewPiece = (id) => { window.location.href = `/pieza?id=${id}`; };
 
-  renderGrid();
+  cargarCatalogo();
 </script>
 </body>
 </html>
