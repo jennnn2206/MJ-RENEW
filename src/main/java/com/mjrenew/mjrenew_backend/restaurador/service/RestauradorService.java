@@ -24,6 +24,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoCotizacion;
+import com.mjrenew.mjrenew_backend.restaurador.dto.CotizacionResumenResponse;
+import com.mjrenew.mjrenew_backend.restaurador.dto.GenerarCotizacionRequest;
+import com.mjrenew.mjrenew_backend.restaurador.entity.Cotizacion;
+import com.mjrenew.mjrenew_backend.restaurador.repository.CotizacionRepository;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -37,6 +42,7 @@ public class RestauradorService {
     private final PerfilRestauradorRepository perfilRestauradorRepository;
     private final DimensionRepository dimensionRepository;
     private final AntiguedadMapper antiguedadMapper;
+    private final CotizacionRepository cotizacionRepository;
 
 
     public RestauradorService(
@@ -45,7 +51,8 @@ public class RestauradorService {
             RestauradorMapper restauradorMapper,
             PerfilRestauradorRepository perfilRestauradorRepository,
             DimensionRepository dimensionRepository,
-            AntiguedadMapper antiguedadMapper
+            AntiguedadMapper antiguedadMapper,
+            CotizacionRepository cotizacionRepository
     ) {
         this.antiguedadRepository = antiguedadRepository;
         this.fotografiaAntiguedadRepository = fotografiaAntiguedadRepository;
@@ -53,6 +60,7 @@ public class RestauradorService {
         this.perfilRestauradorRepository = perfilRestauradorRepository;
         this.dimensionRepository = dimensionRepository;
         this.antiguedadMapper = antiguedadMapper;
+        this.cotizacionRepository = cotizacionRepository;
     }
 
 
@@ -124,7 +132,10 @@ public class RestauradorService {
                         restauradorId
                 );
 
-        validarEnEvaluacion(antiguedad);
+        validarEstado(
+                antiguedad,
+                EstadoAntiguedad.EN_EVALUACION
+        );
 
         antiguedad.setMotivoRechazoEvaluacion(
                 request.motivoRechazoEvaluacion()
@@ -172,7 +183,10 @@ public class RestauradorService {
                         restauradorId
                 );
 
-        validarEnEvaluacion(antiguedad);
+        validarEstado(
+                antiguedad,
+                EstadoAntiguedad.EN_EVALUACION
+        );
 
 
         /*
@@ -226,6 +240,106 @@ public class RestauradorService {
         );
     }
 
+    /*
+     * ============================================================
+     * GENERAR COTIZACIÓN
+     * ============================================================
+     *
+     * CALCULANDO_PRESUPUESTO
+     *      ↓
+     * PRESUPUESTO_PRESENTADO
+     */
+
+    @Transactional
+    public CotizacionResumenResponse generarCotizacion(
+            UUID antiguedadId,
+            UUID restauradorId,
+            GenerarCotizacionRequest request
+    ) {
+
+        Antiguedad antiguedad =
+                buscarAsignadaOFallar(
+                        antiguedadId,
+                        restauradorId
+                );
+
+        validarEstado(
+                antiguedad,
+                EstadoAntiguedad.CALCULANDO_PRESUPUESTO
+        );
+
+
+        /*
+         * Una antigüedad no puede generar dos cotizaciones
+         * dentro del flujo actual.
+         */
+        if (cotizacionRepository
+                .existsByAntiguedad_AntiguedadesId(
+                        antiguedadId
+                )) {
+
+            throw new TransicionEstadoInvalidaException(
+                    "La antigüedad ya tiene una cotización registrada"
+            );
+        }
+
+
+        /*
+         * MapStruct crea la entidad con los datos
+         * que provienen del request.
+         */
+        Cotizacion cotizacion =
+                restauradorMapper.toCotizacion(request);
+
+
+        /*
+         * Estos valores NO deben venir del frontend.
+         *
+         * El servidor conoce:
+         * - qué antigüedad se está cotizando;
+         * - quién es el restaurador asignado;
+         * - cuál es el estado;
+         * - cuándo se creó.
+         */
+        cotizacion.setAntiguedad(antiguedad);
+
+        cotizacion.setRestaurador(
+                antiguedad.getRestaurador()
+        );
+
+        cotizacion.setEstadoCotizacion(
+                EstadoCotizacion.ENVIADA
+        );
+
+        cotizacion.setEnviadaEnCotizacion(
+                OffsetDateTime.now()
+        );
+
+
+        /*
+         * Cotizacion ES una entidad nueva,
+         * por eso sí utilizamos save().
+         */
+        Cotizacion cotizacionGuardada =
+                cotizacionRepository.save(cotizacion);
+
+
+        /*
+         * La antigüedad ya está administrada por Hibernate.
+         *
+         * No necesitamos llamar antiguedadRepository.save().
+         * @Transactional + dirty checking harán el UPDATE.
+         */
+        antiguedad.setEstadoActualAntiguedad(
+                EstadoAntiguedad.PRESUPUESTO_PRESENTADO
+        );
+
+
+        return restauradorMapper
+                .toCotizacionResumen(
+                        cotizacionGuardada
+                );
+    }
 
     /*
      * ============================================================
@@ -291,15 +405,17 @@ public class RestauradorService {
      * ============================================================
      */
 
-    private void validarEnEvaluacion(
-            Antiguedad antiguedad
+    private void validarEstado(
+            Antiguedad antiguedad,
+            EstadoAntiguedad estadoEsperado
     ) {
 
         if (antiguedad.getEstadoActualAntiguedad()
-                != EstadoAntiguedad.EN_EVALUACION) {
+                != estadoEsperado) {
 
             throw new TransicionEstadoInvalidaException(
-                    "La antigüedad debe estar en estado EN_EVALUACION"
+                    "La antigüedad debe estar en estado "
+                            + estadoEsperado.name()
             );
         }
     }

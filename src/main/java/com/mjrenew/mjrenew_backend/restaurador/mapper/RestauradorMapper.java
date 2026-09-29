@@ -9,6 +9,9 @@ import com.mjrenew.mjrenew_backend.restaurador.dto.PerfilRestauradorPublicoRespo
 import com.mjrenew.mjrenew_backend.restaurador.entity.PerfilRestaurador;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import com.mjrenew.mjrenew_backend.restaurador.dto.CotizacionResumenResponse;
+import com.mjrenew.mjrenew_backend.restaurador.dto.GenerarCotizacionRequest;
+import com.mjrenew.mjrenew_backend.restaurador.entity.Cotizacion;
 
 @Mapper(componentModel = "spring")
 public interface RestauradorMapper {
@@ -128,6 +131,76 @@ public interface RestauradorMapper {
             EvaluarAntiguedadRequest request
     );
 
+    /*
+     * ============================================================
+     * COTIZACIÓN
+     * ============================================================
+     */
+
+    @Mapping(
+            target = "cotizacionesId",
+            ignore = true
+    )
+    @Mapping(
+            target = "antiguedad",
+            ignore = true
+    )
+    @Mapping(
+            target = "restaurador",
+            ignore = true
+    )
+    @Mapping(
+            target = "costoMinimoMxnCotizacion",
+            source = "costoMinimoCotizacion"
+    )
+    @Mapping(
+            target = "costoMaximoMxnCotizacion",
+            source = "costoMaximoCotizacion"
+    )
+    @Mapping(
+            target = "tiempoSemanasCotizacion",
+            source = "tipoSemanasCotizacion"
+    )
+    @Mapping(
+            target = "estadoCotizacion",
+            ignore = true
+    )
+    @Mapping(
+            target = "motivoRechazoCotizacion",
+            ignore = true
+    )
+    @Mapping(
+            target = "enviadaEnCotizacion",
+            ignore = true
+    )
+    @Mapping(
+            target = "respondidaEnCotizacion",
+            ignore = true
+    )
+    Cotizacion toCotizacion(
+            GenerarCotizacionRequest request
+    );
+
+
+    @Mapping(
+            target = "cotizacionId",
+            source = "cotizacionesId"
+    )
+    @Mapping(
+            target = "costoMinimoCotizacion",
+            source = "costoMinimoMxnCotizacion"
+    )
+    @Mapping(
+            target = "costoMaximoCotizacion",
+            source = "costoMaximoMxnCotizacion"
+    )
+    @Mapping(
+            target = "tipoSemanasCotizacion",
+            source = "tiempoSemanasCotizacion"
+    )
+    CotizacionResumenResponse toCotizacionResumen(
+            Cotizacion cotizacion
+    );
 
     /*
      * ============================================================

@@ -24,6 +24,7 @@ public interface AntiguedadMapper {
     @Mapping(target = "registradaEnAntiguedad", ignore = true)
     @Mapping(target = "restauracionInicioAntiguedad", ignore = true)
     @Mapping(target = "restauracionFinAntiguedad", ignore = true)
+    @Mapping(target = "motivoRechazoEvaluacion", ignore = true)
     Antiguedad toEntity(AntiguedadCreateRequest request);
 
     @Mapping(target = "antiguedadId", source = "antiguedad.antiguedadesId")

@@ -26,6 +26,9 @@ public class Cotizacion {
     @JoinColumn(name = "restaurador_id", nullable = false)
     private Usuario restaurador;
 
+    @Column(name = "descripcion_proceso_cotizacion", nullable = false, length = 2000)
+    private String descripcionProcesoCotizacion;
+
     @Column(name = "costo_minimo_mxn_cotizacion", nullable = false, precision = 10, scale = 2)
     private BigDecimal costoMinimoMxnCotizacion;
 
@@ -33,7 +36,7 @@ public class Cotizacion {
     private BigDecimal costoMaximoMxnCotizacion;
 
     @Column(name = "tiempo_semanas_cotizacion", nullable = false)
-    private Short tiempoSemanasCotizacion;
+    private Integer tiempoSemanasCotizacion;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "estado_cotizacion", nullable = false)
@@ -90,11 +93,11 @@ public class Cotizacion {
         this.costoMaximoMxnCotizacion = costoMaximoMxnCotizacion;
     }
 
-    public Short getTiempoSemanasCotizacion() {
+    public Integer getTiempoSemanasCotizacion() {
         return tiempoSemanasCotizacion;
     }
 
-    public void setTiempoSemanasCotizacion(Short tiempoSemanasCotizacion) {
+    public void setTiempoSemanasCotizacion(Integer tiempoSemanasCotizacion) {
         this.tiempoSemanasCotizacion = tiempoSemanasCotizacion;
     }
 
@@ -129,4 +132,15 @@ public class Cotizacion {
     public void setRespondidaEnCotizacion(OffsetDateTime respondidaEnCotizacion) {
         this.respondidaEnCotizacion = respondidaEnCotizacion;
     }
+
+    public String getDescripcionProcesoCotizacion() {
+        return descripcionProcesoCotizacion;
+    }
+
+    public void setDescripcionProcesoCotizacion(
+            String descripcionProcesoCotizacion
+    ) {
+        this.descripcionProcesoCotizacion = descripcionProcesoCotizacion;
+    }
+
 }

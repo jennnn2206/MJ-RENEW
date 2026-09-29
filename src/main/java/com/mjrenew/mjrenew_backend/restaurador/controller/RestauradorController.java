@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.mjrenew.mjrenew_backend.restaurador.dto.CotizacionResumenResponse;
+import com.mjrenew.mjrenew_backend.restaurador.dto.GenerarCotizacionRequest;
 
 
 import java.util.UUID;
@@ -169,6 +171,55 @@ public class RestauradorController {
         return ResponseEntity.ok(
                 restauradorService
                         .confirmarEvaluacion(
+                                antiguedadId,
+                                restauradorId,
+                                request
+                        )
+        );
+    }
+
+    /*
+     * ============================================================
+     * GENERAR COTIZACIÓN
+     * ============================================================
+     *
+     * Transición:
+     *
+     * CALCULANDO_PRESUPUESTO
+     *      ↓
+     * PRESUPUESTO_PRESENTADO
+     *
+     * POST
+     * /api/restaurador/generarCotizacion/{antiguedadId}
+     */
+
+    @PostMapping(
+            "/generarCotizacion/{antiguedadId}"
+    )
+    @PreAuthorize("hasRole('RESTAURADOR')")
+    public ResponseEntity<CotizacionResumenResponse>
+    generarCotizacion(
+
+            @PathVariable
+            UUID antiguedadId,
+
+            @Valid
+            @RequestBody
+            GenerarCotizacionRequest request,
+
+            @AuthenticationPrincipal
+            UsuarioPrincipal principal
+    ) {
+
+        UUID restauradorId =
+                principal
+                        .getUsuario()
+                        .getUsuariosId();
+
+
+        return ResponseEntity.ok(
+                restauradorService
+                        .generarCotizacion(
                                 antiguedadId,
                                 restauradorId,
                                 request
