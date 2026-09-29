@@ -2,6 +2,7 @@ package com.mjrenew.mjrenew_backend.nucleo.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -25,6 +26,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CredencialesInvalidasException.class)
     public ResponseEntity<ErrorResponse> manejarCredencialesInvalidas(CredencialesInvalidasException ex) {
         return construirRespuesta(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+    /**
+     * Lanzada por Spring Security cuando @PreAuthorize rechaza al usuario
+     * autenticado por no tener el rol requerido (p. ej. un COMPRADOR llamando
+     * un endpoint de /api/administrador). Sin este handler caía en
+     * manejarErrorInesperado() y respondía 500 en vez de 403.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> manejarAccesoDenegado(AccessDeniedException ex) {
+        return construirRespuesta(HttpStatus.FORBIDDEN, "No tienes permiso para realizar esta acción");
     }
 
     @ExceptionHandler(CorreoYaRegistradoException.class)
