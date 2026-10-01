@@ -119,6 +119,7 @@ public class AntiguedadService {
                 .map(this::construirResumen);
     }
 
+    /*
     @Transactional(readOnly = true)
     public AntiguedadDetalleResponse obtenerDetalle(
             UUID antiguedadId
@@ -126,6 +127,20 @@ public class AntiguedadService {
 
         return construirDetalle(
                 buscarOFallar(antiguedadId)
+        );
+    } */
+
+    @Transactional(readOnly = true)
+    public AntiguedadDetalleResponse obtenerDetalle(
+            UUID antiguedadId,
+            UUID propietarioId
+    ) {
+
+        return construirDetalle(
+                buscarDelPropietarioOFallar(
+                        antiguedadId,
+                        propietarioId
+                )
         );
     }
 

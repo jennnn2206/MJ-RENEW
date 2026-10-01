@@ -74,6 +74,7 @@ public class AntiguedadController {
         );
     }
 
+    /*
     @GetMapping("/obtenerDetalleAntiguedad/{antiguedadId}")
     public ResponseEntity<AntiguedadDetalleResponse>
     obtenerDetalleAntiguedad(
@@ -83,6 +84,22 @@ public class AntiguedadController {
         return ResponseEntity.ok(
                 antiguedadService.obtenerDetalle(
                         antiguedadId
+                )
+        );
+    } */
+
+    @GetMapping("/obtenerDetalleAntiguedad/{antiguedadId}")
+    @PreAuthorize("hasRole('PROPIETARIO')")
+    public ResponseEntity<AntiguedadDetalleResponse>
+    obtenerDetalleAntiguedad(
+            @PathVariable UUID antiguedadId,
+            @AuthenticationPrincipal UsuarioPrincipal principal
+    ) {
+
+        return ResponseEntity.ok(
+                antiguedadService.obtenerDetalle(
+                        antiguedadId,
+                        principal.getUsuario().getUsuariosId()
                 )
         );
     }
