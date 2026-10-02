@@ -33,7 +33,8 @@ public class SecurityConfig {
 
     private static final String[] RUTAS_PUBLICAS_API = {
             "/api/auth/registrarUsuario", "/api/auth/iniciarSesion",
-            "/api/catalogo/explorarCatalogo", "/api/catalogo/obtenerDetallePiezaCatalogo/**"
+            "/api/catalogo/explorarCatalogo", "/api/catalogo/obtenerDetallePiezaCatalogo/**",
+            "/webhook/stripe"
     };
 
     @Bean
@@ -60,7 +61,12 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityContextRepository securityContextRepository) throws Exception {
         http
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
+                .csrf(csrf ->
+                        csrf.ignoringRequestMatchers(
+                                "/api/**",
+                                "/webhook/stripe"
+                        )
+                )
                 .securityContext(context -> context.securityContextRepository(securityContextRepository))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(RUTAS_PUBLICAS_VISTAS).permitAll()
