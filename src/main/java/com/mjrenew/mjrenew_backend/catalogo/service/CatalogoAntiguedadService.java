@@ -15,8 +15,10 @@ import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
 import com.mjrenew.mjrenew_backend.propietario.dto.DimensionResponse;
 import com.mjrenew.mjrenew_backend.propietario.repository.DimensionRepository;
 import com.mjrenew.mjrenew_backend.propietario.repository.FotografiaAntiguedadRepository;
+import com.mjrenew.mjrenew_backend.transaccion.dto.StripeCheckoutSession;
 import com.mjrenew.mjrenew_backend.transaccion.entity.TransaccionBancaria;
 import com.mjrenew.mjrenew_backend.transaccion.repository.TransaccionBancariaRepository;
+import com.mjrenew.mjrenew_backend.transaccion.service.StripeCheckoutService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -33,90 +35,293 @@ public class CatalogoAntiguedadService {
     private final DimensionRepository dimensionRepository;
     private final TransaccionBancariaRepository transaccionRepository;
     private final CatalogoAntiguedadMapper catalogoMapper;
+    private final StripeCheckoutService stripeCheckoutService;
 
-    public CatalogoAntiguedadService(CatalogoAntiguedadRepository catalogoRepository,
-                                     FotografiaAntiguedadRepository fotografiaRepository,
-                                     DimensionRepository dimensionRepository,
-                                     TransaccionBancariaRepository transaccionRepository,
-                                     CatalogoAntiguedadMapper catalogoMapper) {
+
+    public CatalogoAntiguedadService(
+            CatalogoAntiguedadRepository catalogoRepository,
+            FotografiaAntiguedadRepository fotografiaRepository,
+            DimensionRepository dimensionRepository,
+            TransaccionBancariaRepository transaccionRepository,
+            CatalogoAntiguedadMapper catalogoMapper,
+            StripeCheckoutService stripeCheckoutService
+    ) {
+
         this.catalogoRepository = catalogoRepository;
         this.fotografiaRepository = fotografiaRepository;
         this.dimensionRepository = dimensionRepository;
         this.transaccionRepository = transaccionRepository;
         this.catalogoMapper = catalogoMapper;
+        this.stripeCheckoutService = stripeCheckoutService;
     }
 
-    public Page<CatalogoAntiguedadResumenResponse> explorarCatalogo(Pageable pageable) {
-        return catalogoRepository.findByActivaCatalogoTrue(pageable)
-                .map(catalogo -> catalogoMapper.toResumen(catalogo, obtenerUrlFotoPortada(catalogo.getAntiguedad())));
+
+    public Page<CatalogoAntiguedadResumenResponse> explorarCatalogo(
+            Pageable pageable
+    ) {
+
+        return catalogoRepository
+                .findByActivaCatalogoTrue(pageable)
+                .map(catalogo ->
+                        catalogoMapper.toResumen(
+                                catalogo,
+                                obtenerUrlFotoPortada(
+                                        catalogo.getAntiguedad()
+                                )
+                        )
+                );
     }
 
-    public CatalogoAntiguedadDetalleResponse obtenerDetalle(UUID catalogoId) {
-        CatalogoAntiguedad catalogo = buscarOFallar(catalogoId);
-        String urlFotoPortada = obtenerUrlFotoPortada(catalogo.getAntiguedad());
-        DimensionResponse dimension = dimensionRepository
-                .findByAntiguedad_AntiguedadesId(catalogo.getAntiguedad().getAntiguedadesId())
-                .map(dim -> new DimensionResponse(
-                        dim.getAltoCmAntiguedad(), dim.getAnchoCmAntiguedad(),
-                        dim.getProfundidadCmAntiguedad(), dim.getPesoKgAntiguedad()))
-                .orElse(null);
-        return catalogoMapper.toDetalle(catalogo, urlFotoPortada, dimension);
+
+    public CatalogoAntiguedadDetalleResponse obtenerDetalle(
+            UUID catalogoId
+    ) {
+
+        CatalogoAntiguedad catalogo =
+                buscarOFallar(catalogoId);
+
+        String urlFotoPortada =
+                obtenerUrlFotoPortada(
+                        catalogo.getAntiguedad()
+                );
+
+        DimensionResponse dimension =
+                dimensionRepository
+                        .findByAntiguedad_AntiguedadesId(
+                                catalogo
+                                        .getAntiguedad()
+                                        .getAntiguedadesId()
+                        )
+                        .map(dim ->
+                                new DimensionResponse(
+                                        dim.getAltoCmAntiguedad(),
+                                        dim.getAnchoCmAntiguedad(),
+                                        dim.getProfundidadCmAntiguedad(),
+                                        dim.getPesoKgAntiguedad()
+                                )
+                        )
+                        .orElse(null);
+
+        return catalogoMapper.toDetalle(
+                catalogo,
+                urlFotoPortada,
+                dimension
+        );
     }
+
 
     @Transactional
-    public UrlPagoStripeResponse iniciarCompra(UUID catalogoId, Usuario comprador) {
-        CatalogoAntiguedad catalogo = buscarOFallar(catalogoId);
-        Antiguedad antiguedad = catalogo.getAntiguedad();
+    public UrlPagoStripeResponse iniciarCompra(
+            UUID catalogoId,
+            Usuario comprador
+    ) {
 
-        if (!Boolean.TRUE.equals(catalogo.getActivaCatalogo())) {
-            throw new SolicitudInvalidaException("Esta pieza ya no está disponible en el catálogo");
-        }
-        if (antiguedad.getEstadoActualAntiguedad() != EstadoAntiguedad.EN_CATALOGO) {
-            throw new TransicionEstadoInvalidaException(
-                    "La antigüedad debe estar en EN_CATALOGO para iniciar una compra, y está en " + antiguedad.getEstadoActualAntiguedad()
+        CatalogoAntiguedad catalogo =
+                buscarOFallar(catalogoId);
+
+        Antiguedad antiguedad =
+                catalogo.getAntiguedad();
+
+
+        // 1. Validar que la publicación siga disponible
+        if (!Boolean.TRUE.equals(
+                catalogo.getActivaCatalogo()
+        )) {
+
+            throw new SolicitudInvalidaException(
+                    "Esta pieza ya no está disponible en el catálogo"
             );
         }
-        if (antiguedad.getPropietario().getUsuariosId().equals(comprador.getUsuariosId())) {
-            throw new SolicitudInvalidaException("No puedes comprar tu propia pieza");
+
+
+        // 2. Validar el estado actual de la antigüedad
+        if (antiguedad.getEstadoActualAntiguedad()
+                != EstadoAntiguedad.EN_CATALOGO) {
+
+            throw new TransicionEstadoInvalidaException(
+                    "La antigüedad debe estar en EN_CATALOGO para iniciar una compra, y está en "
+                            + antiguedad.getEstadoActualAntiguedad()
+            );
         }
 
-        String idLinkStripe = "mock_" + UUID.randomUUID();
-        String urlPago = "https://checkout.stripe.com/mock/" + idLinkStripe;
 
-        catalogo.setComprador(comprador);
-        catalogo.setIdLinkStripeCatalogo(idLinkStripe);
-        catalogo.setUrlLinkPagoCatalogo(urlPago);
-        catalogo.setActivaCatalogo(false);
-        catalogoRepository.save(catalogo);
+        // 3. Evitar que el propietario compre su propia antigüedad
+        if (antiguedad
+                .getPropietario()
+                .getUsuariosId()
+                .equals(
+                        comprador.getUsuariosId()
+                )) {
 
-        antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.LINK_PAGO_ENVIADO);
+            throw new SolicitudInvalidaException(
+                    "No puedes comprar tu propia pieza"
+            );
+        }
 
-        TransaccionBancaria transaccion = new TransaccionBancaria();
-        transaccion.setTipoTransaccion(TipoTransaccion.PAGO_VENTA);
-        transaccion.setFlujoMjrenew(FlujoTransaccion.INGRESO);
-        transaccion.setOriginator(comprador);
-        transaccion.setBeneficiario(antiguedad.getPropietario());
-        transaccion.setAntiguedad(antiguedad);
-        transaccion.setCatalogoAntiguedad(catalogo);
-        transaccion.setMontoBrutoMxnTransaccion(catalogo.getPrecioMxnCatalogo());
-        transaccion.setEstadoTransaccion(EstadoTransaccion.PENDIENTE);
-        transaccion.setReferenciaStripeTransaccion(idLinkStripe);
-        transaccion.setCreadaEnTransaccion(OffsetDateTime.now());
-        transaccionRepository.save(transaccion);
 
-        return new UrlPagoStripeResponse(urlPago);
+        /*
+         * 4. Crear primero la transacción interna
+         * de MJ Renew.
+         */
+        TransaccionBancaria transaccion =
+                new TransaccionBancaria();
+
+        transaccion.setTipoTransaccion(
+                TipoTransaccion.PAGO_VENTA
+        );
+
+        transaccion.setFlujoMjrenew(
+                FlujoTransaccion.INGRESO
+        );
+
+        transaccion.setOriginator(
+                comprador
+        );
+
+        transaccion.setBeneficiario(
+                antiguedad.getPropietario()
+        );
+
+        transaccion.setAntiguedad(
+                antiguedad
+        );
+
+        transaccion.setCatalogoAntiguedad(
+                catalogo
+        );
+
+        transaccion.setMontoBrutoMxnTransaccion(
+                catalogo.getPrecioMxnCatalogo()
+        );
+
+        transaccion.setEstadoTransaccion(
+                EstadoTransaccion.PENDIENTE
+        );
+
+        transaccion.setCreadaEnTransaccion(
+                OffsetDateTime.now()
+        );
+
+
+        /*
+         * Se guarda antes de crear la sesión de Stripe.
+         */
+        transaccionRepository.save(
+                transaccion
+        );
+
+
+        /*
+         * 5. Solicitar una sesión de pago.
+         *
+         * Actualmente StripeCheckoutService
+         * todavía utiliza un mock.
+         *
+         * Posteriormente ahí conectaremos Stripe real.
+         */
+        StripeCheckoutSession checkout =
+                stripeCheckoutService
+                        .crearSesionPago(
+                                transaccion
+                        );
+
+
+        /*
+         * 6. Relacionar nuestra transacción
+         * con la referencia generada por Stripe.
+         */
+        transaccion.setReferenciaStripeTransaccion(
+                checkout.referenciaStripe()
+        );
+
+        transaccionRepository.save(
+                transaccion
+        );
+
+
+        /*
+         * 7. Asociar el comprador y la información
+         * temporal del Checkout al catálogo.
+         */
+        catalogo.setComprador(
+                comprador
+        );
+
+        catalogo.setIdLinkStripeCatalogo(
+                checkout.referenciaStripe()
+        );
+
+        catalogo.setUrlLinkPagoCatalogo(
+                checkout.urlPagoStripe()
+        );
+
+
+        /*
+         * Mientras existe un proceso de pago,
+         * la pieza deja de aparecer disponible
+         * para otros compradores.
+         */
+        catalogo.setActivaCatalogo(
+                false
+        );
+
+        catalogoRepository.save(
+                catalogo
+        );
+
+
+        /*
+         * 8. Transición oficial:
+         *
+         * EN_CATALOGO
+         *      ↓
+         * LINK_PAGO_ENVIADO
+         *
+         * NO cambiamos aquí a VENTA_COMPLETADA.
+         * Esa transición corresponde al webhook.
+         */
+        antiguedad.setEstadoActualAntiguedad(
+                EstadoAntiguedad.LINK_PAGO_ENVIADO
+        );
+
+
+        /*
+         * 9. El frontend solamente recibe
+         * la URL donde debe realizar el pago.
+         */
+        return new UrlPagoStripeResponse(
+                checkout.urlPagoStripe()
+        );
     }
 
-    private String obtenerUrlFotoPortada(Antiguedad antiguedad) {
+
+    private String obtenerUrlFotoPortada(
+            Antiguedad antiguedad
+    ) {
+
         return fotografiaRepository
                 .findFirstByAntiguedad_AntiguedadesIdAndTipoFotografiaOrderBySubidaEnFotografiaAsc(
-                        antiguedad.getAntiguedadesId(), TipoFotografia.ESTADO_INICIAL)
-                .map(foto -> foto.getUrlAlmacenFotografia())
+                        antiguedad.getAntiguedadesId(),
+                        TipoFotografia.ESTADO_INICIAL
+                )
+                .map(foto ->
+                        foto.getUrlAlmacenFotografia()
+                )
                 .orElse(null);
     }
 
-    private CatalogoAntiguedad buscarOFallar(UUID catalogoId) {
-        return catalogoRepository.findById(catalogoId)
-                .orElseThrow(() -> new RecursoNoEncontradoException("No existe una pieza en catálogo con id " + catalogoId));
+
+    private CatalogoAntiguedad buscarOFallar(
+            UUID catalogoId
+    ) {
+
+        return catalogoRepository
+                .findById(catalogoId)
+                .orElseThrow(() ->
+                        new RecursoNoEncontradoException(
+                                "No existe una pieza en catálogo con id "
+                                        + catalogoId
+                        )
+                );
     }
 }
