@@ -1,8 +1,5 @@
 package com.mjrenew.mjrenew_backend.transaccion.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mjrenew.mjrenew_backend.catalogo.entity.CatalogoAntiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoAntiguedad;
@@ -13,6 +10,14 @@ import com.mjrenew.mjrenew_backend.nucleo.exception.SolicitudInvalidaException;
 import com.mjrenew.mjrenew_backend.nucleo.exception.TransicionEstadoInvalidaException;
 import com.mjrenew.mjrenew_backend.transaccion.entity.TransaccionBancaria;
 import com.mjrenew.mjrenew_backend.transaccion.repository.TransaccionBancariaRepository;
+
+import com.stripe.exception.SignatureVerificationException;
+import com.stripe.model.Event;
+import com.stripe.model.StripeObject;
+import com.stripe.model.checkout.Session;
+import com.stripe.net.Webhook;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,52 +27,117 @@ import java.time.OffsetDateTime;
 public class StripeWebhookService {
 
     private final TransaccionBancariaRepository transaccionRepository;
-    private final ObjectMapper objectMapper;
+    private final String stripeWebhookSecret;
+
 
     public StripeWebhookService(
             TransaccionBancariaRepository transaccionRepository,
-            ObjectMapper objectMapper
+
+            @Value("${stripe.webhook-secret:}")
+            String stripeWebhookSecret
     ) {
         this.transaccionRepository = transaccionRepository;
-        this.objectMapper = objectMapper;
+        this.stripeWebhookSecret = stripeWebhookSecret;
     }
 
+
     @Transactional
-    public void procesarEvento(String payload) {
+    public void procesarEvento(
+            String payload,
+            String stripeSignature
+    ) {
 
-        JsonNode evento;
+        /*
+         * Stripe siempre debe enviar el header
+         * Stripe-Signature.
+         */
+        if (stripeSignature == null
+                || stripeSignature.isBlank()) {
 
-        try {
-            evento = objectMapper.readTree(payload);
-        } catch (JsonProcessingException ex) {
             throw new SolicitudInvalidaException(
-                    "El evento recibido de Stripe no tiene un formato válido"
+                    "El evento no contiene la firma de Stripe"
             );
         }
 
-        String tipoEvento = evento
-                .path("type")
-                .asText();
 
         /*
-         * Por ahora solo procesamos el evento de pago completado.
-         * Los demás eventos se ignoran hasta implementar Stripe real.
+         * Tampoco debemos procesar eventos reales
+         * si el secreto del webhook no está configurado.
          */
-        if (!"checkout.session.completed".equals(tipoEvento)) {
+        if (stripeWebhookSecret == null
+                || stripeWebhookSecret.isBlank()) {
+
+            throw new SolicitudInvalidaException(
+                    "El secreto del webhook de Stripe no está configurado"
+            );
+        }
+
+
+        Event event;
+
+        try {
+
+            /*
+             * Esta llamada verifica criptográficamente
+             * que el evento realmente procede de Stripe
+             * y que el body no fue modificado.
+             */
+            event = Webhook.constructEvent(
+                    payload,
+                    stripeSignature,
+                    stripeWebhookSecret
+            );
+
+        } catch (SignatureVerificationException ex) {
+
+            throw new SolicitudInvalidaException(
+                    "La firma del evento de Stripe no es válida"
+            );
+        }
+
+
+        /*
+         * Por ahora solamente nos interesa
+         * el evento que confirma Checkout.
+         */
+        if (!"checkout.session.completed"
+                .equals(event.getType())) {
+
             return;
         }
 
-        String referenciaStripe = evento
-                .path("data")
-                .path("object")
-                .path("id")
-                .asText();
 
-        if (referenciaStripe == null || referenciaStripe.isBlank()) {
+        StripeObject stripeObject =
+                event
+                        .getDataObjectDeserializer()
+                        .getObject()
+                        .orElseThrow(() ->
+                                new SolicitudInvalidaException(
+                                        "No fue posible interpretar el evento de Stripe"
+                                )
+                        );
+
+
+        if (!(stripeObject instanceof Session session)) {
+
             throw new SolicitudInvalidaException(
-                    "El evento de Stripe no contiene una referencia de pago"
+                    "El evento recibido no contiene una sesión de Checkout"
             );
         }
+
+
+        String referenciaStripe =
+                session.getId();
+
+
+        if (referenciaStripe == null
+                || referenciaStripe.isBlank()) {
+
+            throw new SolicitudInvalidaException(
+                    "Stripe no proporcionó una referencia de Checkout válida"
+            );
+        }
+
 
         TransaccionBancaria transaccion =
                 transaccionRepository
@@ -76,18 +146,25 @@ public class StripeWebhookService {
                         )
                         .orElseThrow(() ->
                                 new RecursoNoEncontradoException(
-                                        "No existe una transacción asociada a la referencia Stripe recibida"
+                                        "No existe una transacción asociada a la sesión de Stripe"
                                 )
                         );
 
+
         /*
-         * Stripe puede reenviar el mismo evento.
-         * Si ya fue procesado, no repetimos las transiciones.
+         * Stripe puede reenviar webhooks.
+         *
+         * Si ya procesamos este pago,
+         * no volvemos a modificar nada.
+         *
+         * Esto hace el webhook idempotente.
          */
         if (transaccion.getEstadoTransaccion()
                 == EstadoTransaccion.EXITOSA) {
+
             return;
         }
+
 
         if (transaccion.getEstadoTransaccion()
                 != EstadoTransaccion.PENDIENTE) {
@@ -97,17 +174,38 @@ public class StripeWebhookService {
             );
         }
 
+
+        /*
+         * Según el tipo de operación de MJ Renew
+         * ejecutamos la transición correspondiente.
+         */
         if (transaccion.getTipoTransaccion()
                 == TipoTransaccion.PAGO_VENTA) {
 
-            procesarPagoVenta(transaccion);
+            procesarPagoVenta(
+                    transaccion
+            );
 
-        } else if (transaccion.getTipoTransaccion()
+            return;
+        }
+
+
+        if (transaccion.getTipoTransaccion()
                 == TipoTransaccion.PAGO_RESTAURACION) {
 
-            procesarPagoRestauracion(transaccion);
+            procesarPagoRestauracion(
+                    transaccion
+            );
+
+            return;
         }
+
+
+        throw new SolicitudInvalidaException(
+                "El tipo de transacción recibido no puede procesarse mediante Stripe"
+        );
     }
+
 
     private void procesarPagoVenta(
             TransaccionBancaria transaccion
@@ -116,6 +214,22 @@ public class StripeWebhookService {
         Antiguedad antiguedad =
                 transaccion.getAntiguedad();
 
+
+        if (antiguedad == null) {
+
+            throw new SolicitudInvalidaException(
+                    "La transacción no tiene una antigüedad asociada"
+            );
+        }
+
+
+        /*
+         * Transición oficial del Diseño API:
+         *
+         * LINK_PAGO_ENVIADO
+         *         ↓
+         * VENTA_COMPLETADA
+         */
         if (antiguedad.getEstadoActualAntiguedad()
                 != EstadoAntiguedad.LINK_PAGO_ENVIADO) {
 
@@ -124,26 +238,39 @@ public class StripeWebhookService {
             );
         }
 
+
         CatalogoAntiguedad catalogo =
                 transaccion.getCatalogoAntiguedad();
 
+
         if (catalogo == null) {
+
             throw new SolicitudInvalidaException(
                     "La transacción de venta no tiene una publicación de catálogo asociada"
             );
         }
 
+
         antiguedad.setEstadoActualAntiguedad(
                 EstadoAntiguedad.VENTA_COMPLETADA
         );
 
-        catalogo.setActivaCatalogo(false);
+
+        catalogo.setActivaCatalogo(
+                false
+        );
+
+
         catalogo.setCompletadaEnCatalogo(
                 OffsetDateTime.now()
         );
 
-        marcarTransaccionExitosa(transaccion);
+
+        marcarTransaccionExitosa(
+                transaccion
+        );
     }
+
 
     private void procesarPagoRestauracion(
             TransaccionBancaria transaccion
@@ -152,6 +279,26 @@ public class StripeWebhookService {
         Antiguedad antiguedad =
                 transaccion.getAntiguedad();
 
+
+        if (antiguedad == null) {
+
+            throw new SolicitudInvalidaException(
+                    "La transacción no tiene una antigüedad asociada"
+            );
+        }
+
+
+        /*
+         * Esta transición también está definida
+         * en el Diseño API.
+         *
+         * PRESUPUESTO_PRESENTADO
+         *          ↓
+         * PAGO_EN_ESCROW
+         *
+         * Pero todavía NO estamos generando el
+         * Checkout real de restauración.
+         */
         if (antiguedad.getEstadoActualAntiguedad()
                 != EstadoAntiguedad.PRESUPUESTO_PRESENTADO) {
 
@@ -160,12 +307,17 @@ public class StripeWebhookService {
             );
         }
 
+
         antiguedad.setEstadoActualAntiguedad(
                 EstadoAntiguedad.PAGO_EN_ESCROW
         );
 
-        marcarTransaccionExitosa(transaccion);
+
+        marcarTransaccionExitosa(
+                transaccion
+        );
     }
+
 
     private void marcarTransaccionExitosa(
             TransaccionBancaria transaccion
@@ -174,6 +326,7 @@ public class StripeWebhookService {
         transaccion.setEstadoTransaccion(
                 EstadoTransaccion.EXITOSA
         );
+
 
         transaccion.setProcesadaEnTransaccion(
                 OffsetDateTime.now()
