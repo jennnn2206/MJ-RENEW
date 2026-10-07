@@ -41,18 +41,13 @@
 
       <div style="max-width:540px;margin-bottom:20px">
         <div class="search-bar">
-          <input class="search-input" id="search-input" placeholder="Busca por tipo, material, época..." oninput="filterCatalog()">
+          <input class="search-input" id="search-input" placeholder="Busca por tipo de mueble..." oninput="filterCatalog()">
           <button class="search-btn" onclick="filterCatalog()">Buscar</button>
         </div>
       </div>
 
-      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
-        <button class="btn btn-ghost btn-sm" onclick="filterByTag('')">Todos</button>
-        <button class="btn btn-ghost btn-sm" onclick="filterByTag('colonial')">Colonial</button>
-        <button class="btn btn-ghost btn-sm" onclick="filterByTag('victoriano')">Victoriano</button>
-        <button class="btn btn-ghost btn-sm" onclick="filterByTag('art deco')">Art Déco</button>
-        <button class="btn btn-ghost btn-sm" onclick="filterByTag('art nouveau')">Art Nouveau</button>
-        <button class="btn btn-ghost btn-sm" onclick="filterByTag('porfiriato')">Porfiriato</button>
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap" id="tag-filters">
+        <button class="btn btn-ghost btn-sm" onclick="filterByTipo('')">Todos</button>
       </div>
 
       <div class="catalog-grid" id="dashboard-catalog"></div>
@@ -71,7 +66,6 @@
     <div id="section-compras" class="dash-section" style="display:none">
       <h2 style="font-size:1.5rem;margin-bottom:24px">Mis compras</h2>
       <div class="empty-state">
-
         <h3>Aún no tienes compras</h3>
         <p>Las piezas que adquieras aparecerán aquí con su estado de envío.</p>
         <button class="btn btn-primary" onclick="showSection('catalogo')">Explorar el catálogo</button>
@@ -81,6 +75,16 @@
   </main>
 </div>
 
+<script th:src="@{/js/data/afd-estados.js}"></script>
+<script th:src="@{/js/data/catalogo.js}"></script>
+<script th:src="@{/js/data/restauradores.js}"></script>
+<script th:src="@{/js/data/piezas-propietario.js}"></script>
+<script th:src="@{/js/data/panel-restaurador.js}"></script>
+<script th:src="@{/js/autenticacion.js}"></script>
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/utilidades.js}"></script>
+<script th:src="@{/js/notificaciones.js}"></script>
+<script th:src="@{/js/modal.js}"></script>
 <script th:src="@{/js/app.js}"></script>
 <script>
   const user = Auth.requireAuth('/login');
@@ -100,37 +104,81 @@
     if (id === 'favoritos') renderFavs();
   }
 
-  let currentTag = '';
-  function filterByTag(tag) {
-    currentTag = tag;
-    const search = document.getElementById('search-input').value.toLowerCase().trim();
-    let result = CATALOG;
-    if (tag) result = result.filter(p => p.tags.some(t => t.includes(tag)));
-    if (search) result = result.filter(p =>
-      p.nombre.toLowerCase().includes(search) || p.categoria.toLowerCase().includes(search) ||
-      p.material.toLowerCase().includes(search) || p.tags.some(t => t.includes(search))
-    );
-    renderCatalogGrid('dashboard-catalog', result);
+  let catalogoCompleto = [];
+
+  function piezaCardHtml(p) {
+    return `
+      <div class="piece-card" onclick="viewPiece('${p.catalogoId}')">
+        <div class="piece-card-img-wrap">
+          <img src="${fotoConFallback(p.urlFotoPortada)}" alt="${tipoMuebleLabel(p.tipoMueble)}" loading="lazy">
+          <button class="piece-card-fav ${isFavId(p.catalogoId) ? 'active' : ''}"
+            onclick="event.stopPropagation(); toggleFav('${p.catalogoId}', this)" aria-label="Agregar a favoritos">♡</button>
+          <span class="piece-card-status"><span class="badge badge-green">Restaurado</span></span>
+        </div>
+        <div class="piece-card-body">
+          <div class="piece-card-tag">${tipoMuebleLabel(p.tipoMueble)}</div>
+          <h4>${tipoMuebleLabel(p.tipoMueble)}</h4>
+          <div class="piece-card-meta"><span class="piece-card-price">${Utils.formatCurrency(p.precioMxn)}</span></div>
+        </div>
+      </div>
+    `;
   }
 
-  function filterCatalog() { filterByTag(currentTag); }
+  function renderGridInto(containerId, list) {
+    const el = document.getElementById(containerId);
+    el.innerHTML = list.length ? list.map(piezaCardHtml).join('')
+      : `<div class="empty-state" style="grid-column:1/-1"><h3>Sin resultados</h3><p>Intenta con otra búsqueda.</p></div>`;
+  }
+
+  async function cargarCatalogo() {
+    try {
+      const page = await Api.explorarCatalogo();
+      catalogoCompleto = page.content || [];
+    } catch (err) {
+      Toast.show('No se pudo cargar el catálogo: ' + err.message, 'error');
+      catalogoCompleto = [];
+    }
+    const tipos = [...new Set(catalogoCompleto.map(p => p.tipoMueble))];
+    document.getElementById('tag-filters').innerHTML =
+      `<button class="btn btn-ghost btn-sm" onclick="filterByTipo('')">Todos</button>` +
+      tipos.map(t => `<button class="btn btn-ghost btn-sm" onclick="filterByTipo('${t}')">${tipoMuebleLabel(t)}</button>`).join('');
+    renderGridInto('dashboard-catalog', catalogoCompleto);
+  }
+
+  let currentTipo = '';
+  function filterByTipo(tipo) {
+    currentTipo = tipo;
+    const search = document.getElementById('search-input').value.toLowerCase().trim();
+    let result = catalogoCompleto;
+    if (tipo) result = result.filter(p => p.tipoMueble === tipo);
+    if (search) result = result.filter(p => tipoMuebleLabel(p.tipoMueble).toLowerCase().includes(search));
+    renderGridInto('dashboard-catalog', result);
+  }
+
+  function filterCatalog() { filterByTipo(currentTipo); }
+
+  function isFavId(id) {
+    const favs = JSON.parse(localStorage.getItem('mjrenew_favs') || '[]');
+    return favs.includes(id);
+  }
+
+  function toggleFav(id, btn) {
+    let favs = JSON.parse(localStorage.getItem('mjrenew_favs') || '[]');
+    const idx = favs.indexOf(id);
+    if (idx === -1) { favs.push(id); btn.textContent = '♥'; btn.classList.add('active'); Toast.show('Agregado a favoritos', 'success'); }
+    else { favs.splice(idx, 1); btn.textContent = '♡'; btn.classList.remove('active'); Toast.show('Eliminado de favoritos', 'info'); }
+    localStorage.setItem('mjrenew_favs', JSON.stringify(favs));
+  }
 
   function renderFavs() {
     const favs = JSON.parse(localStorage.getItem('mjrenew_favs') || '[]');
-    const favPieces = CATALOG.filter(p => favs.includes(p.id));
-    if (!favPieces.length) {
-      document.getElementById('favs-grid').innerHTML = `
-        <div class="empty-state" style="grid-column:1/-1">
-          <h3>Sin favoritos aún</h3>
-          <p>Guarda piezas que te gusten para verlas después.</p>
-          <button class="btn btn-primary" onclick="showSection('catalogo')">Explorar el catálogo</button>
-        </div>`;
-    } else {
-      renderCatalogGrid('favs-grid', favPieces);
-    }
+    const favPieces = catalogoCompleto.filter(p => favs.includes(p.catalogoId));
+    renderGridInto('favs-grid', favPieces);
   }
 
-  renderCatalogGrid('dashboard-catalog', CATALOG);
+  window.viewPiece = (id) => { window.location.href = `/pieza?id=${id}`; };
+
+  cargarCatalogo();
 </script>
 </body>
 </html>

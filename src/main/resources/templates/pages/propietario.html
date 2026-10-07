@@ -45,11 +45,10 @@
         <p style="color:var(--ink2)">¿Qué quieres hacer hoy con tu pieza?</p>
       </div>
 
-      <!-- Quick actions -->
       <div class="grid-2" style="margin-bottom:28px">
-        <div class="card" style="cursor:pointer;border-left:3px solid var(--gold);display:flex;flex-direction:column" onclick="showSection('mis-piezas')">
-          <h4 style="font-family:'Playfair Display',serif;color:var(--ink);margin-bottom:4px">Ver restauraciones</h4>
-          <p style="font-size:1rem">Sigue el progreso de tus piezas en el taller</p>
+        <div class="card" style="cursor:pointer;border-left:3px solid var(--gold);display:flex;flex-direction:column" onclick="openNuevaPiezaModal()">
+          <h4 style="font-family:'Playfair Display',serif;color:var(--ink);margin-bottom:4px">Registrar nueva pieza</h4>
+          <p style="font-size:1rem">Cuéntanos sobre tu antigüedad y te conectamos con un restaurador</p>
         </div>
         <div class="card" style="cursor:pointer;border-left:3px solid var(--brown3);display:flex;flex-direction:column" onclick="window.location.href='/catalogo'">
           <h4 style="font-family:'Playfair Display',serif;color:var(--ink);margin-bottom:4px">Explorar catálogo</h4>
@@ -59,15 +58,14 @@
 
       <!-- Stats -->
       <div class="stats-row" style="grid-template-columns:repeat(3,1fr)" id="owner-stats">
-        <div class="stat-card"><span class="stat-card-value">2</span><div class="stat-card-label">Piezas activas</div></div>
-        <div class="stat-card"><span class="stat-card-value">1</span><div class="stat-card-label">En restauración</div></div>
-        <div class="stat-card"><span class="stat-card-value" style="color:var(--gold)">$0</span><div class="stat-card-label">Valor estimado</div></div>
+        <div class="stat-card"><span class="stat-card-value" id="stat-total">—</span><div class="stat-card-label">Piezas registradas</div></div>
+        <div class="stat-card"><span class="stat-card-value" id="stat-proceso">—</span><div class="stat-card-label">En restauración</div></div>
+        <div class="stat-card"><span class="stat-card-value" id="stat-listas" style="color:var(--gold)">—</span><div class="stat-card-label">Listas / entregadas</div></div>
       </div>
 
-      <!-- Active restoration preview -->
       <div style="margin-top:28px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-          <h3 style="font-size:1.1rem;font-family:'Playfair Display',serif">Restauraciones activas</h3>
+          <h3 style="font-size:1.1rem;font-family:'Playfair Display',serif">Tus piezas</h3>
           <button onclick="showSection('mis-piezas')" class="btn btn-ghost btn-sm">Ver todas</button>
         </div>
         <div class="grid-2" id="active-preview"></div>
@@ -81,6 +79,7 @@
           <h2 style="font-size:1.5rem">Mis piezas</h2>
           <p style="color:var(--ink2)">Seguimiento de tus restauraciones</p>
         </div>
+        <button class="btn btn-primary btn-sm" onclick="openNuevaPiezaModal()">+ Registrar nueva pieza</button>
       </div>
       <div id="pieces-list"></div>
     </div>
@@ -89,27 +88,122 @@
     <div id="section-historial" class="dash-section" style="display:none">
       <h2 style="font-size:1.5rem;margin-bottom:8px">Historial</h2>
       <p style="color:var(--ink2);margin-bottom:24px">Piezas completadas y restauraciones anteriores</p>
-      <div class="empty-state">
-        <h3>Sin historial aún</h3>
-        <p>Las restauraciones completadas aparecerán aquí.</p>
+      <div id="historial-list">
+        <div class="empty-state">
+          <h3>Sin historial aún</h3>
+          <p>Las restauraciones completadas aparecerán aquí.</p>
+        </div>
       </div>
     </div>
-
 
   </main>
 </div>
 
-<!-- MODAL: AFD Tracker Detail -->
-<div class="modal-overlay" id="modal-tracker">
+<!-- MODAL: Registrar nueva pieza -->
+<div class="modal-overlay" id="modal-nueva-pieza">
   <div class="modal-box">
     <div class="modal-header">
-      <h3 style="font-family:'Playfair Display',serif">Estado del proceso de restauración</h3>
-      <button class="modal-close" onclick="Modal.close('modal-tracker')">×</button>
+      <h3 style="font-family:'Playfair Display',serif">Registrar nueva pieza</h3>
+      <button class="modal-close" onclick="Modal.close('modal-nueva-pieza')">×</button>
     </div>
-    <div id="modal-tracker-content"></div>
+    <div class="form-group">
+      <label class="form-label">Tipo de mueble</label>
+      <select class="form-control" id="np-tipo"></select>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label">Estilo</label>
+        <select class="form-control" id="np-estilo"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Material principal</label>
+        <select class="form-control" id="np-material"></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">¿Qué daños tiene?</label>
+      <textarea class="form-control" id="np-danios" rows="2" placeholder="Ej. Barniz desgastado, una pata floja..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Procedencia / historia de la pieza</label>
+      <textarea class="form-control" id="np-procedencia" rows="2" placeholder="Ej. Heredada de mis abuelos..."></textarea>
+    </div>
+    <div id="np-error" class="form-error"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" id="np-submit" onclick="registrarNuevaPieza()">Registrar pieza</button>
+      <button class="btn btn-ghost" onclick="Modal.close('modal-nueva-pieza')">Cancelar</button>
+    </div>
   </div>
 </div>
 
+<!-- MODAL: Buscar restauradores -->
+<div class="modal-overlay" id="modal-restauradores">
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-header">
+      <h3 style="font-family:'Playfair Display',serif">Elige un restaurador</h3>
+      <button class="modal-close" onclick="Modal.close('modal-restauradores')">×</button>
+    </div>
+    <div id="restauradores-list" style="display:flex;flex-direction:column;gap:12px;max-height:60vh;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- MODAL: Cotización -->
+<div class="modal-overlay" id="modal-cotizacion">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 style="font-family:'Playfair Display',serif">Cotización recibida</h3>
+      <button class="modal-close" onclick="Modal.close('modal-cotizacion')">×</button>
+    </div>
+    <div id="cotizacion-content"></div>
+    <div id="cotizacion-error" class="form-error"></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-primary" id="cot-aceptar-btn" onclick="aceptarCotizacionActual()">Aceptar cotización</button>
+      <button class="btn btn-sm" style="background:#FFEBEE;color:#C62828" onclick="rechazarCotizacionActual()">Rechazar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Avances de restauración -->
+<div class="modal-overlay" id="modal-avances">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 style="font-family:'Playfair Display',serif">Avances de la restauración</h3>
+      <button class="modal-close" onclick="Modal.close('modal-avances')">×</button>
+    </div>
+    <div id="avances-content"></div>
+  </div>
+</div>
+
+<!-- MODAL: Publicar en catálogo -->
+<div class="modal-overlay" id="modal-publicar-catalogo">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 style="font-family:'Playfair Display',serif">Publicar en catálogo</h3>
+      <button class="modal-close" onclick="Modal.close('modal-publicar-catalogo')">×</button>
+    </div>
+    <p style="font-size:1rem;color:var(--ink2);margin-bottom:16px">Tu pieza restaurada está lista. Ponle un precio para publicarla en el catálogo público.</p>
+    <div class="form-group">
+      <label class="form-label">Precio de venta (MXN)</label>
+      <input type="number" class="form-control" id="pub-precio" placeholder="Ej. 15000">
+    </div>
+    <div id="pub-error" class="form-error"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="publicarEnCatalogoActual()">Publicar</button>
+      <button class="btn btn-ghost" onclick="Modal.close('modal-publicar-catalogo')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script th:src="@{/js/data/afd-estados.js}"></script>
+<script th:src="@{/js/data/catalogo.js}"></script>
+<script th:src="@{/js/data/restauradores.js}"></script>
+<script th:src="@{/js/data/piezas-propietario.js}"></script>
+<script th:src="@{/js/data/panel-restaurador.js}"></script>
+<script th:src="@{/js/autenticacion.js}"></script>
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/utilidades.js}"></script>
+<script th:src="@{/js/notificaciones.js}"></script>
+<script th:src="@{/js/modal.js}"></script>
 <script th:src="@{/js/app.js}"></script>
 <script>
   const user = Auth.requireAuth('/login');
@@ -128,96 +222,305 @@
     if (btn) btn.classList.add('active');
   }
 
-  // Render pieces
-  function renderPieces() {
-    const pieces = OWNER_PIECES_DEFAULT;
-    const list = document.getElementById('pieces-list');
-    const preview = document.getElementById('active-preview');
+  let misPiezas = [];
 
-    const html = pieces.map(p => `
+  // Estados en los que ya se puede ver el historial de avances publicados.
+  const ESTADOS_CON_AVANCES = [
+    'RECIBIDO_EN_TALLER','EN_RESTAURACION','AVANCE_PUBLICADO','RESTAURACION_LISTA',
+    'DECISION_EN_TALLER','HORARIO_ENTREGA_AGENDADO','EN_DEVOLUCION_PROPIETARIO',
+    'ENTREGADO_AL_PROPIETARIO','EN_CATALOGO','LINK_PAGO_ENVIADO','VENTA_COMPLETADA',
+  ];
+  const ESTADOS_TERMINALES = [
+    'ENTREGADO_AL_PROPIETARIO','EN_CATALOGO','LINK_PAGO_ENVIADO','VENTA_COMPLETADA',
+    'RESTAURACION_COMPLETADA','CANCELADA_NO_CUMPLE','CANCELADA_DUENO_DECLINO',
+    'CANCELADA_RECOLECCION','CANCELADA_ENTREGA',
+  ];
+
+  async function cargarMisPiezas() {
+    try {
+      const page = await Api.misAntiguedades();
+      misPiezas = page.content || [];
+    } catch (err) {
+      Toast.show('No se pudieron cargar tus piezas: ' + err.message, 'error');
+      misPiezas = [];
+    }
+    renderStats();
+    renderPieces();
+  }
+
+  function renderStats() {
+    const total = misPiezas.length;
+    const enProceso = misPiezas.filter(p => ['RECIBIDO_EN_TALLER','EN_RESTAURACION','AVANCE_PUBLICADO'].includes(p.estadoActualAntiguedad)).length;
+    const listas = misPiezas.filter(p => ESTADOS_TERMINALES.includes(p.estadoActualAntiguedad) || p.estadoActualAntiguedad === 'RESTAURACION_LISTA').length;
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-proceso').textContent = enProceso;
+    document.getElementById('stat-listas').textContent = listas;
+  }
+
+  function pieceCardHtml(p) {
+    const info = estadoAntiguedadInfo(p.estadoActualAntiguedad);
+    const nombre = `${tipoMuebleLabel(p.tipoMueble)}`;
+    const img = fotoConFallback(p.urlFotoPortada);
+
+    let acciones = '';
+    if (p.estadoActualAntiguedad === 'PIEZA_CAPTURADA' && !p.nombreRestaurador) {
+      acciones += `<button class="btn btn-primary btn-sm" onclick="abrirBuscarRestauradores('${p.antiguedadId}')">Buscar restaurador</button>`;
+    }
+    if (p.estadoActualAntiguedad === 'PRESUPUESTO_PRESENTADO') {
+      acciones += `<button class="btn btn-primary btn-sm" onclick="abrirCotizacion('${p.antiguedadId}')">Ver cotización</button>`;
+    }
+    if (ESTADOS_CON_AVANCES.includes(p.estadoActualAntiguedad)) {
+      acciones += `<button class="btn btn-ghost btn-sm" onclick="abrirAvances('${p.antiguedadId}')">Ver avances</button>`;
+    }
+    if (p.estadoActualAntiguedad === 'ENTREGADO_AL_PROPIETARIO') {
+      acciones += `<button class="btn btn-gold btn-sm" onclick="abrirPublicarCatalogo('${p.antiguedadId}')">Publicar en catálogo</button>`;
+    }
+
+    return `
       <div style="background:var(--white);border-radius:var(--radius);border:1px solid var(--bg3);overflow:hidden;margin-bottom:20px">
         <div style="display:grid;grid-template-columns:160px 1fr;gap:0">
-          <img src="${p.imagen}" alt="${p.nombre}" style="width:160px;height:140px;object-fit:cover">
+          <img src="${img}" alt="${nombre}" style="width:160px;height:140px;object-fit:cover">
           <div style="padding:20px">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
               <div>
-                <span class="eyebrow">Restauración activa</span>
-                <h4 style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--ink);margin-bottom:4px">${p.nombre}</h4>
-                <span class="badge badge-orange">Estado: ${AFD_STATES[p.estado_afd]?.label || p.estado_afd}</span>
+                <h4 style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--ink);margin-bottom:4px">${nombre}</h4>
+                <span class="badge ${info.badge}">${info.label}</span>
               </div>
-              <button class="btn btn-ghost btn-sm" onclick="openTrackerModal('${p.id}')">Ver progreso</button>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px">
-              <div class="meta-item"><div class="meta-label">Costo estimado</div><div class="meta-value">${p.costo_estimado}</div></div>
-              <div class="meta-item"><div class="meta-label">Tiempo restante</div><div class="meta-value">${p.tiempo_restante}</div></div>
-              <div class="meta-item"><div class="meta-label">Restaurador</div><div class="meta-value">${p.restaurador}</div></div>
+            <div style="margin-top:16px">
+              <div class="meta-item"><div class="meta-label">Restaurador</div><div class="meta-value">${p.nombreRestaurador || 'Sin asignar'}</div></div>
             </div>
-            <div id="tracker-inline-${p.id}" style="margin-top:16px"></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">${acciones}</div>
           </div>
         </div>
-      </div>
-    `).join('');
-
-    list.innerHTML = html;
-
-    // Render AFD mini-trackers inline
-    pieces.forEach(p => {
-      renderAFDTrackerMini(`tracker-inline-${p.id}`, p.estado_afd);
-    });
-
-    // Preview for inicio section
-    preview.innerHTML = pieces.slice(0, 2).map(p => `
-      <div class="restoration-card">
-        <img src="${p.imagen}" class="restoration-card-img" alt="${p.nombre}">
-        <div class="restoration-card-body">
-          <div class="restoration-card-tag">${AFD_STATES[p.estado_afd]?.phase || ''}</div>
-          <h4>${p.nombre}</h4>
-          <div class="restoration-card-meta">
-            <div class="meta-item"><span class="meta-label">Estado AFD</span><span class="meta-value">${AFD_STATES[p.estado_afd]?.label || p.estado_afd}</span></div>
-            <div class="meta-item"><span class="meta-label">Restaurador</span><span class="meta-value">${p.restaurador}</span></div>
-          </div>
-          <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center" onclick="showSection('mis-piezas')">Ver detalle</button>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  function renderAFDTrackerMini(containerId, currentState) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    const steps = ['q0','q4','q7','q8','q9','q10','qF1'];
-    const labels = { q0:'Capturada', q4:'Pago OK', q7:'En taller', q8:'Restaurando', q9:'Avances', q10:'Lista', qF1:'Completada' };
-    const currentIdx = steps.indexOf(currentState);
-
-    container.innerHTML = `
-      <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
-        ${steps.map((s, i) => {
-          let cls = 'pending';
-          if (i < currentIdx) cls = 'done';
-          else if (i === currentIdx) cls = 'current';
-          return `
-            <div style="display:flex;align-items:center;gap:4px">
-              <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-                <div style="width:24px;height:24px;border-radius:50%;background:${cls==='done'?'var(--brown)':cls==='current'?'var(--gold)':'var(--bg3)'};color:${cls==='done'||cls==='current'?'white':'var(--ink2)'};display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700">${cls==='done'?'✓':i+1}</div>
-                <span style="font-size:1rem;color:${cls==='current'?'var(--gold)':'var(--ink2)'};font-weight:${cls==='current'?'700':'400'}">${labels[s]||s}</span>
-              </div>
-              ${i < steps.length-1 ? `<div style="width:16px;height:1px;background:${i<currentIdx?'var(--brown)':'var(--bg3)'};margin-bottom:12px"></div>` : ''}
-            </div>
-          `;
-        }).join('')}
       </div>
     `;
   }
 
-  function openTrackerModal(pieceId) {
-    const piece = OWNER_PIECES_DEFAULT.find(p => p.id === pieceId);
-    if (!piece) return;
-    document.getElementById('modal-tracker-content').innerHTML = '';
-    renderAFDTracker('modal-tracker-content', piece.estado_afd, piece);
-    Modal.open('modal-tracker');
+  function renderPieces() {
+    const list = document.getElementById('pieces-list');
+    const preview = document.getElementById('active-preview');
+
+    if (!misPiezas.length) {
+      list.innerHTML = `<div class="empty-state"><h3>Aún no tienes piezas</h3><p>Registra tu primera antigüedad para empezar.</p><button class="btn btn-primary" onclick="openNuevaPiezaModal()">Registrar pieza</button></div>`;
+      preview.innerHTML = '';
+      return;
+    }
+
+    list.innerHTML = misPiezas.map(pieceCardHtml).join('');
+
+    preview.innerHTML = misPiezas.slice(0, 2).map(p => {
+      const info = estadoAntiguedadInfo(p.estadoActualAntiguedad);
+      return `
+      <div class="restoration-card">
+        <img src="${fotoConFallback(p.urlFotoPortada)}" class="restoration-card-img" alt="${tipoMuebleLabel(p.tipoMueble)}">
+        <div class="restoration-card-body">
+          <div class="restoration-card-tag">${info.label}</div>
+          <h4>${tipoMuebleLabel(p.tipoMueble)}</h4>
+          <div class="restoration-card-meta">
+            <div class="meta-item"><span class="meta-label">Estado</span><span class="meta-value">${info.label}</span></div>
+            <div class="meta-item"><span class="meta-label">Restaurador</span><span class="meta-value">${p.nombreRestaurador || 'Sin asignar'}</span></div>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center" onclick="showSection('mis-piezas')">Ver detalle</button>
+        </div>
+      </div>
+    `;
+    }).join('');
   }
 
-  renderPieces();
+  // ── REGISTRAR NUEVA PIEZA ──────────────────────────────────────
+  function llenarSelect(id, labels, placeholder) {
+    const el = document.getElementById(id);
+    el.innerHTML = `<option value="">${placeholder}</option>` +
+      Object.entries(labels).map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
+  }
+
+  function openNuevaPiezaModal() {
+    llenarSelect('np-tipo', TIPO_MUEBLE_LABELS, 'Selecciona el tipo de mueble');
+    llenarSelect('np-estilo', ESTILO_MUEBLE_LABELS, 'Selecciona el estilo (opcional)');
+    llenarSelect('np-material', MATERIAL_MUEBLE_LABELS, 'Selecciona el material (opcional)');
+    document.getElementById('np-danios').value = '';
+    document.getElementById('np-procedencia').value = '';
+    document.getElementById('np-error').classList.remove('visible');
+    Modal.open('modal-nueva-pieza');
+  }
+
+  async function registrarNuevaPieza() {
+    const tipoMueble = document.getElementById('np-tipo').value;
+    const errEl = document.getElementById('np-error');
+    if (!tipoMueble) {
+      errEl.textContent = 'Selecciona el tipo de mueble.';
+      errEl.classList.add('visible');
+      return;
+    }
+    const btn = document.getElementById('np-submit');
+    btn.disabled = true;
+    try {
+      await Api.registrarAntiguedad({
+        tipoMueble,
+        estiloMueble: document.getElementById('np-estilo').value || null,
+        materialMueble: document.getElementById('np-material').value || null,
+        descripcionDaniosAntiguedad: document.getElementById('np-danios').value || null,
+        procedenciaMueble: document.getElementById('np-procedencia').value || null,
+      });
+      Modal.close('modal-nueva-pieza');
+      Toast.show('Pieza registrada. Ya puedes buscar un restaurador.', 'success');
+      await cargarMisPiezas();
+      showSection('mis-piezas');
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.classList.add('visible');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ── BUSCAR / SELECCIONAR RESTAURADOR ───────────────────────────
+  let antiguedadParaRestaurador = null;
+
+  async function abrirBuscarRestauradores(antiguedadId) {
+    antiguedadParaRestaurador = antiguedadId;
+    const cont = document.getElementById('restauradores-list');
+    cont.innerHTML = '<p style="color:var(--ink2)">Cargando restauradores disponibles...</p>';
+    Modal.open('modal-restauradores');
+    try {
+      const page = await Api.buscarRestauradores();
+      const restauradores = page.content || [];
+      if (!restauradores.length) {
+        cont.innerHTML = '<p style="color:var(--ink2)">No hay restauradores disponibles en este momento.</p>';
+        return;
+      }
+      cont.innerHTML = restauradores.map(r => `
+        <div class="request-card">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <div>
+              <h4 style="font-family:'Playfair Display',serif">${r.especialidadRestaurador}</h4>
+              <p style="font-size:1rem;color:var(--ink2)">${r.anosExperienciaRestaurador} años de experiencia</p>
+              <p style="font-size:1rem;color:var(--ink2);margin-top:6px">${r.descripcionBioRestaurador || ''}</p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="seleccionarRestauradorActual('${r.restauradorId}')">Seleccionar</button>
+          </div>
+        </div>
+      `).join('');
+    } catch (err) {
+      cont.innerHTML = `<p style="color:var(--error)">${err.message}</p>`;
+    }
+  }
+
+  async function seleccionarRestauradorActual(restauradorId) {
+    try {
+      await Api.seleccionarRestaurador(antiguedadParaRestaurador, restauradorId);
+      Modal.close('modal-restauradores');
+      Toast.show('Restaurador seleccionado. Tu pieza está en evaluación.', 'success');
+      await cargarMisPiezas();
+    } catch (err) {
+      Toast.show(err.message, 'error');
+    }
+  }
+
+  // ── COTIZACIÓN ──────────────────────────────────────────────────
+  let antiguedadConCotizacion = null;
+
+  async function abrirCotizacion(antiguedadId) {
+    antiguedadConCotizacion = antiguedadId;
+    const cont = document.getElementById('cotizacion-content');
+    document.getElementById('cotizacion-error').classList.remove('visible');
+    cont.innerHTML = '<p style="color:var(--ink2)">Cargando cotización...</p>';
+    Modal.open('modal-cotizacion');
+    try {
+      const c = await Api.obtenerCotizacion(antiguedadId);
+      cont.innerHTML = `
+        <div style="background:var(--bg2);border-radius:8px;padding:16px;margin-bottom:16px">
+          <div class="meta-item" style="margin-bottom:8px"><div class="meta-label">Rango de costo</div><div class="meta-value">${Utils.formatCurrency(c.costoMinimoCotizacion)} – ${Utils.formatCurrency(c.costoMaximoCotizacion)}</div></div>
+          <div class="meta-item" style="margin-bottom:8px"><div class="meta-label">Tiempo estimado</div><div class="meta-value">${c.tipoSemanasCotizacion} semana(s)</div></div>
+          <div class="meta-item"><div class="meta-label">Proceso propuesto</div><div class="meta-value" style="font-weight:400">${c.descripcionProcesoCotizacion}</div></div>
+        </div>
+      `;
+    } catch (err) {
+      cont.innerHTML = `<p style="color:var(--error)">${err.message}</p>`;
+    }
+  }
+
+  async function aceptarCotizacionActual() {
+    try {
+      await Api.aceptarCotizacion(antiguedadConCotizacion);
+      Modal.close('modal-cotizacion');
+      Toast.show('Cotización aceptada. El pago quedó en garantía (escrow).', 'success');
+      await cargarMisPiezas();
+    } catch (err) {
+      const el = document.getElementById('cotizacion-error');
+      el.textContent = err.message;
+      el.classList.add('visible');
+    }
+  }
+
+  async function rechazarCotizacionActual() {
+    try {
+      await Api.rechazarCotizacion(antiguedadConCotizacion, 'El propietario decidió no continuar con esta cotización');
+      Modal.close('modal-cotizacion');
+      Toast.show('Cotización rechazada.', 'info');
+      await cargarMisPiezas();
+    } catch (err) {
+      const el = document.getElementById('cotizacion-error');
+      el.textContent = err.message;
+      el.classList.add('visible');
+    }
+  }
+
+  // ── AVANCES ──────────────────────────────────────────────────────
+  async function abrirAvances(antiguedadId) {
+    const cont = document.getElementById('avances-content');
+    cont.innerHTML = '<p style="color:var(--ink2)">Cargando avances...</p>';
+    Modal.open('modal-avances');
+    try {
+      const page = await Api.obtenerAvances(antiguedadId);
+      const avances = page.content || [];
+      if (!avances.length) {
+        cont.innerHTML = '<p style="color:var(--ink2)">Tu restaurador aún no ha publicado avances.</p>';
+        return;
+      }
+      cont.innerHTML = avances.map(a => `
+        <div class="card-elevated" style="margin-bottom:12px">
+          <p style="font-size:1rem;color:var(--ink2);margin-bottom:8px">${new Date(a.publicadoEn).toLocaleDateString('es-MX', { day:'numeric', month:'long', year:'numeric' })}</p>
+          <p style="margin-bottom:10px">${a.descripcionAvance}</p>
+          ${(a.fotos||[]).length ? `<div style="display:flex;gap:8px;flex-wrap:wrap">${a.fotos.map(f => `<img src="${f}" style="width:90px;height:70px;object-fit:cover;border-radius:6px">`).join('')}</div>` : ''}
+        </div>
+      `).join('');
+    } catch (err) {
+      cont.innerHTML = `<p style="color:var(--error)">${err.message}</p>`;
+    }
+  }
+
+  // ── PUBLICAR EN CATÁLOGO ──────────────────────────────────────────
+  let antiguedadParaCatalogo = null;
+
+  function abrirPublicarCatalogo(antiguedadId) {
+    antiguedadParaCatalogo = antiguedadId;
+    document.getElementById('pub-precio').value = '';
+    document.getElementById('pub-error').classList.remove('visible');
+    Modal.open('modal-publicar-catalogo');
+  }
+
+  async function publicarEnCatalogoActual() {
+    const precio = document.getElementById('pub-precio').value;
+    const errEl = document.getElementById('pub-error');
+    if (!precio || Number(precio) <= 0) {
+      errEl.textContent = 'Ingresa un precio válido.';
+      errEl.classList.add('visible');
+      return;
+    }
+    try {
+      await Api.publicarEnCatalogo(antiguedadParaCatalogo, Number(precio));
+      Modal.close('modal-publicar-catalogo');
+      Toast.show('¡Pieza publicada en el catálogo!', 'success');
+      await cargarMisPiezas();
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.classList.add('visible');
+    }
+  }
+
+  cargarMisPiezas();
 </script>
 </body>
 </html>

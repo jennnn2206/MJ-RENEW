@@ -10,10 +10,7 @@
 
 <div class="auth-page">
   <div class="auth-card">
-    <div class="auth-logo">
-      <h2>MJ Renew</h2>
-      <p>Antigüedades &amp; Restauración</p>
-    </div>
+    <div th:replace="~{fragmentos/logo-autenticacion :: logo-autenticacion('Antigüedades &amp; Restauración')}"></div>
 
     <h3 style="font-size:1.3rem;color:var(--ink);margin-bottom:4px">Bienvenido de vuelta</h3>
     <p style="font-size:1rem;color:var(--ink2);margin-bottom:24px">Accede a tu cuenta para continuar</p>
@@ -42,14 +39,14 @@
     <div style="background:var(--bg2);border-radius:10px;padding:16px;font-size:1rem;color:var(--ink2);margin-bottom:20px">
       <strong style="display:block;margin-bottom:8px;color:var(--ink2)">Cuentas de demostración:</strong>
       <div style="display:flex;flex-direction:column;gap:6px">
-        <div onclick="fillDemo('jennifer@mjrenew.mx','123456')" style="cursor:pointer;padding:6px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--bg3);transition:all 0.2s" onmouseover="this.style.borderColor='var(--brown)'" onmouseout="this.style.borderColor='var(--bg3)'">
-          <strong>Propietario</strong> · jennifer@mjrenew.mx / 123456
+        <div onclick="fillDemo('propietario1@test.mx','Test1234')" style="cursor:pointer;padding:6px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--bg3);transition:all 0.2s" onmouseover="this.style.borderColor='var(--brown)'" onmouseout="this.style.borderColor='var(--bg3)'">
+          <strong>Propietario</strong> · propietario1@test.mx / Test1234
         </div>
-        <div onclick="fillDemo('rafael@mjrenew.mx','123456')" style="cursor:pointer;padding:6px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--bg3);transition:all 0.2s" onmouseover="this.style.borderColor='var(--brown)'" onmouseout="this.style.borderColor='var(--bg3)'">
-          <strong>Restaurador</strong> · rafael@mjrenew.mx / 123456
+        <div onclick="fillDemo('restaurador1@test.mx','Test1234')" style="cursor:pointer;padding:6px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--bg3);transition:all 0.2s" onmouseover="this.style.borderColor='var(--brown)'" onmouseout="this.style.borderColor='var(--bg3)'">
+          <strong>Restaurador</strong> · restaurador1@test.mx / Test1234
         </div>
-        <div onclick="fillDemo('ana@mjrenew.mx','123456')" style="cursor:pointer;padding:6px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--bg3);transition:all 0.2s" onmouseover="this.style.borderColor='var(--brown)'" onmouseout="this.style.borderColor='var(--bg3)'">
-          <strong>Comprador</strong> · ana@mjrenew.mx / 123456
+        <div onclick="fillDemo('comprador1@test.mx','Test1234')" style="cursor:pointer;padding:6px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--bg3);transition:all 0.2s" onmouseover="this.style.borderColor='var(--brown)'" onmouseout="this.style.borderColor='var(--bg3)'">
+          <strong>Comprador</strong> · comprador1@test.mx / Test1234
         </div>
       </div>
     </div>
@@ -63,6 +60,16 @@
   </div>
 </div>
 
+<script th:src="@{/js/data/afd-estados.js}"></script>
+<script th:src="@{/js/data/catalogo.js}"></script>
+<script th:src="@{/js/data/restauradores.js}"></script>
+<script th:src="@{/js/data/piezas-propietario.js}"></script>
+<script th:src="@{/js/data/panel-restaurador.js}"></script>
+<script th:src="@{/js/autenticacion.js}"></script>
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/utilidades.js}"></script>
+<script th:src="@{/js/notificaciones.js}"></script>
+<script th:src="@{/js/modal.js}"></script>
 <script th:src="@{/js/app.js}"></script>
 <script>
   // Redirect if already logged in
@@ -103,8 +110,8 @@
     btn.disabled = true;
     btn.textContent = 'Verificando...';
 
-    setTimeout(() => {
-      const result = Auth.login(email, password);
+    setTimeout(async () => {
+      const result = await Auth.login(email, password);
       if (result.success) {
         const map = { propietario:'/propietario', restaurador:'/restaurador', comprador:'/comprador' };
         window.location.href = map[result.user.tipo] || '/comprador';

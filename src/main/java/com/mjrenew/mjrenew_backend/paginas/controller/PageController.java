@@ -1,4 +1,4 @@
-package com.mjrenew.mjrenew_backend.controller;
+package com.mjrenew.mjrenew_backend.paginas.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="restaurador-perfil" id="section-perfil" class="dash-section" style="display:none">
+    <div style="margin-bottom:24px"><h2 style="font-size:1.5rem">Mi perfil profesional</h2><p style="color:var(--ink2)">Así te ven los propietarios cuando buscan restaurador</p></div>
+    <div class="grid-2" style="align-items:start;gap:24px">
+        <div class="card-elevated">
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--bg3)">
+                <div class="user-avatar" id="profile-avatar" style="width:60px;height:60px;font-size:1.4rem;background:var(--gold);color:var(--brown)"></div>
+                <div>
+                    <h3 style="font-family:'Playfair Display',serif" id="profile-name"></h3>
+                    <span class="badge" id="perfil-aprobado-badge">—</span>
+                </div>
+            </div>
+            <div class="form-group"><label class="form-label">Especialidad</label><input class="form-control" id="perfil-especialidad" placeholder="Ej. Ebanistería y restauración de madera"></div>
+            <div class="form-group"><label class="form-label">Años de experiencia</label><input type="number" class="form-control" id="perfil-experiencia" placeholder="Ej. 12"></div>
+            <div class="form-group"><label class="form-label">Descripción</label><textarea class="form-control" id="perfil-bio" rows="4" placeholder="Cuéntale a los propietarios sobre tu experiencia..."></textarea></div>
+            <div id="perfil-error" class="form-error"></div>
+            <div style="display:flex;gap:10px">
+                <button class="btn btn-primary" onclick="guardarPerfilRestaurador()">Guardar cambios</button>
+            </div>
+        </div>
+        <div>
+            <div class="card-elevated" style="margin-bottom:16px">
+                <h4 style="font-family:'Playfair Display',serif;margin-bottom:12px">Disponibilidad</h4>
+                <p style="font-size:1rem;color:var(--ink2);margin-bottom:12px">Los propietarios solo pueden seleccionarte si estás disponible.</p>
+                <div class="form-group">
+                    <select class="form-control" id="perfil-disponibilidad" onchange="cambiarDisponibilidad()">
+                        <option value="DISPONIBLE">Disponible</option>
+                        <option value="NO_DISPONIBLE">No disponible</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-elevated">
+                <h4 style="font-family:'Playfair Display',serif;margin-bottom:12px">Estado de la cuenta</h4>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                    <div class="meta-item"><span class="meta-label">Aprobación del administrador</span><span class="meta-value" id="perfil-aprobado-texto">—</span></div>
+                    <div class="meta-item"><span class="meta-label">Última actualización</span><span class="meta-value" id="perfil-actualizado">—</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
