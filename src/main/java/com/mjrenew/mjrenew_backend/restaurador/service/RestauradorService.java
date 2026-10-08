@@ -11,7 +11,6 @@ import com.mjrenew.mjrenew_backend.nucleo.exception.TransicionEstadoInvalidaExce
 import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadDetalleResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.DimensionResponse;
-import com.mjrenew.mjrenew_backend.propietario.entity.Dimension;
 import com.mjrenew.mjrenew_backend.propietario.entity.FotografiaAntiguedad;
 import com.mjrenew.mjrenew_backend.propietario.mapper.AntiguedadMapper;
 import com.mjrenew.mjrenew_backend.propietario.repository.DimensionRepository;
@@ -181,8 +180,11 @@ public class RestauradorService {
      *      ↓
      * CALCULANDO_PRESUPUESTO
      *
-     * Durante esta operación se registran también las dimensiones
-     * tomadas por el restaurador.
+     * Ya no registra dimensiones aquí: el restaurador no tiene la pieza
+     * en su poder durante la evaluación (es visual, a partir de las fotos
+     * del estado inicial), así que no puede medirla. Las dimensiones las
+     * aporta el propietario al registrar la pieza — si las dio, ya están
+     * guardadas de antes y se reflejan en construirDetalle() más abajo.
      */
 
     @Transactional
@@ -203,38 +205,6 @@ public class RestauradorService {
                 EstadoAntiguedad.EN_EVALUACION
         );
 
-
-        /*
-         * Se evita crear dos registros de dimensiones
-         * para la misma antigüedad.
-         */
-        if (dimensionRepository
-                .findByAntiguedad_AntiguedadesId(antiguedadId)
-                .isPresent()) {
-
-            throw new TransicionEstadoInvalidaException(
-                    "La antigüedad ya tiene dimensiones registradas"
-            );
-        }
-
-
-        /*
-         * MapStruct crea la entidad Dimension a partir
-         * del DTO recibido.
-         */
-        Dimension dimension =
-                restauradorMapper.toDimension(request);
-
-        dimension.setAntiguedad(antiguedad);
-
-        dimension.setRegistradasEnDimensiones(
-                OffsetDateTime.now()
-        );
-
-        Dimension dimensionGuardada =
-                dimensionRepository.save(dimension);
-
-
         /*
          * Transición del autómata.
          */
@@ -242,17 +212,7 @@ public class RestauradorService {
                 EstadoAntiguedad.CALCULANDO_PRESUPUESTO
         );
 
-
-        DimensionResponse dimensionResponse =
-                antiguedadMapper.toDimensionResponse(
-                        dimensionGuardada
-                );
-
-
-        return antiguedadMapper.toDetalle(
-                antiguedad,
-                dimensionResponse
-        );
+        return construirDetalle(antiguedad);
     }
 
     /*
@@ -751,10 +711,21 @@ public class RestauradorService {
                         )
                         .orElse(null);
 
+        List<String> fotosEstadoInicial =
+                fotografiaAntiguedadRepository
+                        .findByAntiguedad_AntiguedadesIdAndTipoFotografiaOrderBySubidaEnFotografiaAsc(
+                                antiguedad.getAntiguedadesId(),
+                                TipoFotografia.ESTADO_INICIAL
+                        )
+                        .stream()
+                        .map(FotografiaAntiguedad::getUrlAlmacenFotografia)
+                        .toList();
+
 
         return antiguedadMapper.toDetalle(
                 antiguedad,
-                dimensionResponse
+                dimensionResponse,
+                fotosEstadoInicial
         );
     }
 }

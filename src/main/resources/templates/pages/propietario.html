@@ -128,11 +128,41 @@
       <label class="form-label">Procedencia / historia de la pieza</label>
       <textarea class="form-control" id="np-procedencia" rows="2" placeholder="Ej. Heredada de mis abuelos..."></textarea>
     </div>
+
+    <hr class="divider">
+
+    <p class="eyebrow" style="margin-bottom:10px">Dimensiones (opcional)</p>
+    <p style="font-size:1rem;color:var(--ink2);margin-bottom:12px">Ayudan al restaurador a evaluar tu pieza sin tenerla en sus manos.</p>
+    <div class="grid-2">
+      <div class="form-group"><label class="form-label">Alto (cm)</label><input type="number" id="np-alto" class="form-control" placeholder="Ej. 80"></div>
+      <div class="form-group"><label class="form-label">Ancho (cm)</label><input type="number" id="np-ancho" class="form-control" placeholder="Ej. 50"></div>
+      <div class="form-group"><label class="form-label">Profundidad (cm)</label><input type="number" id="np-profundidad" class="form-control" placeholder="Ej. 40"></div>
+      <div class="form-group"><label class="form-label">Peso (kg)</label><input type="number" id="np-peso" class="form-control" placeholder="Ej. 15"></div>
+    </div>
+
+    <hr class="divider">
+
+    <p class="eyebrow" style="margin-bottom:10px">Fotos del estado actual (opcional)</p>
+    <p style="font-size:1rem;color:var(--ink2);margin-bottom:12px">Por ahora solo aceptamos URLs de fotos ya subidas a algún sitio (no hay carga de archivos todavía).</p>
+    <div id="np-fotos-list"></div>
+    <button type="button" class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="agregarCampoFoto()">+ Agregar otra foto</button>
+
     <div id="np-error" class="form-error"></div>
     <div style="display:flex;gap:10px">
       <button class="btn btn-primary" id="np-submit" onclick="registrarNuevaPieza()">Registrar pieza</button>
       <button class="btn btn-ghost" onclick="Modal.close('modal-nueva-pieza')">Cancelar</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL: Detalle de pieza -->
+<div class="modal-overlay" id="modal-detalle-pieza">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 style="font-family:'Playfair Display',serif">Detalle de la pieza</h3>
+      <button class="modal-close" onclick="Modal.close('modal-detalle-pieza')">×</button>
+    </div>
+    <div id="detalle-pieza-content"></div>
   </div>
 </div>
 
@@ -262,7 +292,7 @@
     const nombre = `${tipoMuebleLabel(p.tipoMueble)}`;
     const img = fotoConFallback(p.urlFotoPortada);
 
-    let acciones = '';
+    let acciones = `<button class="btn btn-ghost btn-sm" onclick="abrirDetallePieza('${p.antiguedadId}')">Ver detalle</button>`;
     if (p.estadoActualAntiguedad === 'PIEZA_CAPTURADA' && !p.nombreRestaurador) {
       acciones += `<button class="btn btn-primary btn-sm" onclick="abrirBuscarRestauradores('${p.antiguedadId}')">Buscar restaurador</button>`;
     }
@@ -341,8 +371,21 @@
     llenarSelect('np-material', MATERIAL_MUEBLE_LABELS, 'Selecciona el material (opcional)');
     document.getElementById('np-danios').value = '';
     document.getElementById('np-procedencia').value = '';
+    ['np-alto', 'np-ancho', 'np-profundidad', 'np-peso'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('np-fotos-list').innerHTML = '';
+    agregarCampoFoto();
     document.getElementById('np-error').classList.remove('visible');
     Modal.open('modal-nueva-pieza');
+  }
+
+  // No hay carga de archivos todavía (sin S3/Cloudinary): se piden URLs
+  // de fotos ya subidas a algún sitio, con un botón para agregar más.
+  function agregarCampoFoto() {
+    const cont = document.getElementById('np-fotos-list');
+    const div = document.createElement('div');
+    div.className = 'form-group';
+    div.innerHTML = `<input type="url" class="form-control np-foto-input" placeholder="https://... (URL de la foto)">`;
+    cont.appendChild(div);
   }
 
   async function registrarNuevaPieza() {
@@ -353,6 +396,10 @@
       errEl.classList.add('visible');
       return;
     }
+    const urlsFotografiasIniciales = [...document.querySelectorAll('.np-foto-input')]
+      .map(el => el.value.trim())
+      .filter(Boolean);
+
     const btn = document.getElementById('np-submit');
     btn.disabled = true;
     try {
@@ -362,6 +409,11 @@
         materialMueble: document.getElementById('np-material').value || null,
         descripcionDaniosAntiguedad: document.getElementById('np-danios').value || null,
         procedenciaMueble: document.getElementById('np-procedencia').value || null,
+        altoCmAntiguedad: document.getElementById('np-alto').value || null,
+        anchoCmAntiguedad: document.getElementById('np-ancho').value || null,
+        profundidadCmAntiguedad: document.getElementById('np-profundidad').value || null,
+        pesoKgAntiguedad: document.getElementById('np-peso').value || null,
+        urlsFotografiasIniciales: urlsFotografiasIniciales.length ? urlsFotografiasIniciales : null,
       });
       Modal.close('modal-nueva-pieza');
       Toast.show('Pieza registrada. Ya puedes buscar un restaurador.', 'success');
@@ -372,6 +424,41 @@
       errEl.classList.add('visible');
     } finally {
       btn.disabled = false;
+    }
+  }
+
+  // ── VER DETALLE DE PIEZA ────────────────────────────────────────
+  async function abrirDetallePieza(antiguedadId) {
+    const cont = document.getElementById('detalle-pieza-content');
+    cont.innerHTML = '<p style="color:var(--ink2)">Cargando...</p>';
+    Modal.open('modal-detalle-pieza');
+    try {
+      const a = await Api.detalleAntiguedad(antiguedadId);
+      const info = estadoAntiguedadInfo(a.estadoActualAntiguedad);
+      const fotos = a.fotosEstadoInicial || [];
+      const dim = a.dimension;
+
+      cont.innerHTML = `
+        <div style="margin-bottom:16px">
+          <h4 style="font-family:'Playfair Display',serif">${tipoMuebleLabel(a.tipoMueble)}</h4>
+          <span class="badge ${info.badge}">${info.label}</span>
+        </div>
+        ${fotos.length ? `
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+            ${fotos.map(f => `<img src="${f}" style="width:110px;height:90px;object-fit:cover;border-radius:8px">`).join('')}
+          </div>
+        ` : `<p style="color:var(--ink2);margin-bottom:16px">Todavía no registraste fotos de esta pieza.</p>`}
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px">
+          <div class="meta-item"><div class="meta-label">Estilo</div><div class="meta-value">${estiloMuebleLabel(a.estiloMueble) || '—'}</div></div>
+          <div class="meta-item"><div class="meta-label">Material</div><div class="meta-value">${materialMuebleLabel(a.materialMueble) || '—'}</div></div>
+          <div class="meta-item"><div class="meta-label">Restaurador</div><div class="meta-value">${a.nombreCompletoRestaurador || 'Sin asignar'}</div></div>
+          <div class="meta-item"><div class="meta-label">Dimensiones</div><div class="meta-value">${dim ? `${dim.altoCm ?? '—'} × ${dim.anchoCm ?? '—'} × ${dim.profundidadCm ?? '—'} cm` : 'No registradas'}</div></div>
+        </div>
+        ${a.descripcionDaniosAntiguedad ? `<p><strong>Daños:</strong> ${a.descripcionDaniosAntiguedad}</p>` : ''}
+        ${a.procedenciaMueble ? `<p style="margin-top:8px"><strong>Procedencia:</strong> ${a.procedenciaMueble}</p>` : ''}
+      `;
+    } catch (err) {
+      cont.innerHTML = `<p style="color:var(--error)">${err.message}</p>`;
     }
   }
 

@@ -2,9 +2,7 @@ package com.mjrenew.mjrenew_backend.restaurador.mapper;
 
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.enums.DisponibilidadRestaurador;
-import com.mjrenew.mjrenew_backend.propietario.entity.Dimension;
 import com.mjrenew.mjrenew_backend.restaurador.dto.AntiguedadResumenResponse;
-import com.mjrenew.mjrenew_backend.restaurador.dto.EvaluarAntiguedadRequest;
 import com.mjrenew.mjrenew_backend.restaurador.dto.PerfilRestauradorCompletoResponse;
 import com.mjrenew.mjrenew_backend.restaurador.dto.PerfilRestauradorPublicoResponse;
 import com.mjrenew.mjrenew_backend.restaurador.entity.AvanceRestauracion;
@@ -87,54 +85,6 @@ public interface RestauradorMapper {
             PerfilRestaurador perfilRestaurador
     );
 
-
-    /*
-     * ============================================================
-     * EVALUACIÓN -> DIMENSIONES
-     * ============================================================
-     *
-     * Convierte los datos recibidos en
-     * EvaluarAntiguedadRequest a la entidad Dimension.
-     *
-     * Los campos que dependen del backend se asignan posteriormente
-     * en RestauradorService:
-     *
-     * - dimensionesId -> generado por JPA
-     * - antiguedad -> antigüedad autenticada/asignada
-     * - registradasEnDimensiones -> fecha del servidor
-     */
-
-    @Mapping(
-            target = "dimensionesId",
-            ignore = true
-    )
-    @Mapping(
-            target = "antiguedad",
-            ignore = true
-    )
-    @Mapping(
-            target = "altoCmAntiguedad",
-            source = "altoCm"
-    )
-    @Mapping(
-            target = "anchoCmAntiguedad",
-            source = "anchoCm"
-    )
-    @Mapping(
-            target = "profundidadCmAntiguedad",
-            source = "profundidadCm"
-    )
-    @Mapping(
-            target = "pesoKgAntiguedad",
-            source = "pesoKg"
-    )
-    @Mapping(
-            target = "registradasEnDimensiones",
-            ignore = true
-    )
-    Dimension toDimension(
-            EvaluarAntiguedadRequest request
-    );
 
     /*
      * ============================================================

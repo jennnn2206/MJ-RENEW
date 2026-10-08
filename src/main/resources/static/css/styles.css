@@ -334,6 +334,8 @@ p  { color: var(--ink2); line-height: 1.7; }
   padding: 36px;
   max-width: 540px;
   width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: var(--shadow-lg);
   transform: translateY(10px);
   transition: transform 0.25s cubic-bezier(0.22,1,0.36,1);

@@ -176,17 +176,13 @@
   function openQuoteModal(antiguedadId) {
     currentRequestId = antiguedadId;
     document.getElementById('modal-quote-piece').innerHTML = `<strong>Pieza:</strong> ${antiguedadId}`;
-    ['q-alto','q-ancho','q-profundidad','q-peso','q-costo-min','q-costo-max','q-tiempo','q-desc'].forEach(id => document.getElementById(id).value = '');
+    ['q-costo-min','q-costo-max','q-tiempo','q-desc'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('q-error').classList.remove('visible');
     Modal.open('modal-quote');
   }
 
   async function sendQuote() {
     const errEl = document.getElementById('q-error');
-    const alto = document.getElementById('q-alto').value;
-    const ancho = document.getElementById('q-ancho').value;
-    const profundidad = document.getElementById('q-profundidad').value;
-    const peso = document.getElementById('q-peso').value;
     const costoMin = document.getElementById('q-costo-min').value;
     const costoMax = document.getElementById('q-costo-max').value;
     const tiempo = document.getElementById('q-tiempo').value;
@@ -201,9 +197,9 @@
     const btn = document.getElementById('q-submit');
     btn.disabled = true;
     try {
-      await Api.confirmarEvaluacion(currentRequestId, {
-        altoCm: alto || null, anchoCm: ancho || null, profundidadCm: profundidad || null, pesoKg: peso || null,
-      });
+      // El restaurador ya no mide la pieza: la evaluación es visual, a
+      // partir de las fotos que subió el propietario al registrarla.
+      await Api.confirmarEvaluacion(currentRequestId, {});
       await Api.generarCotizacion(currentRequestId, {
         descripcionProcesoCotizacion: desc,
         costoMinimoCotizacion: Number(costoMin),

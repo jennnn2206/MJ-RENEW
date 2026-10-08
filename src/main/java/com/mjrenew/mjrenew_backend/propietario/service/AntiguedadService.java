@@ -21,6 +21,7 @@ import com.mjrenew.mjrenew_backend.propietario.dto.DimensionResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.PublicarEnCatalogoRequest;
 import com.mjrenew.mjrenew_backend.propietario.dto.RechazarCotizacionRequest;
 import com.mjrenew.mjrenew_backend.propietario.dto.SeleccionarRestauradorRequest;
+import com.mjrenew.mjrenew_backend.propietario.entity.Dimension;
 import com.mjrenew.mjrenew_backend.propietario.entity.FotografiaAntiguedad;
 import com.mjrenew.mjrenew_backend.propietario.mapper.AntiguedadMapper;
 import com.mjrenew.mjrenew_backend.propietario.repository.DimensionRepository;
@@ -40,6 +41,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -101,6 +103,47 @@ public class AntiguedadService {
 
         Antiguedad guardada =
                 antiguedadRepository.save(antiguedad);
+
+        /*
+         * Dimensiones: las aporta el propietario aquí, al registrar la
+         * pieza (no el restaurador durante la evaluación visual). Solo
+         * se crea el registro si vino al menos un valor.
+         */
+        if (request.altoCmAntiguedad() != null
+                || request.anchoCmAntiguedad() != null
+                || request.profundidadCmAntiguedad() != null
+                || request.pesoKgAntiguedad() != null) {
+
+            Dimension dimension =
+                    antiguedadMapper.toDimension(request);
+
+            dimension.setAntiguedad(guardada);
+
+            dimension.setRegistradasEnDimensiones(
+                    OffsetDateTime.now()
+            );
+
+            dimensionRepository.save(dimension);
+        }
+
+        /*
+         * Fotos del estado inicial: tampoco hay servicio de almacenamiento
+         * (S3/Cloudinary) todavía, así que se reciben URLs externas ya
+         * subidas por el propietario, no archivos.
+         */
+        if (request.urlsFotografiasIniciales() != null) {
+
+            for (String url : request.urlsFotografiasIniciales()) {
+
+                FotografiaAntiguedad foto = new FotografiaAntiguedad();
+                foto.setAntiguedad(guardada);
+                foto.setTipoFotografia(TipoFotografia.ESTADO_INICIAL);
+                foto.setUrlAlmacenFotografia(url);
+                foto.setSubidaEnFotografia(OffsetDateTime.now());
+
+                fotografiaRepository.save(foto);
+            }
+        }
 
         return construirDetalle(guardada);
     }
@@ -409,8 +452,21 @@ public class AntiguedadService {
 
         return antiguedadMapper.toDetalle(
                 antiguedad,
-                dimension
+                dimension,
+                obtenerFotosEstadoInicial(antiguedad)
         );
+    }
+
+    private List<String> obtenerFotosEstadoInicial(Antiguedad antiguedad) {
+
+        return fotografiaRepository
+                .findByAntiguedad_AntiguedadesIdAndTipoFotografiaOrderBySubidaEnFotografiaAsc(
+                        antiguedad.getAntiguedadesId(),
+                        TipoFotografia.ESTADO_INICIAL
+                )
+                .stream()
+                .map(FotografiaAntiguedad::getUrlAlmacenFotografia)
+                .toList();
     }
 
     private Antiguedad buscarOFallar(

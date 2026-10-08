@@ -13,5 +13,8 @@ public interface FotografiaAntiguedadRepository extends JpaRepository<Fotografia
     Optional<FotografiaAntiguedad> findFirstByAntiguedad_AntiguedadesIdAndTipoFotografiaOrderBySubidaEnFotografiaAsc(
             UUID antiguedadId, TipoFotografia tipoFotografia);
 
+    List<FotografiaAntiguedad> findByAntiguedad_AntiguedadesIdAndTipoFotografiaOrderBySubidaEnFotografiaAsc(
+            UUID antiguedadId, TipoFotografia tipoFotografia);
+
     List<FotografiaAntiguedad> findByAvance_AvancesRestauracionId(UUID avanceId);
 }
