@@ -50,7 +50,7 @@
       <button class="modal-close" onclick="Modal.close('modal-buy')">×</button>
     </div>
     <div id="buy-piece-name" style="background:var(--bg2);border-radius:8px;padding:12px;margin-bottom:20px;font-weight:600;color:var(--ink)"></div>
-    <p style="font-size:1rem;color:var(--ink2);margin-bottom:20px">Al confirmar, se genera un link de pago (por ahora simulado) y la pieza queda reservada.</p>
+    <p style="font-size:1rem;color:var(--ink2);margin-bottom:20px">Al confirmar, se abrirá Stripe Checkout. La compra se confirma únicamente después de verificar el pago.</p>
     <div id="buy-error" class="form-error"></div>
     <div id="buy-success" style="display:none;background:var(--bg2);border-radius:8px;padding:14px;margin-bottom:16px;word-break:break-all"></div>
     <div style="display:flex;gap:10px">
@@ -199,12 +199,13 @@
     }
     try {
       const resp = await Api.iniciarCompraPiezaCatalogo(catalogoId);
+      // MJRENEW-STRIPE: Checkout real; nunca anunciar venta completada antes del webhook.
+      const destino = new URL(resp.urlPagoStripe);
+      if (destino.protocol !== 'https:' || destino.hostname !== 'checkout.stripe.com') {
+        throw new Error('Stripe devolvió un enlace de pago inválido.');
+      }
       document.getElementById('buy-confirm-btn').disabled = true;
-      errEl.classList.remove('visible');
-      const successEl = document.getElementById('buy-success');
-      successEl.style.display = 'block';
-      successEl.innerHTML = `<strong>¡Compra iniciada!</strong><br>Link de pago (simulado): <a href="#" onclick="return false">${resp.urlPagoStripe}</a>`;
-      Toast.show('Compra iniciada. Revisa el link de pago simulado.', 'success', 5000);
+      window.location.assign(destino.href);
     } catch (err) {
       errEl.textContent = err.message;
       errEl.classList.add('visible');

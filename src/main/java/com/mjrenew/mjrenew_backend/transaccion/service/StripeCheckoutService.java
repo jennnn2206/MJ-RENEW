@@ -3,6 +3,7 @@ package com.mjrenew.mjrenew_backend.transaccion.service;
 import com.mjrenew.mjrenew_backend.nucleo.exception.SolicitudInvalidaException;
 import com.mjrenew.mjrenew_backend.transaccion.dto.StripeCheckoutSession;
 import com.mjrenew.mjrenew_backend.transaccion.entity.TransaccionBancaria;
+import com.mjrenew.mjrenew_backend.nucleo.enums.TipoTransaccion;
 
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 @Service
 public class StripeCheckoutService {
@@ -67,8 +70,15 @@ public class StripeCheckoutService {
         Stripe.apiKey = stripeSecretKey;
 
 
+        // MJRENEW-STRIPE: cada proceso regresa a su pantalla correspondiente.
+        String rutaRetorno = transaccion.getTipoTransaccion() == TipoTransaccion.PAGO_RESTAURACION
+                ? "/propietario" : "/catalogo";
+
         SessionCreateParams params =
                 SessionCreateParams.builder()
+                        // Checkout hospedado exige como mínimo ~30 minutos.
+                        // Los 7 minutos del ERS requieren un mecanismo adicional.
+                        .setExpiresAt(Instant.now().plus(35, ChronoUnit.MINUTES).getEpochSecond())
 
                         /*
                          * Esta sesión corresponde
@@ -91,7 +101,7 @@ public class StripeCheckoutService {
                          */
                         .setSuccessUrl(
                                 appBaseUrl
-                                        + "/catalogo"
+                                        + rutaRetorno
                                         + "?pago=exitoso"
                                         + "&session_id={CHECKOUT_SESSION_ID}"
                         )
@@ -102,7 +112,7 @@ public class StripeCheckoutService {
                          */
                         .setCancelUrl(
                                 appBaseUrl
-                                        + "/catalogo"
+                                        + rutaRetorno
                                         + "?pago=cancelado"
                         )
 
@@ -234,6 +244,28 @@ public class StripeCheckoutService {
         }
     }
 
+
+    // MJRENEW-STRIPE: reutilizar Checkout pendiente evita crear cobros duplicados.
+    // null significa que Stripe confirmó que la sesión venció.
+    public StripeCheckoutSession recuperarSesionAbierta(String referenciaStripe) {
+        Stripe.apiKey = stripeSecretKey;
+        try {
+            Session session = Session.retrieve(referenciaStripe);
+            if ("expired".equals(session.getStatus())) {
+                return null;
+            }
+            if (!"open".equals(session.getStatus())) {
+                throw new SolicitudInvalidaException(
+                        "Este pago está siendo confirmado. Actualiza tu panel en unos momentos");
+            }
+            if (session.getUrl() == null || session.getUrl().isBlank()) {
+                throw new SolicitudInvalidaException("La sesión de pago no tiene una URL válida");
+            }
+            return new StripeCheckoutSession(session.getId(), session.getUrl());
+        } catch (StripeException ex) {
+            throw new SolicitudInvalidaException("No fue posible consultar la sesión de Stripe");
+        }
+    }
 
     private void validarTransaccion(
             TransaccionBancaria transaccion

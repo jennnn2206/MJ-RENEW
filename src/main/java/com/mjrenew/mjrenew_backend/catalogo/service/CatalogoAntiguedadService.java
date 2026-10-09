@@ -116,8 +116,11 @@ public class CatalogoAntiguedadService {
             Usuario comprador
     ) {
 
-        CatalogoAntiguedad catalogo =
-                buscarOFallar(catalogoId);
+        // MJRENEW-STRIPE: bloquea la fila durante la reserva; evita Checkout
+        // duplicado si dos compradores presionan Comprar al mismo tiempo.
+        CatalogoAntiguedad catalogo = catalogoRepository.buscarParaCompra(catalogoId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No existe una pieza en catálogo con id " + catalogoId));
 
         Antiguedad antiguedad =
                 catalogo.getAntiguedad();
@@ -214,10 +217,8 @@ public class CatalogoAntiguedadService {
         /*
          * 5. Solicitar una sesión de pago.
          *
-         * Actualmente StripeCheckoutService
-         * todavía utiliza un mock.
-         *
-         * Posteriormente ahí conectaremos Stripe real.
+         * StripeCheckoutService crea el Checkout real.
+         * La confirmación se recibe únicamente por webhook.
          */
         StripeCheckoutSession checkout =
                 stripeCheckoutService

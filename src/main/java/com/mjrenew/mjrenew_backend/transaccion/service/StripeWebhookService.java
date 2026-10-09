@@ -22,6 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.math.BigDecimal;
+import java.util.Objects;
 
 @Service
 public class StripeWebhookService {
@@ -96,16 +98,14 @@ public class StripeWebhookService {
         }
 
 
-        /*
-         * Por ahora solamente nos interesa
-         * el evento que confirma Checkout.
-         */
-        if (!"checkout.session.completed"
-                .equals(event.getType())) {
-
+        // MJRENEW-STRIPE: manejar pago confirmado y fallos/vencimientos.
+        boolean pagoConfirmado = "checkout.session.completed".equals(event.getType())
+                || "checkout.session.async_payment_succeeded".equals(event.getType());
+        boolean pagoNoCompletado = "checkout.session.expired".equals(event.getType())
+                || "checkout.session.async_payment_failed".equals(event.getType());
+        if (!pagoConfirmado && !pagoNoCompletado) {
             return;
         }
-
 
         StripeObject stripeObject =
                 event
@@ -150,6 +150,31 @@ public class StripeWebhookService {
                                 )
                         );
 
+
+        // MJRENEW-STRIPE: correlacionar el evento con la operación interna.
+        // No confiar solo en el session_id: verificar id interno y monto.
+        if (session.getMetadata() == null
+                || !Objects.equals(session.getMetadata().get("transaccionId"),
+                transaccion.getTransaccionId().toString())) {
+            throw new SolicitudInvalidaException("La referencia interna de Stripe no coincide");
+        }
+
+        if (pagoNoCompletado) {
+            procesarPagoNoCompletado(transaccion);
+            return;
+        }
+
+        // checkout.session.completed también puede significar pago ASÍNCRONO pendiente.
+        // En ese caso esperar checkout.session.async_payment_succeeded.
+        if (!"paid".equals(session.getPaymentStatus())) {
+            return;
+        }
+        long esperadoCentavos = transaccion.getMontoBrutoMxnTransaccion()
+                .movePointRight(2).longValueExact();
+        if (!"mxn".equalsIgnoreCase(session.getCurrency())
+                || !Objects.equals(session.getAmountTotal(), esperadoCentavos)) {
+            throw new SolicitudInvalidaException("La moneda o el monto confirmado por Stripe no coincide");
+        }
 
         /*
          * Stripe puede reenviar webhooks.
@@ -265,6 +290,11 @@ public class StripeWebhookService {
                 OffsetDateTime.now()
         );
 
+        // MJRENEW-STRIPE: PaymentIntent es trazabilidad, no un cargo duplicado.
+        // El session_id continúa en referenciaStripeTransaccion.
+        // Se completa desde el evento, nunca desde parámetros del navegador.
+
+
 
         marcarTransaccionExitosa(
                 transaccion
@@ -318,6 +348,31 @@ public class StripeWebhookService {
         );
     }
 
+
+    // MJRENEW-STRIPE: liberar la reserva si Checkout expiró o falló.
+    private void procesarPagoNoCompletado(TransaccionBancaria transaccion) {
+        if (transaccion.getEstadoTransaccion() != EstadoTransaccion.PENDIENTE) {
+            return;  // Idempotencia: ignorar reenvíos y eventos tardíos.
+        }
+        transaccion.setEstadoTransaccion(EstadoTransaccion.FALLIDA);
+        transaccion.setProcesadaEnTransaccion(OffsetDateTime.now());
+
+        if (transaccion.getTipoTransaccion() != TipoTransaccion.PAGO_VENTA) {
+            // Para restauración no hay transición previa: permanece en PRESUPUESTO_PRESENTADO.
+            return;
+        }
+
+        Antiguedad antiguedad = transaccion.getAntiguedad();
+        CatalogoAntiguedad catalogo = transaccion.getCatalogoAntiguedad();
+        if (antiguedad != null && catalogo != null
+                && antiguedad.getEstadoActualAntiguedad() == EstadoAntiguedad.LINK_PAGO_ENVIADO) {
+            antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.EN_CATALOGO);
+            catalogo.setActivaCatalogo(true);
+            catalogo.setComprador(null);
+            catalogo.setIdLinkStripeCatalogo(null);
+            catalogo.setUrlLinkPagoCatalogo(null);
+        }
+    }
 
     private void marcarTransaccionExitosa(
             TransaccionBancaria transaccion

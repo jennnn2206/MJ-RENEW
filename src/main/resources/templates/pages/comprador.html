@@ -127,7 +127,7 @@
   function renderGridInto(containerId, list) {
     const el = document.getElementById(containerId);
     el.innerHTML = list.length ? list.map(piezaCardHtml).join('')
-      : `<div class="empty-state" style="grid-column:1/-1"><h3>Sin resultados</h3><p>Intenta con otra búsqueda.</p></div>`;
+            : `<div class="empty-state" style="grid-column:1/-1"><h3>Sin resultados</h3><p>Intenta con otra búsqueda.</p></div>`;
   }
 
   async function cargarCatalogo() {
@@ -140,8 +140,8 @@
     }
     const tipos = [...new Set(catalogoCompleto.map(p => p.tipoMueble))];
     document.getElementById('tag-filters').innerHTML =
-      `<button class="btn btn-ghost btn-sm" onclick="filterByTipo('')">Todos</button>` +
-      tipos.map(t => `<button class="btn btn-ghost btn-sm" onclick="filterByTipo('${t}')">${tipoMuebleLabel(t)}</button>`).join('');
+            `<button class="btn btn-ghost btn-sm" onclick="filterByTipo('')">Todos</button>` +
+            tipos.map(t => `<button class="btn btn-ghost btn-sm" onclick="filterByTipo('${t}')">${tipoMuebleLabel(t)}</button>`).join('');
     renderGridInto('dashboard-catalog', catalogoCompleto);
   }
 
@@ -179,6 +179,13 @@
   window.viewPiece = (id) => { window.location.href = `/pieza?id=${id}`; };
 
   cargarCatalogo();
+  // MJRENEW-STRIPE: solo el webhook confirma la venta.
+  const resultadoPago = new URLSearchParams(window.location.search).get('pago');
+  if (resultadoPago === 'exitoso') {
+    Toast.show('Regresaste de Stripe. Espera la confirmación de tu compra.', 'info', 7000);
+  } else if (resultadoPago === 'cancelado') {
+    Toast.show('No se completó el pago. La reserva vencerá si no se paga.', 'info', 6000);
+  }
 </script>
 </body>
 </html>

@@ -11,6 +11,15 @@ import com.mjrenew.mjrenew_backend.nucleo.enums.DisponibilidadRestaurador;
 import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoAntiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoCotizacion;
 import com.mjrenew.mjrenew_backend.nucleo.enums.TipoFotografia;
+// MJRENEW-STRIPE: tipos propios del flujo bancario; no cadenas mágicas.
+import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoTransaccion;
+import com.mjrenew.mjrenew_backend.nucleo.enums.FlujoTransaccion;
+import com.mjrenew.mjrenew_backend.nucleo.enums.TipoTransaccion;
+import com.mjrenew.mjrenew_backend.nucleo.exception.SolicitudInvalidaException;
+import com.mjrenew.mjrenew_backend.transaccion.dto.StripeCheckoutSession;
+import com.mjrenew.mjrenew_backend.transaccion.entity.TransaccionBancaria;
+import com.mjrenew.mjrenew_backend.transaccion.repository.TransaccionBancariaRepository;
+import com.mjrenew.mjrenew_backend.transaccion.service.StripeCheckoutService;
 import com.mjrenew.mjrenew_backend.nucleo.exception.RecursoNoEncontradoException;
 import com.mjrenew.mjrenew_backend.nucleo.exception.TransicionEstadoInvalidaException;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
@@ -57,6 +66,9 @@ public class AntiguedadService {
     private final AvanceRestauracionRepository avanceRestauracionRepository;
     private final CatalogoAntiguedadRepository catalogoAntiguedadRepository;
     private final CatalogoAntiguedadMapper catalogoAntiguedadMapper;
+    // MJRENEW-STRIPE: integración de pago real de restauración.
+    private final TransaccionBancariaRepository transaccionRepository;
+    private final StripeCheckoutService stripeCheckoutService;
 
     public AntiguedadService(
             AntiguedadRepository antiguedadRepository,
@@ -68,7 +80,9 @@ public class AntiguedadService {
             RestauradorMapper restauradorMapper,
             AvanceRestauracionRepository avanceRestauracionRepository,
             CatalogoAntiguedadRepository catalogoAntiguedadRepository,
-            CatalogoAntiguedadMapper catalogoAntiguedadMapper
+            CatalogoAntiguedadMapper catalogoAntiguedadMapper,
+            TransaccionBancariaRepository transaccionRepository,
+            StripeCheckoutService stripeCheckoutService
     ) {
         this.antiguedadRepository = antiguedadRepository;
         this.fotografiaRepository = fotografiaRepository;
@@ -80,6 +94,8 @@ public class AntiguedadService {
         this.avanceRestauracionRepository = avanceRestauracionRepository;
         this.catalogoAntiguedadRepository = catalogoAntiguedadRepository;
         this.catalogoAntiguedadMapper = catalogoAntiguedadMapper;
+        this.transaccionRepository = transaccionRepository;
+        this.stripeCheckoutService = stripeCheckoutService;
     }
 
     @Transactional
@@ -258,47 +274,69 @@ public class AntiguedadService {
     }
 
     /*
-     * ============================================================
-     * ACEPTAR COTIZACIÓN
-     * ============================================================
-     *
-     * PRESUPUESTO_PRESENTADO
-     *      ↓
-     * PAGO_EN_ESCROW
-     *
-     * Mock: se omite la integración real con Stripe. Solo se cambia
-     * el estado de la cotización/antigüedad y se devuelve una URL
-     * de pago simulada.
+     * MJRENEW-STRIPE: aceptar la cotización SOLO prepara Checkout.
+     * PRESUPUESTO_PRESENTADO -> PAGO_EN_ESCROW ocurre únicamente en el webhook.
+     * La cotización establece un rango; para el prototipo se cobra su límite
+     * superior. Falta aprobar un precio cerrado y el desglose de logística,
+     * comisión y costos de Stripe antes de considerarlo listo para producción.
      */
-
     @Transactional
     public UrlPagoStripeResponse aceptarCotizacion(
             UUID antiguedadId,
             UUID propietarioId
     ) {
-
-        Antiguedad antiguedad =
-                buscarDelPropietarioOFallar(antiguedadId, propietarioId);
-
-        validarEstado(
-                antiguedad,
-                EstadoAntiguedad.PRESUPUESTO_PRESENTADO
-        );
-
+        Antiguedad antiguedad = buscarDelPropietarioOFallar(antiguedadId, propietarioId);
+        validarEstado(antiguedad, EstadoAntiguedad.PRESUPUESTO_PRESENTADO);
         Cotizacion cotizacion = buscarCotizacionOFallar(antiguedadId);
 
+        if (cotizacion.getEstadoCotizacion() == EstadoCotizacion.RECHAZADA) {
+            throw new SolicitudInvalidaException("La cotización ya fue rechazada");
+        }
+        if (antiguedad.getRestaurador() == null) {
+            throw new SolicitudInvalidaException("La antigüedad no tiene restaurador asignado");
+        }
+        if (cotizacion.getCostoMaximoMxnCotizacion() == null
+                || cotizacion.getCostoMaximoMxnCotizacion().signum() <= 0) {
+            throw new SolicitudInvalidaException("La cotización no contiene un monto de pago válido");
+        }
+
+        // MJRENEW-STRIPE: permite reabrir la misma sesión si ya hay una pendiente;
+        // si Stripe informa que expiró, deja constancia y genera otra sesión.
+        var anterior = transaccionRepository
+                .findFirstByAntiguedad_AntiguedadesIdAndTipoTransaccionAndEstadoTransaccionOrderByCreadaEnTransaccionDesc(
+                        antiguedadId, TipoTransaccion.PAGO_RESTAURACION, EstadoTransaccion.PENDIENTE);
+        if (anterior.isPresent()) {
+            TransaccionBancaria pendiente = anterior.get();
+            if (pendiente.getReferenciaStripeTransaccion() == null) {
+                throw new SolicitudInvalidaException("Existe un intento de pago todavía en preparación");
+            }
+            StripeCheckoutSession vigente = stripeCheckoutService
+                    .recuperarSesionAbierta(pendiente.getReferenciaStripeTransaccion());
+            if (vigente != null) {
+                return new UrlPagoStripeResponse(vigente.urlPagoStripe());
+            }
+            pendiente.setEstadoTransaccion(EstadoTransaccion.FALLIDA);
+            pendiente.setProcesadaEnTransaccion(OffsetDateTime.now());
+        }
+
+        TransaccionBancaria transaccion = new TransaccionBancaria();
+        transaccion.setTipoTransaccion(TipoTransaccion.PAGO_RESTAURACION);
+        transaccion.setFlujoMjrenew(FlujoTransaccion.INGRESO);
+        transaccion.setOriginator(antiguedad.getPropietario());
+        transaccion.setBeneficiario(antiguedad.getRestaurador());
+        transaccion.setAntiguedad(antiguedad);
+        transaccion.setMontoBrutoMxnTransaccion(cotizacion.getCostoMaximoMxnCotizacion());
+        transaccion.setEstadoTransaccion(EstadoTransaccion.PENDIENTE);
+        transaccion.setCreadaEnTransaccion(OffsetDateTime.now());
+        transaccionRepository.saveAndFlush(transaccion);
+
+        StripeCheckoutSession checkout = stripeCheckoutService.crearSesionPago(transaccion);
+        transaccion.setReferenciaStripeTransaccion(checkout.referenciaStripe());
         cotizacion.setEstadoCotizacion(EstadoCotizacion.ACEPTADA);
         cotizacion.setRespondidaEnCotizacion(OffsetDateTime.now());
 
-        antiguedad.setEstadoActualAntiguedad(
-                EstadoAntiguedad.PAGO_EN_ESCROW
-        );
-
-        // TODO: reemplazar por la integración real con Stripe Payment Links.
-        String idPagoMock = "mock_" + UUID.randomUUID();
-        String urlPago = "https://checkout.stripe.com/mock/" + idPagoMock;
-
-        return new UrlPagoStripeResponse(urlPago);
+        // No modificar estadoActualAntiguedad: Stripe aún no ha confirmado pago.
+        return new UrlPagoStripeResponse(checkout.urlPagoStripe());
     }
 
     /*
@@ -327,6 +365,12 @@ public class AntiguedadService {
         );
 
         Cotizacion cotizacion = buscarCotizacionOFallar(antiguedadId);
+        // MJRENEW-STRIPE: no cancelar una cotización con Checkout iniciado:
+        // Stripe podría confirmar el cargo mientras se procesa el rechazo.
+        if (cotizacion.getEstadoCotizacion() == EstadoCotizacion.ACEPTADA) {
+            throw new SolicitudInvalidaException(
+                    "La cotización ya fue aceptada. Espera la confirmación del pago");
+        }
 
         cotizacion.setEstadoCotizacion(EstadoCotizacion.RECHAZADA);
         cotizacion.setMotivoRechazoCotizacion(

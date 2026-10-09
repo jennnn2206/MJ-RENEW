@@ -362,7 +362,7 @@
   function llenarSelect(id, labels, placeholder) {
     const el = document.getElementById(id);
     el.innerHTML = `<option value="">${placeholder}</option>` +
-      Object.entries(labels).map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
+            Object.entries(labels).map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
   }
 
   function openNuevaPiezaModal() {
@@ -397,8 +397,8 @@
       return;
     }
     const urlsFotografiasIniciales = [...document.querySelectorAll('.np-foto-input')]
-      .map(el => el.value.trim())
-      .filter(Boolean);
+            .map(el => el.value.trim())
+            .filter(Boolean);
 
     const btn = document.getElementById('np-submit');
     btn.disabled = true;
@@ -519,6 +519,8 @@
       cont.innerHTML = `
         <div style="background:var(--bg2);border-radius:8px;padding:16px;margin-bottom:16px">
           <div class="meta-item" style="margin-bottom:8px"><div class="meta-label">Rango de costo</div><div class="meta-value">${Utils.formatCurrency(c.costoMinimoCotizacion)} – ${Utils.formatCurrency(c.costoMaximoCotizacion)}</div></div>
+          <!-- MJRENEW-STRIPE: transparentar el importe que se envía en el prototipo. -->
+          <p style="color:var(--ink2);font-size:.9rem;margin-bottom:12px">En esta demo, Stripe cobrará el costo máximo mostrado arriba. El cálculo de logística y comisiones está pendiente de aprobación.</p>
           <div class="meta-item" style="margin-bottom:8px"><div class="meta-label">Tiempo estimado</div><div class="meta-value">${c.tipoSemanasCotizacion} semana(s)</div></div>
           <div class="meta-item"><div class="meta-label">Proceso propuesto</div><div class="meta-value" style="font-weight:400">${c.descripcionProcesoCotizacion}</div></div>
         </div>
@@ -530,10 +532,13 @@
 
   async function aceptarCotizacionActual() {
     try {
-      await Api.aceptarCotizacion(antiguedadConCotizacion);
-      Modal.close('modal-cotizacion');
-      Toast.show('Cotización aceptada. El pago quedó en garantía (escrow).', 'success');
-      await cargarMisPiezas();
+      // MJRENEW-STRIPE: una URL creada NO equivale a pago confirmado.
+      const resp = await Api.aceptarCotizacion(antiguedadConCotizacion);
+      const destino = new URL(resp.urlPagoStripe);
+      if (destino.protocol !== 'https:' || destino.hostname !== 'checkout.stripe.com') {
+        throw new Error('Stripe devolvió un enlace de pago inválido.');
+      }
+      window.location.assign(destino.href);
     } catch (err) {
       const el = document.getElementById('cotizacion-error');
       el.textContent = err.message;
@@ -608,6 +613,13 @@
   }
 
   cargarMisPiezas();
+  // MJRENEW-STRIPE: la redirección de Stripe NO confirma el pago.
+  const resultadoPago = new URLSearchParams(window.location.search).get('pago');
+  if (resultadoPago === 'exitoso') {
+    Toast.show('Regresaste de Stripe. Estamos verificando tu pago; el estado se actualizará al confirmarlo.', 'info', 7000);
+  } else if (resultadoPago === 'cancelado') {
+    Toast.show('No se completó el pago. Puedes retomarlo desde la cotización.', 'info', 6000);
+  }
 </script>
 </body>
 </html>
