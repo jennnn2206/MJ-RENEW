@@ -1,5 +1,7 @@
 package com.mjrenew.mjrenew_backend.propietario.entity;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import com.mjrenew.mjrenew_backend.restaurador.entity.AvanceRestauracion;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.enums.TipoFotografia;
@@ -26,7 +28,8 @@ public class FotografiaAntiguedad {
     private AvanceRestauracion avance;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_fotografia", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "tipo_fotografia", nullable = false, columnDefinition = "tipo_fotografia")
     private TipoFotografia tipoFotografia;
 
     @Column(name = "url_almacen_fotografia", nullable = false, length = 300)

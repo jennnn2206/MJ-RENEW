@@ -1,5 +1,7 @@
 package com.mjrenew.mjrenew_backend.transportista.entity;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.enums.ResultadoTraslado;
 import com.mjrenew.mjrenew_backend.nucleo.enums.TipoTraslado;
@@ -30,7 +32,8 @@ public class TrasladoAntiguedad {
     private Usuario transportista;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_traslado", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "tipo_traslado", nullable = false, columnDefinition = "tipo_traslado")
     private TipoTraslado tipoTraslado;
 
     @Column(name = "direccion_origen_traslado", nullable = false, length = 300)
@@ -52,7 +55,8 @@ public class TrasladoAntiguedad {
     private Short numeroIntentoTraslado;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "resultado_traslado", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "resultado_traslado", nullable = false, columnDefinition = "resultado_traslado")
     private ResultadoTraslado resultadoTraslado;
 
     @Column(name = "costo_estimado_mxn_traslado", precision = 10, scale = 2)
@@ -77,7 +81,7 @@ public class TrasladoAntiguedad {
     public void setSalidaConfirmadaEnTraslado(OffsetDateTime salidaConfirmadaEnTraslado) {
         this.salidaConfirmadaEnTraslado = salidaConfirmadaEnTraslado;
     }
-    
+
 
     public UUID getTrasladosAntiguedadId() {
         return trasladosAntiguedadId;

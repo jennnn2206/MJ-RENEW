@@ -1,5 +1,7 @@
 package com.mjrenew.mjrenew_backend.administrador.entity;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoAntiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
@@ -26,7 +28,8 @@ public class DisputaAntiguedad {
     private Usuario abiertaPor;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado_ciclo_al_abrir_disputa", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "estado_ciclo_al_abrir_disputa", nullable = false, columnDefinition = "estado_antiguedad")
     private EstadoAntiguedad estadoCicloAlAbrirDisputa;
 
     @Column(name = "descripcion_disputa", nullable = false)

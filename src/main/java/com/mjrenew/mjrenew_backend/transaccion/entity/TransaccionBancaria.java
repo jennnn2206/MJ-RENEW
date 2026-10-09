@@ -1,5 +1,7 @@
 package com.mjrenew.mjrenew_backend.transaccion.entity;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import com.mjrenew.mjrenew_backend.catalogo.entity.CatalogoAntiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoTransaccion;
@@ -22,11 +24,13 @@ public class TransaccionBancaria {
     private UUID transaccionId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_transaccion", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "tipo_transaccion", nullable = false, columnDefinition = "tipo_transaccion")
     private TipoTransaccion tipoTransaccion;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "flujo_mjrenew", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "flujo_mjrenew", nullable = false, columnDefinition = "flujo_transaccion")
     private FlujoTransaccion flujoMjrenew;
 
     @ManyToOne
@@ -53,7 +57,8 @@ public class TransaccionBancaria {
     private BigDecimal montoBrutoMxnTransaccion;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado_transaccion", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "estado_transaccion", nullable = false, columnDefinition = "estado_transaccion")
     private EstadoTransaccion estadoTransaccion;
 
     @Column(name = "referencia_stripe_transaccion", length = 100)

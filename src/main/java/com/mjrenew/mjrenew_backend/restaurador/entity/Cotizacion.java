@@ -1,5 +1,7 @@
 package com.mjrenew.mjrenew_backend.restaurador.entity;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoCotizacion;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
@@ -39,7 +41,8 @@ public class Cotizacion {
     private Integer tiempoSemanasCotizacion;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado_cotizacion", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "estado_cotizacion", nullable = false, columnDefinition = "estado_cotizacion")
     private EstadoCotizacion estadoCotizacion;
 
     @Column(name = "motivo_rechazo_cotizacion")
