@@ -2,11 +2,27 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <body>
 <th:block th:fragment="restaurador-modales">
-    <!-- MODAL: Evaluar y cotizar -->
+    <!-- MJRENEW-FLUJO: revisión visual antes de confirmar la evaluación -->
+    <div class="modal-overlay" id="modal-revision-evaluacion">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Revisar antigüedad</h3>
+                <button class="modal-close" onclick="Modal.close('modal-revision-evaluacion')">×</button>
+            </div>
+            <div id="revision-contenido"></div>
+            <div id="revision-error" class="form-error"></div>
+            <div style="display:flex;gap:8px;margin-top:16px">
+                <button id="confirmar-evaluacion-btn" class="btn btn-primary" onclick="confirmarEvaluacionActual()">Confirmar evaluación</button>
+                <button class="btn btn-ghost" onclick="Modal.close('modal-revision-evaluacion')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Cotizar una antigüedad evaluada -->
     <div class="modal-overlay" id="modal-quote">
         <div class="modal-box">
             <div class="modal-header">
-                <h3 style="font-family:'Playfair Display',serif">Evaluar y cotizar</h3>
+                <h3 style="font-family:'Playfair Display',serif">Generar cotización</h3>
                 <button class="modal-close" onclick="Modal.close('modal-quote')">×</button>
             </div>
             <div id="modal-quote-piece" style="background:var(--bg2);border-radius:8px;padding:12px;margin-bottom:20px;font-size:1rem;color:var(--ink2)"></div>
@@ -21,7 +37,7 @@
 
             <div id="q-error" class="form-error"></div>
             <div style="display:flex;gap:10px">
-                <button class="btn btn-primary" id="q-submit" onclick="sendQuote()">Confirmar evaluación y enviar cotización</button>
+                <button class="btn btn-primary" id="q-submit" onclick="sendQuote()">Enviar cotización</button>
                 <button class="btn btn-ghost" onclick="Modal.close('modal-quote')">Cancelar</button>
             </div>
         </div>

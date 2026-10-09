@@ -91,14 +91,27 @@ public class RestauradorService {
     ) {
 
         return antiguedadRepository
-                .findByRestaurador_UsuariosIdAndEstadoActualAntiguedad(
+                .findByRestaurador_UsuariosIdAndEstadoActualAntiguedadIn(
                         restauradorId,
-                        EstadoAntiguedad.EN_EVALUACION,
+                        List.of(EstadoAntiguedad.EN_EVALUACION, EstadoAntiguedad.CALCULANDO_PRESUPUESTO),
                         pageable
                 )
                 .map(this::convertirAResumen);
     }
 
+
+    // MJRENEW-FLUJO: extensiones GET propias del restaurador, jamás reutilizar
+    // /api/propietario/obtenerDetalleAntiguedad (requiere rol y propietario distintos).
+    @Transactional(readOnly = true)
+    public Page<AntiguedadResumenResponse> obtenerMisAntiguedades(UUID restauradorId, Pageable pageable) {
+        return antiguedadRepository.findByRestaurador_UsuariosId(restauradorId, pageable)
+                .map(this::convertirAResumen);
+    }
+
+    @Transactional(readOnly = true)
+    public AntiguedadDetalleResponse obtenerDetalleAsignado(UUID antiguedadId, UUID restauradorId) {
+        return construirDetalle(buscarAsignadaOFallar(antiguedadId, restauradorId));
+    }
 
     /*
      * ============================================================
@@ -204,6 +217,12 @@ public class RestauradorService {
                 antiguedad,
                 EstadoAntiguedad.EN_EVALUACION
         );
+        // MJRENEW-FLUJO: sin evidencia fotográfica no procede la evaluación (RF-010).
+        if (fotografiaAntiguedadRepository
+                .findByAntiguedad_AntiguedadesIdAndTipoFotografiaOrderBySubidaEnFotografiaAsc(
+                        antiguedadId, TipoFotografia.ESTADO_INICIAL).size() < 3) {
+            throw new SolicitudInvalidaException("La antigüedad requiere al menos 3 fotografías iniciales para evaluar");
+        }
 
         /*
          * Transición del autómata.

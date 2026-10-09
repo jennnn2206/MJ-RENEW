@@ -30,6 +30,13 @@ public interface AntiguedadRepository
             Pageable pageable
     );
 
+    // MJRENEW-FLUJO: permite al restaurador ver q1 y q2 tras evaluar,
+    // sin perder el expediente si la cotización falla.
+    Page<Antiguedad> findByRestaurador_UsuariosIdAndEstadoActualAntiguedadIn(
+            UUID restauradorId, java.util.Collection<EstadoAntiguedad> estados, Pageable pageable);
+
+    Page<Antiguedad> findByRestaurador_UsuariosId(UUID restauradorId, Pageable pageable);
+
     Optional<Antiguedad> findByAntiguedadesIdAndRestaurador_UsuariosId(
             UUID antiguedadId,
             UUID restauradorId

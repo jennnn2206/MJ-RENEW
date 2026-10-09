@@ -30,7 +30,7 @@
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">Cuenta</div>
-      <button class="sidebar-nav-item" onclick="Auth.logout();window.location.href='/'">Cerrar sesión</button>
+      <button class="sidebar-nav-item" onclick="Auth.logout().then(() => window.location.href='/login')">Cerrar sesión</button>
     </div>
   </aside>
 
@@ -68,8 +68,9 @@
     <div id="section-activas" class="dash-section" style="display:none">
       <div style="margin-bottom:24px">
         <h2 style="font-size:1.5rem">Gestionar restauración</h2>
-        <p style="color:var(--ink2)">Pega el ID de una pieza que ya aceptó su cotización para iniciar la restauración, publicar avances o marcarla lista.</p>
+        <p style="color:var(--ink2)">Antigüedades asignadas a tu cuenta. Solo se muestran las que te pertenecen.</p>
       </div>
+      <div id="gestion-lista" style="margin-bottom:18px"></div>
       <div class="card-elevated" style="margin-bottom:20px;max-width:640px">
         <div class="form-group" style="margin-bottom:12px">
           <label class="form-label">ID de la antigüedad</label>
@@ -101,7 +102,7 @@
 <script th:src="@{/js/modal.js}"></script>
 <script th:src="@{/js/app.js}"></script>
 <script>
-  const user = Auth.requireAuth('/login');
+  const user = Auth.requireAuth('/login', 'restaurador');
   if (user) {
     document.getElementById('welcome-title').textContent = `Hola, ${user.name.split(' ')[0]}`;
     document.getElementById('sb-name').textContent = user.name;
@@ -120,15 +121,19 @@
     const btn = [...document.querySelectorAll('.sidebar-nav-item')].find(b => b.onclick?.toString().includes(`'${id}'`));
     if (btn) btn.classList.add('active');
     if (id === 'perfil') cargarPerfil();
+    if (id === 'activas') cargarGestionAsignada();
   }
 
   let solicitudes = [];
+  let errorSolicitudes = null;
 
   async function cargarSolicitudes() {
     try {
       const page = await Api.solicitudesAsignadas();
       solicitudes = page.content || [];
+      errorSolicitudes = null;
     } catch (err) {
+      errorSolicitudes = err.message;
       Toast.show('No se pudieron cargar las solicitudes: ' + err.message, 'error');
       solicitudes = [];
     }
@@ -136,6 +141,7 @@
   }
 
   function requestCardHtml(r) {
+    const enEvaluacion = r.estadoActualAntiguedad === 'EN_EVALUACION';
     return `
       <div class="request-card" style="margin-bottom:16px">
         <div class="request-card-header">
@@ -149,8 +155,10 @@
           <span class="badge badge-orange">Pendiente</span>
         </div>
         <div class="request-card-actions">
-          <button class="btn btn-primary btn-sm" onclick="openQuoteModal('${r.antiguedadId}')">Evaluar y cotizar</button>
-          <button class="btn btn-sm" style="background:#FFEBEE;color:#C62828" onclick="rejectRequest('${r.antiguedadId}')">Rechazar</button>
+          ${enEvaluacion
+            ? `<button class="btn btn-primary btn-sm" onclick="abrirRevisionEvaluacion('${r.antiguedadId}')">Revisar y evaluar</button>`
+            : `<button class="btn btn-primary btn-sm" onclick="openQuoteModal('${r.antiguedadId}')">Continuar cotización</button>`}
+          ${enEvaluacion ? `<button class="btn btn-sm" style="background:#FFEBEE;color:#C62828" onclick="rejectRequest('${r.antiguedadId}')">Rechazar</button>` : ''}
         </div>
       </div>
     `;
@@ -161,6 +169,13 @@
     document.getElementById('req-count').textContent = solicitudes.length;
     document.getElementById('stat-solicitudes').textContent = solicitudes.length;
 
+    if (errorSolicitudes) {
+      const error = `<div class="empty-state"><h3>No se pudieron consultar las solicitudes</h3><p>${errorSolicitudes}</p>
+        <button class="btn btn-primary" onclick="cargarSolicitudes()">Reintentar</button></div>`;
+      document.getElementById('requests-list').innerHTML = error;
+      document.getElementById('quick-requests').innerHTML = error;
+      return;
+    }
     if (!solicitudes.length) {
       const empty = `<div class="empty-state"><h3>Sin solicitudes nuevas</h3><p>Cuando un propietario te seleccione, aparecerá aquí.</p></div>`;
       document.getElementById('requests-list').innerHTML = empty;
@@ -173,6 +188,47 @@
   }
 
   let currentRequestId = '';
+  // MJRENEW-FLUJO: cada transición es una acción atómica y recuperable.
+  async function abrirRevisionEvaluacion(antiguedadId) {
+    currentRequestId = antiguedadId;
+    const cont = document.getElementById('revision-contenido');
+    const error = document.getElementById('revision-error');
+    error.classList.remove('visible');
+    document.getElementById('confirmar-evaluacion-btn').disabled = false;
+    cont.textContent = 'Cargando antigüedad...';
+    Modal.open('modal-revision-evaluacion');
+    try {
+      const a = await Api.detalleAntiguedadAsignada(antiguedadId);
+      const fotos = a.fotosEstadoInicial || [];
+      document.getElementById('confirmar-evaluacion-btn').disabled = fotos.length < 3;
+      cont.innerHTML = `<p><strong>${tipoMuebleLabel(a.tipoMueble)}</strong></p>
+        <p><strong>Daños:</strong> ${a.descripcionDaniosAntiguedad || 'Sin descripción'}</p>
+        <p><strong>Procedencia:</strong> ${a.procedenciaMueble || 'Sin información'}</p>
+        ${fotos.length ? fotos.map(url => `<img src="${url}" alt="Evidencia inicial" style="width:120px;height:90px;object-fit:cover;margin:5px">`).join('')
+              : '<p style="color:var(--error)">Sin suficientes fotografías para evaluar (mínimo 3). Contacta al propietario antes de confirmar.</p>'}`;
+    } catch (err) {
+      error.textContent = err.message;
+      error.classList.add('visible');
+      document.getElementById('confirmar-evaluacion-btn').disabled = true;
+    }
+  }
+
+  async function confirmarEvaluacionActual() {
+    const btn = document.getElementById('confirmar-evaluacion-btn');
+    btn.disabled = true;
+    try {
+      await Api.confirmarEvaluacion(currentRequestId, {});
+      Modal.close('modal-revision-evaluacion');
+      Toast.show('Evaluación confirmada. Ahora puedes generar la cotización.', 'success');
+      await cargarSolicitudes();
+      openQuoteModal(currentRequestId);
+    } catch (err) {
+      const el = document.getElementById('revision-error');
+      el.textContent = err.message;
+      el.classList.add('visible');
+    } finally { btn.disabled = false; }
+  }
+
   function openQuoteModal(antiguedadId) {
     currentRequestId = antiguedadId;
     document.getElementById('modal-quote-piece').innerHTML = `<strong>Pieza:</strong> ${antiguedadId}`;
@@ -188,8 +244,9 @@
     const tiempo = document.getElementById('q-tiempo').value;
     const desc = document.getElementById('q-desc').value;
 
-    if (!costoMin || !costoMax || !tiempo || !desc) {
-      errEl.textContent = 'Completa el costo mínimo, máximo, tiempo y descripción de la cotización.';
+    if (!costoMin || !costoMax || !tiempo || !desc || Number(costoMin) <= 0 ||
+            Number(costoMax) < Number(costoMin) || !Number.isInteger(Number(tiempo)) || Number(tiempo) < 1) {
+      errEl.textContent = 'Revisa los costos (mínimo > 0 y máximo ≥ mínimo), las semanas (entero positivo) y la descripción.';
       errEl.classList.add('visible');
       return;
     }
@@ -197,9 +254,8 @@
     const btn = document.getElementById('q-submit');
     btn.disabled = true;
     try {
-      // El restaurador ya no mide la pieza: la evaluación es visual, a
-      // partir de las fotos que subió el propietario al registrarla.
-      await Api.confirmarEvaluacion(currentRequestId, {});
+      // MJRENEW-FLUJO: EN_EVALUACION se confirmó en un paso separado.
+      // Si falla esta petición, CALCULANDO_PRESUPUESTO permanece y es reintentable.
       await Api.generarCotizacion(currentRequestId, {
         descripcionProcesoCotizacion: desc,
         costoMinimoCotizacion: Number(costoMin),
@@ -229,6 +285,31 @@
     }
   }
 
+  // MJRENEW-FLUJO: ya no dependemos de copiar un UUID desde la cuenta del propietario.
+  async function cargarGestionAsignada() {
+    const lista = document.getElementById('gestion-lista');
+    lista.textContent = 'Cargando antigüedades asignadas...';
+    try {
+      const page = await Api.misAntiguedadesRestaurador();
+      const piezas = page.content || [];
+      lista.innerHTML = piezas.length ? piezas.map(a => {
+        const info = estadoAntiguedadInfo(a.estadoActualAntiguedad);
+        return `<div class="request-card" style="margin-bottom:8px">
+          <strong>${tipoMuebleLabel(a.tipoMueble)}</strong>
+          <span class="badge ${info.badge}">${info.label}</span>
+          <button class="btn btn-ghost btn-sm" onclick="abrirGestionAsignada('${a.antiguedadId}')">Gestionar</button>
+        </div>`;
+      }).join('') : '<p>Aún no tienes antigüedades asignadas.</p>';
+    } catch (err) {
+      lista.textContent = 'No fue posible cargar tus antigüedades: ' + err.message;
+    }
+  }
+
+  function abrirGestionAsignada(id) {
+    document.getElementById('gestion-id').value = id;
+    buscarAntiguedadGestion();
+  }
+
   // ── GESTIONAR RESTAURACIÓN (por ID) ────────────────────────────
   // No existe (todavía) un endpoint que liste "mis antigüedades en
   // cualquier estado" para el restaurador — obtenerSolicitudesAsignadas
@@ -243,7 +324,7 @@
     if (!id) return;
     cont.innerHTML = '<p style="color:var(--ink2)">Buscando...</p>';
     try {
-      const a = await Api.detalleAntiguedad(id);
+      const a = await Api.detalleAntiguedadAsignada(id);
       antiguedadGestion = a;
       renderGestion(a);
     } catch (err) {
@@ -331,7 +412,12 @@
       document.getElementById('stat-aprobado').textContent = aprobado ? 'Aprobado' : 'Pendiente';
       document.getElementById('perfil-actualizado').textContent = p.actualizadoEn ? new Date(p.actualizadoEn).toLocaleString('es-MX') : '—';
     } catch (err) {
-      // Sin perfil todavía: se completará al guardar por primera vez.
+      if (err.status !== 404) {
+        Toast.show('Error consultando perfil: ' + err.message, 'error');
+        document.getElementById('perfil-aprobado-badge').textContent = 'Error de consulta';
+        return;
+      }
+      // 404: el restaurador autenticado aún no completó su perfil.
       document.getElementById('perfil-aprobado-badge').textContent = 'Completa tu perfil';
       document.getElementById('perfil-aprobado-badge').className = 'badge badge-gray';
       document.getElementById('stat-disponibilidad').textContent = '—';
@@ -375,6 +461,7 @@
   }
 
   cargarSolicitudes();
+  cargarGestionAsignada();
 </script>
 </body>
 </html>

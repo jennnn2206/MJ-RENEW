@@ -81,6 +81,24 @@ public class RestauradorController {
     }
 
 
+    // MJRENEW-FLUJO: consultas por rol para no consultar un expediente con la cuenta de otro usuario.
+    // Extensiones de lectura al diseño v4 (no son transiciones de estado).
+    @GetMapping("/obtenerMisAntiguedades")
+    @PreAuthorize("hasRole('RESTAURADOR')")
+    public ResponseEntity<Page<AntiguedadResumenResponse>> obtenerMisAntiguedades(
+            Pageable pageable, @AuthenticationPrincipal UsuarioPrincipal principal) {
+        return ResponseEntity.ok(restauradorService.obtenerMisAntiguedades(
+                principal.getUsuario().getUsuariosId(), pageable));
+    }
+
+    @GetMapping("/obtenerDetalleAntiguedadAsignada/{antiguedadId}")
+    @PreAuthorize("hasRole('RESTAURADOR')")
+    public ResponseEntity<AntiguedadDetalleResponse> obtenerDetalleAntiguedadAsignada(
+            @PathVariable UUID antiguedadId, @AuthenticationPrincipal UsuarioPrincipal principal) {
+        return ResponseEntity.ok(restauradorService.obtenerDetalleAsignado(
+                antiguedadId, principal.getUsuario().getUsuariosId()));
+    }
+
     /*
      * ============================================================
      * RECHAZAR EVALUACIÓN

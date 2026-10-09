@@ -94,7 +94,7 @@
       <div class="user-type-card">
         <div class="user-type-card-header"></div>
         <div class="user-type-card-body">
-          
+
           <h3>Propietarios</h3>
           <p>¿Tienes un mueble antiguo olvidado? Descubre su valor real, conéctate con un restaurador de confianza y dale una segunda vida.</p>
           <ul style="font-size:1rem;color:var(--ink2);margin-bottom:20px;display:flex;flex-direction:column;gap:6px">
@@ -122,7 +122,7 @@
       <div class="user-type-card">
         <div class="user-type-card-header"></div>
         <div class="user-type-card-body">
-         
+
           <h3>Compradores</h3>
           <p>Encuentra muebles únicos con historia verificada. Para coleccionistas, arquitectos, diseñadores y hoteles boutique.</p>
           <ul style="font-size:1rem;color:var(--ink2);margin-bottom:20px;display:flex;flex-direction:column;gap:6px">
@@ -235,6 +235,7 @@
 <script th:src="@{/js/data/piezas-propietario.js}"></script>
 <script th:src="@{/js/data/panel-restaurador.js}"></script>
 <script th:src="@{/js/autenticacion.js}"></script>
+<script th:src="@{/js/api.js}"></script>
 <script th:src="@{/js/utilidades.js}"></script>
 <script th:src="@{/js/notificaciones.js}"></script>
 <script th:src="@{/js/modal.js}"></script>
@@ -242,9 +243,22 @@
 <script>
   renderHeader(true);
 
-  // Render 4 featured pieces
-  const featured = CATALOG.slice(0, 4);
-  renderCatalogGrid('featured-catalog', featured);
+  // MJRENEW-FLUJO: la portada muestra antigüedades REALES, nunca el CATALOG simulado.
+  (async () => {
+    const grid = document.getElementById('featured-catalog');
+    try {
+      const page = await Api.explorarCatalogo(0, 4);
+      const piezas = page.content || [];
+      grid.innerHTML = piezas.length ? piezas.map(p => `
+        <a class="piece-card" href="/pieza?id=${encodeURIComponent(p.catalogoId)}">
+          <div class="piece-card-img-wrap"><img src="${fotoConFallback(p.urlFotoPortada)}" alt="${tipoMuebleLabel(p.tipoMueble)}"></div>
+          <div class="piece-card-body"><h4>${tipoMuebleLabel(p.tipoMueble)}</h4>
+            <span class="piece-card-price">${Utils.formatCurrency(p.precioMxn)}</span></div>
+        </a>`).join('') : '<p>Aún no hay antigüedades publicadas en el catálogo.</p>';
+    } catch (err) {
+      grid.textContent = 'No se pudo cargar el catálogo: ' + err.message;
+    }
+  })();
 
   // Pre-select user type from URL
   const urlParams = new URLSearchParams(window.location.search);

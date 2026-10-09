@@ -32,7 +32,7 @@ function renderHeader(isRoot = false) {
         <div class="user-avatar">${Utils.initials(user.name)}</div>
         <span class="user-pill-name">${user.name.split(' ')[0]}</span>
       </div>
-      <button class="btn nav-btn-login btn-sm" onclick="Auth.logout(); window.location.href='${home}'">Salir</button>
+      <button class="btn nav-btn-login btn-sm" onclick="Auth.logout().finally(() => window.location.href='${home}')">Salir</button>
     `;
   } else {
     userSection = `

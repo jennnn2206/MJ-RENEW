@@ -19,7 +19,10 @@ const Api = {
                 (body && Array.isArray(body.detalles) && body.detalles.length && body.detalles[0]) ||
                 (body && body.mensaje) ||
                 `Ocurrió un error inesperado (HTTP ${res.status}).`;
-            throw new Error(mensaje);
+            // MJRENEW-FLUJO: conservar el HTTP status para distinguir 404/403/409/500.
+            const error = new Error(mensaje);
+            error.status = res.status;
+            throw error;
         }
         return body;
     },
@@ -67,6 +70,13 @@ const Api = {
     // ── RESTAURADOR ────────────────────────────────────────────
     solicitudesAsignadas(page = 0, size = 50) {
         return this.get(`/api/restaurador/obtenerSolicitudesAsignadas?page=${page}&size=${size}`);
+    },
+    // MJRENEW-FLUJO: rutas del restaurador autenticado, no del propietario.
+    misAntiguedadesRestaurador(page = 0, size = 50) {
+        return this.get(`/api/restaurador/obtenerMisAntiguedades?page=${page}&size=${size}`);
+    },
+    detalleAntiguedadAsignada(antiguedadId) {
+        return this.get(`/api/restaurador/obtenerDetalleAntiguedadAsignada/${antiguedadId}`);
     },
     confirmarEvaluacion(antiguedadId, dimensiones) {
         return this.post(`/api/restaurador/confirmarEvaluacionAntiguedad/${antiguedadId}`, dimensiones);

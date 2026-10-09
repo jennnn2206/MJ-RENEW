@@ -31,7 +31,7 @@
     <div class="sidebar-section">
       <div class="sidebar-label">Explorar</div>
       <button class="sidebar-nav-item" onclick="window.location.href='/catalogo'">Ver catálogo</button>
-      <button class="sidebar-nav-item" onclick="Auth.logout();window.location.href='/'">Cerrar sesión</button>
+      <button class="sidebar-nav-item" onclick="Auth.logout().then(() => window.location.href='/login')">Cerrar sesión</button>
     </div>
   </aside>
 
@@ -142,8 +142,8 @@
 
     <hr class="divider">
 
-    <p class="eyebrow" style="margin-bottom:10px">Fotos del estado actual (opcional)</p>
-    <p style="font-size:1rem;color:var(--ink2);margin-bottom:12px">Por ahora solo aceptamos URLs de fotos ya subidas a algún sitio (no hay carga de archivos todavía).</p>
+    <p class="eyebrow" style="margin-bottom:10px">Fotografías iniciales (mínimo 3)</p>
+    <p style="font-size:1rem;color:var(--ink2);margin-bottom:12px">Registra una URL pública por fotografía: frente, lado y parte posterior. De momento no hay subida directa de archivos (pendiente de implementar).</p>
     <div id="np-fotos-list"></div>
     <button type="button" class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="agregarCampoFoto()">+ Agregar otra foto</button>
 
@@ -236,7 +236,7 @@
 <script th:src="@{/js/modal.js}"></script>
 <script th:src="@{/js/app.js}"></script>
 <script>
-  const user = Auth.requireAuth('/login');
+  const user = Auth.requireAuth('/login', 'propietario');
   if (user) {
     document.getElementById('welcome-title').textContent = `Hola, ${user.name.split(' ')[0]}`;
     document.getElementById('sb-name').textContent = user.name;
@@ -253,6 +253,7 @@
   }
 
   let misPiezas = [];
+  let errorCargaMisPiezas = null;
 
   // Estados en los que ya se puede ver el historial de avances publicados.
   const ESTADOS_CON_AVANCES = [
@@ -270,7 +271,9 @@
     try {
       const page = await Api.misAntiguedades();
       misPiezas = page.content || [];
+      errorCargaMisPiezas = null;
     } catch (err) {
+      errorCargaMisPiezas = err.message;
       Toast.show('No se pudieron cargar tus piezas: ' + err.message, 'error');
       misPiezas = [];
     }
@@ -331,6 +334,12 @@
     const list = document.getElementById('pieces-list');
     const preview = document.getElementById('active-preview');
 
+    if (errorCargaMisPiezas) {
+      list.innerHTML = `<div class="empty-state"><h3>Error al cargar antigüedades</h3><p>${errorCargaMisPiezas}</p>
+        <button class="btn btn-primary" onclick="cargarMisPiezas()">Reintentar</button></div>`;
+      preview.innerHTML = '';
+      return;
+    }
     if (!misPiezas.length) {
       list.innerHTML = `<div class="empty-state"><h3>Aún no tienes piezas</h3><p>Registra tu primera antigüedad para empezar.</p><button class="btn btn-primary" onclick="openNuevaPiezaModal()">Registrar pieza</button></div>`;
       preview.innerHTML = '';
@@ -374,6 +383,8 @@
     ['np-alto', 'np-ancho', 'np-profundidad', 'np-peso'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('np-fotos-list').innerHTML = '';
     agregarCampoFoto();
+    agregarCampoFoto();
+    agregarCampoFoto();
     document.getElementById('np-error').classList.remove('visible');
     Modal.open('modal-nueva-pieza');
   }
@@ -399,11 +410,17 @@
     const urlsFotografiasIniciales = [...document.querySelectorAll('.np-foto-input')]
             .map(el => el.value.trim())
             .filter(Boolean);
+    // MJRENEW-FLUJO: mismo contrato que @Size(min=3) y @Pattern del DTO.
+    if (urlsFotografiasIniciales.length < 3 || !urlsFotografiasIniciales.every(url => /^https?:\/\/.+/.test(url))) {
+      errEl.textContent = 'Necesitas al menos 3 URLs válidas (http/https) para evaluar la antigüedad.';
+      errEl.classList.add('visible');
+      return;
+    }
 
     const btn = document.getElementById('np-submit');
     btn.disabled = true;
     try {
-      await Api.registrarAntiguedad({
+      const nuevaAntiguedad = await Api.registrarAntiguedad({
         tipoMueble,
         estiloMueble: document.getElementById('np-estilo').value || null,
         materialMueble: document.getElementById('np-material').value || null,
@@ -413,11 +430,14 @@
         anchoCmAntiguedad: document.getElementById('np-ancho').value || null,
         profundidadCmAntiguedad: document.getElementById('np-profundidad').value || null,
         pesoKgAntiguedad: document.getElementById('np-peso').value || null,
-        urlsFotografiasIniciales: urlsFotografiasIniciales.length ? urlsFotografiasIniciales : null,
+        urlsFotografiasIniciales,
       });
       Modal.close('modal-nueva-pieza');
       Toast.show('Pieza registrada. Ya puedes buscar un restaurador.', 'success');
       await cargarMisPiezas();
+      if (!misPiezas.some(p => p.antiguedadId === nuevaAntiguedad.antiguedadId)) {
+        Toast.show('La antigüedad se registró, pero no apareció en la lista. Actualiza la página y revisa la sesión.', 'error');
+      }
       showSection('mis-piezas');
     } catch (err) {
       errEl.textContent = err.message;
