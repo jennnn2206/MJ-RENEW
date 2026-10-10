@@ -1,0 +1,18 @@
+# EJEMPLO SIN CLAVES REALES. Solo para desarrollo local; NO usar en producción.
+# Copia los valores a src/main/resources/application-local.properties (archivo ignorado por Git).
+# Usa credenciales de TU propia instancia PostgreSQL y del sandbox de Stripe autorizado.
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/MJRenew-DB
+spring.datasource.username=postgres
+spring.datasource.password=REEMPLAZAR_LOCALMENTE
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+stripe.secret-key=sk_test_REEMPLAZAR_LOCALMENTE
+stripe.webhook-secret=whsec_REEMPLAZAR_DEL_LISTENER_LOCAL
+app.base-url=http://localhost:8080
+
+# El webhook es la vía principal.
+# Activar solo con aprobación del equipo/documentación API actualizada.
+mjrenew.stripe.reconciliation-enabled=false
+mjrenew.stripe.reconciliation-initial-delay-ms=120000
+mjrenew.stripe.reconciliation-delay-ms=60000
