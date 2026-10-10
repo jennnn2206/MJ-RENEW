@@ -1,5 +1,6 @@
 package com.mjrenew.mjrenew_backend.nucleo.exception;
 
+import com.mjrenew.mjrenew_backend.transaccion.service.StripeTransaccionAunNoVisibleException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -84,8 +85,21 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(body);
     }
 
+    // Respuesta temporal: Stripe puede reintentar cuando la sesión aún no se confirmó en JPA.
+    @ExceptionHandler(StripeTransaccionAunNoVisibleException.class)
+    public ResponseEntity<ErrorResponse> manejarWebhookEnEspera(StripeTransaccionAunNoVisibleException ex) {
+        log.warn("Webhook recibido antes de persistir Checkout: {}", ex.getMessage());
+        return construirRespuesta(HttpStatus.SERVICE_UNAVAILABLE,
+                "La transacción aún no está disponible; reintenta el webhook");
+    }
+
     @ExceptionHandler(SolicitudInvalidaException.class)
     public ResponseEntity<ErrorResponse> manejarSolicitudInvalida(SolicitudInvalidaException ex) {
+
+        // MJRENEW-STRIPE-DIAGNOSTICO:
+        // Registrar el motivo del error HTTP 400.
+        log.warn("Solicitud inválida: {}", ex.getMessage());
+
         return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 }

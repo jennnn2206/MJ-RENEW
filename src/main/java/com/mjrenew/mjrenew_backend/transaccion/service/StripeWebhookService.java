@@ -1,390 +1,76 @@
 package com.mjrenew.mjrenew_backend.transaccion.service;
 
-import com.mjrenew.mjrenew_backend.catalogo.entity.CatalogoAntiguedad;
-import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
-import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoAntiguedad;
-import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoTransaccion;
-import com.mjrenew.mjrenew_backend.nucleo.enums.TipoTransaccion;
-import com.mjrenew.mjrenew_backend.nucleo.exception.RecursoNoEncontradoException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mjrenew.mjrenew_backend.nucleo.exception.SolicitudInvalidaException;
-import com.mjrenew.mjrenew_backend.nucleo.exception.TransicionEstadoInvalidaException;
-import com.mjrenew.mjrenew_backend.transaccion.entity.TransaccionBancaria;
-import com.mjrenew.mjrenew_backend.transaccion.repository.TransaccionBancariaRepository;
-
+import com.mjrenew.mjrenew_backend.transaccion.dto.StripeCheckoutEstado;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
-import com.stripe.model.StripeObject;
-import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
-import java.math.BigDecimal;
-import java.util.Objects;
-
+/**
+ * La verificación criptográfica precede toda lectura o procesamiento del evento.
+ * StripePagoEstadoService es el único componente que aplica cambios monetarios y del AFD.
+ */
 @Service
 public class StripeWebhookService {
+    private static final Logger log = LoggerFactory.getLogger(StripeWebhookService.class);
+    private final StripePagoEstadoService pagos;
+    private final ObjectMapper objectMapper;
+    private final String secretoWebhook;
 
-    private final TransaccionBancariaRepository transaccionRepository;
-    private final String stripeWebhookSecret;
-
-
-    public StripeWebhookService(
-            TransaccionBancariaRepository transaccionRepository,
-
-            @Value("${stripe.webhook-secret:}")
-            String stripeWebhookSecret
-    ) {
-        this.transaccionRepository = transaccionRepository;
-        this.stripeWebhookSecret = stripeWebhookSecret;
+    public StripeWebhookService(StripePagoEstadoService pagos, ObjectMapper objectMapper,
+                                @Value("${stripe.webhook-secret:}") String secretoWebhook) {
+        this.pagos = pagos;
+        this.objectMapper = objectMapper;
+        this.secretoWebhook = secretoWebhook;
     }
 
-
-    @Transactional
-    public void procesarEvento(
-            String payload,
-            String stripeSignature
-    ) {
-
-        /*
-         * Stripe siempre debe enviar el header
-         * Stripe-Signature.
-         */
-        if (stripeSignature == null
-                || stripeSignature.isBlank()) {
-
-            throw new SolicitudInvalidaException(
-                    "El evento no contiene la firma de Stripe"
-            );
+    public void procesarEvento(String payload, String stripeSignature) {
+        if (stripeSignature == null || stripeSignature.isBlank()) {
+            throw new SolicitudInvalidaException("El evento no contiene Stripe-Signature");
+        }
+        if (secretoWebhook == null || secretoWebhook.isBlank()) {
+            throw new IllegalStateException("El secreto de webhook no está configurado");
         }
 
-
-        /*
-         * Tampoco debemos procesar eventos reales
-         * si el secreto del webhook no está configurado.
-         */
-        if (stripeWebhookSecret == null
-                || stripeWebhookSecret.isBlank()) {
-
-            throw new SolicitudInvalidaException(
-                    "El secreto del webhook de Stripe no está configurado"
-            );
-        }
-
-
-        Event event;
-
+        Event evento;
         try {
-
-            /*
-             * Esta llamada verifica criptográficamente
-             * que el evento realmente procede de Stripe
-             * y que el body no fue modificado.
-             */
-            event = Webhook.constructEvent(
-                    payload,
-                    stripeSignature,
-                    stripeWebhookSecret
-            );
-
+            evento = Webhook.constructEvent(payload, stripeSignature, secretoWebhook);
         } catch (SignatureVerificationException ex) {
-
-            throw new SolicitudInvalidaException(
-                    "La firma del evento de Stripe no es válida"
-            );
+            log.warn("Firma Stripe inválida: {}", ex.getMessage());
+            throw new SolicitudInvalidaException("Firma del webhook de Stripe inválida");
         }
 
-
-        // MJRENEW-STRIPE: manejar pago confirmado y fallos/vencimientos.
-        boolean pagoConfirmado = "checkout.session.completed".equals(event.getType())
-                || "checkout.session.async_payment_succeeded".equals(event.getType());
-        boolean pagoNoCompletado = "checkout.session.expired".equals(event.getType())
-                || "checkout.session.async_payment_failed".equals(event.getType());
-        if (!pagoConfirmado && !pagoNoCompletado) {
-            return;
+        boolean confirmado = "checkout.session.completed".equals(evento.getType())
+                || "checkout.session.async_payment_succeeded".equals(evento.getType());
+        boolean fallido = "checkout.session.expired".equals(evento.getType())
+                || "checkout.session.async_payment_failed".equals(evento.getType());
+        if (!confirmado && !fallido) {
+            return; // Eventos no relacionados con MJ Renew no generan reintentos.
         }
 
-        StripeObject stripeObject =
-                event
-                        .getDataObjectDeserializer()
-                        .getObject()
-                        .orElseThrow(() ->
-                                new SolicitudInvalidaException(
-                                        "No fue posible interpretar el evento de Stripe"
-                                )
-                        );
-
-
-        if (!(stripeObject instanceof Session session)) {
-
-            throw new SolicitudInvalidaException(
-                    "El evento recibido no contiene una sesión de Checkout"
-            );
+        final StripeCheckoutEstado sesion;
+        try {
+            JsonNode cuerpo = objectMapper.readTree(payload);
+            sesion = StripeCheckoutEstado.desdeWebhook(cuerpo.path("data").path("object"));
+        } catch (JsonProcessingException ex) {
+            throw new SolicitudInvalidaException("El JSON firmado de Stripe no es válido");
         }
 
-
-        String referenciaStripe =
-                session.getId();
-
-
-        if (referenciaStripe == null
-                || referenciaStripe.isBlank()) {
-
-            throw new SolicitudInvalidaException(
-                    "Stripe no proporcionó una referencia de Checkout válida"
-            );
+        if (fallido) {
+            if ("checkout.session.expired".equals(evento.getType())
+                    && !"expired".equals(sesion.estadoSesion())) {
+                throw new SolicitudInvalidaException("El evento expirado tiene un estado inconsistente");
+            }
+            pagos.marcarNoCompletado(sesion);
+        } else {
+            pagos.confirmar(sesion);
         }
-
-
-        TransaccionBancaria transaccion =
-                transaccionRepository
-                        .findByReferenciaStripeTransaccion(
-                                referenciaStripe
-                        )
-                        .orElseThrow(() ->
-                                new RecursoNoEncontradoException(
-                                        "No existe una transacción asociada a la sesión de Stripe"
-                                )
-                        );
-
-
-        // MJRENEW-STRIPE: correlacionar el evento con la operación interna.
-        // No confiar solo en el session_id: verificar id interno y monto.
-        if (session.getMetadata() == null
-                || !Objects.equals(session.getMetadata().get("transaccionId"),
-                transaccion.getTransaccionId().toString())) {
-            throw new SolicitudInvalidaException("La referencia interna de Stripe no coincide");
-        }
-
-        if (pagoNoCompletado) {
-            procesarPagoNoCompletado(transaccion);
-            return;
-        }
-
-        // checkout.session.completed también puede significar pago ASÍNCRONO pendiente.
-        // En ese caso esperar checkout.session.async_payment_succeeded.
-        if (!"paid".equals(session.getPaymentStatus())) {
-            return;
-        }
-        long esperadoCentavos = transaccion.getMontoBrutoMxnTransaccion()
-                .movePointRight(2).longValueExact();
-        if (!"mxn".equalsIgnoreCase(session.getCurrency())
-                || !Objects.equals(session.getAmountTotal(), esperadoCentavos)) {
-            throw new SolicitudInvalidaException("La moneda o el monto confirmado por Stripe no coincide");
-        }
-
-        /*
-         * Stripe puede reenviar webhooks.
-         *
-         * Si ya procesamos este pago,
-         * no volvemos a modificar nada.
-         *
-         * Esto hace el webhook idempotente.
-         */
-        if (transaccion.getEstadoTransaccion()
-                == EstadoTransaccion.EXITOSA) {
-
-            return;
-        }
-
-
-        if (transaccion.getEstadoTransaccion()
-                != EstadoTransaccion.PENDIENTE) {
-
-            throw new SolicitudInvalidaException(
-                    "La transacción ya no se encuentra pendiente"
-            );
-        }
-
-
-        /*
-         * Según el tipo de operación de MJ Renew
-         * ejecutamos la transición correspondiente.
-         */
-        if (transaccion.getTipoTransaccion()
-                == TipoTransaccion.PAGO_VENTA) {
-
-            procesarPagoVenta(
-                    transaccion
-            );
-
-            return;
-        }
-
-
-        if (transaccion.getTipoTransaccion()
-                == TipoTransaccion.PAGO_RESTAURACION) {
-
-            procesarPagoRestauracion(
-                    transaccion
-            );
-
-            return;
-        }
-
-
-        throw new SolicitudInvalidaException(
-                "El tipo de transacción recibido no puede procesarse mediante Stripe"
-        );
-    }
-
-
-    private void procesarPagoVenta(
-            TransaccionBancaria transaccion
-    ) {
-
-        Antiguedad antiguedad =
-                transaccion.getAntiguedad();
-
-
-        if (antiguedad == null) {
-
-            throw new SolicitudInvalidaException(
-                    "La transacción no tiene una antigüedad asociada"
-            );
-        }
-
-
-        /*
-         * Transición oficial del Diseño API:
-         *
-         * LINK_PAGO_ENVIADO
-         *         ↓
-         * VENTA_COMPLETADA
-         */
-        if (antiguedad.getEstadoActualAntiguedad()
-                != EstadoAntiguedad.LINK_PAGO_ENVIADO) {
-
-            throw new TransicionEstadoInvalidaException(
-                    "La antigüedad debe estar en LINK_PAGO_ENVIADO para confirmar la venta"
-            );
-        }
-
-
-        CatalogoAntiguedad catalogo =
-                transaccion.getCatalogoAntiguedad();
-
-
-        if (catalogo == null) {
-
-            throw new SolicitudInvalidaException(
-                    "La transacción de venta no tiene una publicación de catálogo asociada"
-            );
-        }
-
-
-        antiguedad.setEstadoActualAntiguedad(
-                EstadoAntiguedad.VENTA_COMPLETADA
-        );
-
-
-        catalogo.setActivaCatalogo(
-                false
-        );
-
-
-        catalogo.setCompletadaEnCatalogo(
-                OffsetDateTime.now()
-        );
-
-        // MJRENEW-STRIPE: PaymentIntent es trazabilidad, no un cargo duplicado.
-        // El session_id continúa en referenciaStripeTransaccion.
-        // Se completa desde el evento, nunca desde parámetros del navegador.
-
-
-
-        marcarTransaccionExitosa(
-                transaccion
-        );
-    }
-
-
-    private void procesarPagoRestauracion(
-            TransaccionBancaria transaccion
-    ) {
-
-        Antiguedad antiguedad =
-                transaccion.getAntiguedad();
-
-
-        if (antiguedad == null) {
-
-            throw new SolicitudInvalidaException(
-                    "La transacción no tiene una antigüedad asociada"
-            );
-        }
-
-
-        /*
-         * Esta transición también está definida
-         * en el Diseño API.
-         *
-         * PRESUPUESTO_PRESENTADO
-         *          ↓
-         * PAGO_EN_ESCROW
-         *
-         * Pero todavía NO estamos generando el
-         * Checkout real de restauración.
-         */
-        if (antiguedad.getEstadoActualAntiguedad()
-                != EstadoAntiguedad.PRESUPUESTO_PRESENTADO) {
-
-            throw new TransicionEstadoInvalidaException(
-                    "La antigüedad debe estar en PRESUPUESTO_PRESENTADO para confirmar el pago de restauración"
-            );
-        }
-
-
-        antiguedad.setEstadoActualAntiguedad(
-                EstadoAntiguedad.PAGO_EN_ESCROW
-        );
-
-
-        marcarTransaccionExitosa(
-                transaccion
-        );
-    }
-
-
-    // MJRENEW-STRIPE: liberar la reserva si Checkout expiró o falló.
-    private void procesarPagoNoCompletado(TransaccionBancaria transaccion) {
-        if (transaccion.getEstadoTransaccion() != EstadoTransaccion.PENDIENTE) {
-            return;  // Idempotencia: ignorar reenvíos y eventos tardíos.
-        }
-        transaccion.setEstadoTransaccion(EstadoTransaccion.FALLIDA);
-        transaccion.setProcesadaEnTransaccion(OffsetDateTime.now());
-
-        if (transaccion.getTipoTransaccion() != TipoTransaccion.PAGO_VENTA) {
-            // Para restauración no hay transición previa: permanece en PRESUPUESTO_PRESENTADO.
-            return;
-        }
-
-        Antiguedad antiguedad = transaccion.getAntiguedad();
-        CatalogoAntiguedad catalogo = transaccion.getCatalogoAntiguedad();
-        if (antiguedad != null && catalogo != null
-                && antiguedad.getEstadoActualAntiguedad() == EstadoAntiguedad.LINK_PAGO_ENVIADO) {
-            antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.EN_CATALOGO);
-            catalogo.setActivaCatalogo(true);
-            catalogo.setComprador(null);
-            catalogo.setIdLinkStripeCatalogo(null);
-            catalogo.setUrlLinkPagoCatalogo(null);
-        }
-    }
-
-    private void marcarTransaccionExitosa(
-            TransaccionBancaria transaccion
-    ) {
-
-        transaccion.setEstadoTransaccion(
-                EstadoTransaccion.EXITOSA
-        );
-
-
-        transaccion.setProcesadaEnTransaccion(
-                OffsetDateTime.now()
-        );
     }
 }

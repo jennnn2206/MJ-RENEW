@@ -6,6 +6,7 @@ import com.mjrenew.mjrenew_backend.transaccion.entity.TransaccionBancaria;
 import com.mjrenew.mjrenew_backend.nucleo.enums.TipoTransaccion;
 
 import com.stripe.Stripe;
+import com.stripe.net.RequestOptions;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
@@ -15,7 +16,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 @Service
@@ -67,7 +67,7 @@ public class StripeCheckoutService {
          * Nunca debe escribirse directamente
          * dentro del código.
          */
-        Stripe.apiKey = stripeSecretKey;
+        // La clave se envía por petición, no se escribe en Stripe.apiKey global.
 
 
         // MJRENEW-STRIPE: cada proceso regresa a su pantalla correspondiente.
@@ -78,7 +78,8 @@ public class StripeCheckoutService {
                 SessionCreateParams.builder()
                         // Checkout hospedado exige como mínimo ~30 minutos.
                         // Los 7 minutos del ERS requieren un mecanismo adicional.
-                        .setExpiresAt(Instant.now().plus(35, ChronoUnit.MINUTES).getEpochSecond())
+                        .setExpiresAt(transaccion.getCreadaEnTransaccion().toInstant()
+                                .plus(35, ChronoUnit.MINUTES).getEpochSecond())
 
                         /*
                          * Esta sesión corresponde
@@ -196,7 +197,10 @@ public class StripeCheckoutService {
              * con Stripe.
              */
             Session session =
-                    Session.create(params);
+                    Session.create(params, RequestOptions.builder()
+                            .setApiKey(stripeSecretKey)
+                            .setIdempotencyKey("mjrenew-checkout-" + transaccion.getTransaccionId())
+                            .build());
 
 
             /*
@@ -248,9 +252,10 @@ public class StripeCheckoutService {
     // MJRENEW-STRIPE: reutilizar Checkout pendiente evita crear cobros duplicados.
     // null significa que Stripe confirmó que la sesión venció.
     public StripeCheckoutSession recuperarSesionAbierta(String referenciaStripe) {
-        Stripe.apiKey = stripeSecretKey;
+        // La clave se envía por petición, no se escribe en Stripe.apiKey global.
         try {
-            Session session = Session.retrieve(referenciaStripe);
+            Session session = Session.retrieve(referenciaStripe, RequestOptions.builder()
+                    .setApiKey(stripeSecretKey).build());
             if ("expired".equals(session.getStatus())) {
                 return null;
             }
@@ -265,6 +270,13 @@ public class StripeCheckoutService {
         } catch (StripeException ex) {
             throw new SolicitudInvalidaException("No fue posible consultar la sesión de Stripe");
         }
+    }
+
+
+    /** Consulta autenticada al proveedor; nunca crea ni repite un cargo. */
+    public Session consultarSesionPorId(String referenciaStripe) throws StripeException {
+        return Session.retrieve(referenciaStripe,
+                RequestOptions.builder().setApiKey(stripeSecretKey).build());
     }
 
     private void validarTransaccion(

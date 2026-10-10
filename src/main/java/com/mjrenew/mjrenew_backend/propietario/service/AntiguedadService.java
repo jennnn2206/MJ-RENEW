@@ -285,7 +285,8 @@ public class AntiguedadService {
             UUID antiguedadId,
             UUID propietarioId
     ) {
-        Antiguedad antiguedad = buscarDelPropietarioOFallar(antiguedadId, propietarioId);
+        Antiguedad antiguedad = antiguedadRepository.bloquearParaCrearPago(antiguedadId, propietarioId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("La antigüedad no pertenece al propietario"));
         validarEstado(antiguedad, EstadoAntiguedad.PRESUPUESTO_PRESENTADO);
         Cotizacion cotizacion = buscarCotizacionOFallar(antiguedadId);
 

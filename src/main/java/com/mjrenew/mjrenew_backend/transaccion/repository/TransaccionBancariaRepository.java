@@ -8,6 +8,8 @@ import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoTransaccion;
 import com.mjrenew.mjrenew_backend.nucleo.enums.TipoTransaccion;
 import java.util.Optional;
 import java.util.UUID;
+import java.time.OffsetDateTime;
+import java.util.List;
 
 public interface TransaccionBancariaRepository extends JpaRepository<TransaccionBancaria, UUID> {
     // MJRENEW-STRIPE: el bloqueo serializa reintentos simultáneos de webhook.
@@ -21,4 +23,8 @@ public interface TransaccionBancariaRepository extends JpaRepository<Transaccion
     findFirstByAntiguedad_AntiguedadesIdAndTipoTransaccionAndEstadoTransaccionOrderByCreadaEnTransaccionDesc(
             UUID antiguedadId, TipoTransaccion tipoTransaccion, EstadoTransaccion estadoTransaccion);
 
+
+    List<TransaccionBancaria>
+    findTop50ByEstadoTransaccionAndReferenciaStripeTransaccionIsNotNullAndCreadaEnTransaccionBeforeOrderByCreadaEnTransaccionAsc(
+            EstadoTransaccion estadoTransaccion, OffsetDateTime antesDe);
 }
