@@ -26,7 +26,7 @@ function renderHeader(isRoot = false) {
 
   let userSection;
   if (user) {
-    const dashMap = { propietario:`${base}propietario`, restaurador:`${base}restaurador`, comprador:`${base}comprador` };
+    const dashMap = { propietario:`${base}propietario`, restaurador:`${base}restaurador`, comprador:`${base}comprador`, transportista:`${base}transportista`, administrador:`${base}administrador` };
     userSection = `
       <div class="user-pill" onclick="window.location.href='${dashMap[user.tipo]||base+'comprador'}'">
         <div class="user-avatar">${Utils.initials(user.name)}</div>

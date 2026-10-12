@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Administrador — MJ Renew</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<header class="site-header" id="site-header"></header>
+
+<div class="dashboard-layout">
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-section">
+      <div style="padding:16px 12px 20px;border-bottom:1px solid var(--bg3);margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="user-avatar" id="sb-avatar" style="width:42px;height:42px;font-size:1rem;background:var(--gold);color:var(--brown)"></div>
+          <div>
+            <div style="font-weight:600;font-size:1rem;color:var(--ink)" id="sb-name"></div>
+            <div style="font-size:1rem;color:var(--ink2)">Administrador</div>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-label">Gestión</div>
+      <button class="sidebar-nav-item active" onclick="showSection('inicio')">Inicio</button>
+      <button class="sidebar-nav-item" onclick="showSection('restauradores')">Restauradores pendientes <span class="sidebar-badge" id="restauradores-badge">0</span></button>
+      <button class="sidebar-nav-item" onclick="showSection('disputas')">Disputas abiertas <span class="sidebar-badge" id="disputas-badge">0</span></button>
+      <button class="sidebar-nav-item" onclick="showSection('usuarios')">Usuarios registrados</button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Cuenta</div>
+      <button class="sidebar-nav-item" onclick="Auth.logout().then(() => window.location.href='/login')">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <main class="dashboard-main">
+
+    <!-- INICIO -->
+    <div id="section-inicio" class="dash-section">
+      <div style="margin-bottom:28px">
+        <h2 id="welcome-title" style="font-size:1.8rem"></h2>
+        <p style="color:var(--ink2)">Panel de control de MJ Renew</p>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card"><span class="stat-card-value" id="stat-restauradores">—</span><div class="stat-card-label">Restauradores pendientes</div></div>
+        <div class="stat-card"><span class="stat-card-value" id="stat-disputas">—</span><div class="stat-card-label">Disputas abiertas</div></div>
+        <div class="stat-card"><span class="stat-card-value" id="stat-usuarios" style="color:var(--gold)">—</span><div class="stat-card-label">Usuarios registrados</div></div>
+      </div>
+    </div>
+
+    <!-- RESTAURADORES PENDIENTES -->
+    <div id="section-restauradores" class="dash-section" style="display:none">
+      <div style="margin-bottom:24px">
+        <h2 style="font-size:1.5rem">Restauradores pendientes de aprobación</h2>
+        <p style="color:var(--ink2)">Revisa el perfil antes de aprobarlo — una vez aprobado, aparece en las búsquedas de los propietarios.</p>
+      </div>
+      <div id="restauradores-list"></div>
+    </div>
+
+    <!-- DISPUTAS ABIERTAS -->
+    <div id="section-disputas" class="dash-section" style="display:none">
+      <div style="margin-bottom:24px">
+        <h2 style="font-size:1.5rem">Disputas abiertas</h2>
+        <p style="color:var(--ink2)">Resuelve cada disputa con una explicación clara para ambas partes.</p>
+      </div>
+      <div id="disputas-list"></div>
+    </div>
+
+    <!-- USUARIOS REGISTRADOS -->
+    <div id="section-usuarios" class="dash-section" style="display:none">
+      <div style="margin-bottom:24px">
+        <h2 style="font-size:1.5rem">Usuarios registrados</h2>
+        <p style="color:var(--ink2)">Solo lectura.</p>
+      </div>
+      <div id="usuarios-list"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL: Resolver disputa -->
+<div class="modal-overlay" id="modal-resolver-disputa">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 style="font-family:'Playfair Display',serif">Resolver disputa</h3>
+      <button class="modal-close" onclick="Modal.close('modal-resolver-disputa')">×</button>
+    </div>
+    <div id="disputa-modal-contenido" style="background:var(--bg2);border-radius:8px;padding:12px;margin-bottom:16px;font-size:1rem;color:var(--ink2)"></div>
+    <div class="form-group">
+      <label class="form-label">Resolución</label>
+      <textarea id="rd-resolucion" class="form-control" rows="4" placeholder="Explica cómo se resolvió la disputa..."></textarea>
+    </div>
+    <div id="rd-error" class="form-error"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" id="rd-submit" onclick="resolverDisputaActual()">Resolver</button>
+      <button class="btn btn-ghost" onclick="Modal.close('modal-resolver-disputa')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script th:src="@{/js/data/afd-estados.js}"></script>
+<script th:src="@{/js/data/catalogo.js}"></script>
+<script th:src="@{/js/data/restauradores.js}"></script>
+<script th:src="@{/js/data/piezas-propietario.js}"></script>
+<script th:src="@{/js/data/panel-restaurador.js}"></script>
+<script th:src="@{/js/autenticacion.js}"></script>
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/utilidades.js}"></script>
+<script th:src="@{/js/notificaciones.js}"></script>
+<script th:src="@{/js/modal.js}"></script>
+<script th:src="@{/js/app.js}"></script>
+<script>
+  const user = Auth.requireAuth('/login', 'administrador');
+  if (user) {
+    document.getElementById('welcome-title').textContent = `Hola, ${user.name.split(' ')[0]}`;
+    document.getElementById('sb-name').textContent = user.name;
+    document.getElementById('sb-avatar').textContent = Utils.initials(user.name);
+    renderHeader(false);
+  }
+
+  function showSection(id) {
+    document.querySelectorAll('.dash-section').forEach(s => s.style.display = 'none');
+    document.getElementById('section-' + id).style.display = 'block';
+    document.querySelectorAll('.sidebar-nav-item').forEach(b => b.classList.remove('active'));
+    const btn = [...document.querySelectorAll('.sidebar-nav-item')].find(b => b.onclick?.toString().includes(`'${id}'`));
+    if (btn) btn.classList.add('active');
+  }
+
+  // ── RESTAURADORES PENDIENTES ────────────────────────────────────
+  let restauradoresPendientes = [];
+  let errorRestauradores = null;
+
+  async function cargarRestauradoresPendientes() {
+    try {
+      const page = await Api.obtenerRestauradoresPendientes();
+      restauradoresPendientes = page.content || [];
+      errorRestauradores = null;
+    } catch (err) {
+      errorRestauradores = err.message;
+      restauradoresPendientes = [];
+    }
+    renderRestauradoresPendientes();
+  }
+
+  function renderRestauradoresPendientes() {
+    const cont = document.getElementById('restauradores-list');
+    document.getElementById('restauradores-badge').textContent = restauradoresPendientes.length;
+    document.getElementById('stat-restauradores').textContent = restauradoresPendientes.length;
+
+    if (errorRestauradores) {
+      cont.innerHTML = `<div class="empty-state"><h3>No se pudo consultar</h3><p>${errorRestauradores}</p>
+        <button class="btn btn-primary" onclick="cargarRestauradoresPendientes()">Reintentar</button></div>`;
+      return;
+    }
+    if (!restauradoresPendientes.length) {
+      cont.innerHTML = `<div class="empty-state"><h3>Sin solicitudes pendientes</h3><p>Cuando un restaurador complete su perfil, aparecerá aquí.</p></div>`;
+      return;
+    }
+    cont.innerHTML = restauradoresPendientes.map(r => `
+      <div class="request-card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div>
+            <h4 style="font-family:'Playfair Display',serif">${r.especialidadRestaurador || 'Sin especialidad'}</h4>
+            <p style="font-size:1rem;color:var(--ink2)">${r.anosExperienciaRestaurador ?? '—'} años de experiencia</p>
+            <p style="font-size:1rem;color:var(--ink2);margin-top:6px">${r.descripcionBioRestaurador || 'Sin descripción.'}</p>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="aprobarRestauradorActual('${r.restauradorId}')">Aprobar</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function aprobarRestauradorActual(restauradorId) {
+    if (!confirm('¿Aprobar a este restaurador? Podrá recibir solicitudes de inmediato.')) return;
+    try {
+      await Api.aprobarRestaurador(restauradorId);
+      Toast.show('Restaurador aprobado', 'success');
+      await cargarRestauradoresPendientes();
+    } catch (err) {
+      Toast.show(err.message, 'error');
+    }
+  }
+
+  // ── DISPUTAS ABIERTAS ────────────────────────────────────────────
+  let disputas = [];
+  let errorDisputas = null;
+
+  async function cargarDisputas() {
+    try {
+      const page = await Api.obtenerDisputasAbiertas();
+      disputas = page.content || [];
+      errorDisputas = null;
+    } catch (err) {
+      errorDisputas = err.message;
+      disputas = [];
+    }
+    renderDisputas();
+  }
+
+  function renderDisputas() {
+    const cont = document.getElementById('disputas-list');
+    document.getElementById('disputas-badge').textContent = disputas.length;
+    document.getElementById('stat-disputas').textContent = disputas.length;
+
+    if (errorDisputas) {
+      cont.innerHTML = `<div class="empty-state"><h3>No se pudo consultar</h3><p>${errorDisputas}</p>
+        <button class="btn btn-primary" onclick="cargarDisputas()">Reintentar</button></div>`;
+      return;
+    }
+    if (!disputas.length) {
+      cont.innerHTML = `<div class="empty-state"><h3>Sin disputas abiertas</h3><p>Cuando se abra una disputa, aparecerá aquí.</p></div>`;
+      return;
+    }
+    cont.innerHTML = disputas.map(d => `
+      <div class="request-card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div>
+            <span class="eyebrow">Pieza ${d.antiguedadId}</span>
+            <h4 style="font-family:'Playfair Display',serif">${d.descripcionDisputa}</h4>
+            <p style="font-size:1rem;color:var(--ink2);margin-top:4px">Abierta por ${d.nombreAbiertaPor || 'desconocido'} · ${d.abiertaEn ? new Date(d.abiertaEn).toLocaleString('es-MX') : '—'}</p>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="abrirResolverDisputa('${d.disputaId}','${(d.descripcionDisputa || '').replace(/'/g,"\\'")}')">Resolver</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  let disputaActualId = null;
+  function abrirResolverDisputa(disputaId, descripcion) {
+    disputaActualId = disputaId;
+    document.getElementById('disputa-modal-contenido').textContent = descripcion;
+    document.getElementById('rd-resolucion').value = '';
+    document.getElementById('rd-error').classList.remove('visible');
+    Modal.open('modal-resolver-disputa');
+  }
+
+  async function resolverDisputaActual() {
+    const resolucion = document.getElementById('rd-resolucion').value.trim();
+    const errEl = document.getElementById('rd-error');
+    if (!resolucion) {
+      errEl.textContent = 'Describe cómo se resolvió la disputa.';
+      errEl.classList.add('visible');
+      return;
+    }
+    const btn = document.getElementById('rd-submit');
+    btn.disabled = true;
+    try {
+      await Api.resolverDisputa(disputaActualId, resolucion);
+      Modal.close('modal-resolver-disputa');
+      Toast.show('Disputa resuelta', 'success');
+      await cargarDisputas();
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.classList.add('visible');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ── USUARIOS REGISTRADOS (solo lectura) ──────────────────────────
+  async function cargarUsuarios() {
+    const cont = document.getElementById('usuarios-list');
+    cont.innerHTML = '<p style="color:var(--ink2)">Cargando...</p>';
+    try {
+      const page = await Api.obtenerUsuariosRegistrados();
+      const usuarios = page.content || [];
+      document.getElementById('stat-usuarios').textContent = usuarios.length;
+      if (!usuarios.length) {
+        cont.innerHTML = `<div class="empty-state"><h3>Sin usuarios</h3><p>Todavía no hay cuentas registradas.</p></div>`;
+        return;
+      }
+      cont.innerHTML = `
+        <div class="card-elevated">
+          <div style="display:grid;grid-template-columns:2fr 2fr 1fr;gap:12px;padding:10px 4px;border-bottom:1px solid var(--bg3);font-size:1rem;color:var(--ink2);font-weight:600">
+            <div>Nombre</div><div>Correo</div><div>Tipo</div>
+          </div>
+          ${usuarios.map(u => `
+            <div style="display:grid;grid-template-columns:2fr 2fr 1fr;gap:12px;padding:10px 4px;border-bottom:1px solid var(--bg2);align-items:center">
+              <div>${u.nombreCompleto}</div>
+              <div style="color:var(--ink2)">${u.correoElectronico}</div>
+              <div><span class="badge badge-brown">${tipoUsuarioLabel(u.tipoUsuario)}</span></div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    } catch (err) {
+      cont.innerHTML = `<div class="empty-state"><h3>No se pudo consultar</h3><p>${err.message}</p>
+        <button class="btn btn-primary" onclick="cargarUsuarios()">Reintentar</button></div>`;
+    }
+  }
+
+  cargarRestauradoresPendientes();
+  cargarDisputas();
+  cargarUsuarios();
+</script>
+</body>
+</html>

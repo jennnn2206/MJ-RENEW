@@ -116,6 +116,44 @@ const Api = {
     iniciarCompraPiezaCatalogo(catalogoId) {
         return this.post(`/api/catalogo/iniciarCompraPiezaCatalogo/${catalogoId}`);
     },
+
+    // ── TRANSPORTISTA ───────────────────────────────────────────
+    obtenerMisTraslados(page = 0, size = 50) {
+        return this.get(`/api/transportista/obtenerMisTraslados?page=${page}&size=${size}`);
+    },
+    obtenerDetalleTraslado(trasladoId) {
+        return this.get(`/api/transportista/obtenerDetalleTraslado/${trasladoId}`);
+    },
+    // fotos: mínimo 4 URLs de evidencia; el backend las exige y rechaza si faltan.
+    confirmarSalidaRecoleccion(trasladoId, fotos) {
+        return this.post(`/api/transportista/confirmarSalidaRecoleccion/${trasladoId}`, { fotos });
+    },
+    confirmarLlegadaTaller(trasladoId) {
+        return this.post(`/api/transportista/confirmarLlegadaTaller/${trasladoId}`, {});
+    },
+    confirmarSalidaEntregaPropietario(trasladoId) {
+        return this.post(`/api/transportista/confirmarSalidaEntregaPropietario/${trasladoId}`, {});
+    },
+    confirmarEntregaPropietario(trasladoId, fotos) {
+        return this.post(`/api/transportista/confirmarEntregaPropietario/${trasladoId}`, { fotos });
+    },
+
+    // ── ADMINISTRADOR ───────────────────────────────────────────
+    obtenerRestauradoresPendientes(page = 0, size = 50) {
+        return this.get(`/api/administrador/obtenerRestauradoresPendientesAprobacion?page=${page}&size=${size}`);
+    },
+    aprobarRestaurador(restauradorId) {
+        return this.post(`/api/administrador/aprobarRestaurador/${restauradorId}`);
+    },
+    obtenerDisputasAbiertas(page = 0, size = 50) {
+        return this.get(`/api/administrador/obtenerDisputasAbiertas?page=${page}&size=${size}`);
+    },
+    resolverDisputa(disputaId, resolucionDisputa) {
+        return this.post(`/api/administrador/resolverDisputaAntiguedad/${disputaId}`, { resolucionDisputa });
+    },
+    obtenerUsuariosRegistrados(page = 0, size = 50) {
+        return this.get(`/api/administrador/obtenerUsuariosRegistrados?page=${page}&size=${size}`);
+    },
 };
 
 // ── ETIQUETAS: enums del backend -> texto/estilo en español ────
@@ -163,6 +201,23 @@ const ESTADO_ANTIGUEDAD_INFO = {
     DEVUELTA_DESDE_TALLER: { label: 'Devuelta desde el taller', badge: 'badge-blue' },
 };
 
+const TIPO_TRASLADO_LABELS = {
+    RECOLECCION: 'Recolección', ENTREGA_PROPIETARIO: 'Entrega al propietario', ENTREGA_COMPRADOR: 'Entrega al comprador',
+};
+const RESULTADO_TRASLADO_INFO = {
+    PENDIENTE: { label: 'Pendiente', badge: 'badge-orange' },
+    EXITOSO: { label: 'Completado', badge: 'badge-green' },
+    NADIE_EN_CASA: { label: 'Nadie en casa', badge: 'badge-red' },
+    CANCELADO: { label: 'Cancelado', badge: 'badge-red' },
+};
+const TIPO_USUARIO_LABELS = {
+    PROPIETARIO: 'Propietario', RESTAURADOR: 'Restaurador', TRANSPORTISTA: 'Transportista',
+    COMPRADOR: 'Comprador', ADMINISTRADOR: 'Administrador',
+};
+function tipoTrasladoLabel(tipo) { return TIPO_TRASLADO_LABELS[tipo] || tipo; }
+function resultadoTrasladoInfo(resultado) { return RESULTADO_TRASLADO_INFO[resultado] || { label: resultado, badge: 'badge-gray' }; }
+function tipoUsuarioLabel(tipo) { return TIPO_USUARIO_LABELS[tipo] || tipo; }
+
 // Placeholder consistente para piezas sin fotografía todavía: hoy no existe
 // endpoint para subir la foto de portada (ESTADO_INICIAL) de una antigüedad,
 // así que urlFotoPortada llega null salvo que se haya cargado por otra vía.
@@ -189,3 +244,9 @@ window.tipoMuebleLabel = tipoMuebleLabel;
 window.estiloMuebleLabel = estiloMuebleLabel;
 window.materialMuebleLabel = materialMuebleLabel;
 window.fotoConFallback = fotoConFallback;
+window.TIPO_TRASLADO_LABELS = TIPO_TRASLADO_LABELS;
+window.RESULTADO_TRASLADO_INFO = RESULTADO_TRASLADO_INFO;
+window.TIPO_USUARIO_LABELS = TIPO_USUARIO_LABELS;
+window.tipoTrasladoLabel = tipoTrasladoLabel;
+window.resultadoTrasladoInfo = resultadoTrasladoInfo;
+window.tipoUsuarioLabel = tipoUsuarioLabel;

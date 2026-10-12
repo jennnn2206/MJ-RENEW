@@ -15,10 +15,12 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.web.context.SecurityContextRepository;
 
 /**
- * Las 8 rutas de PageController (vistas Thymeleaf del mockup) y los recursos
+ * Las 10 rutas de PageController (vistas Thymeleaf del mockup) y los recursos
  * estáticos quedan explícitamente públicos para no romper el frontend existente,
  * que todavía no consume esta API. Solo /api/** requiere autenticación (salvo
- * registro/login, que son el punto de entrada).
+ * registro/login, que son el punto de entrada). La protección real de los
+ * paneles de transportista/administrador ocurre en sus llamadas a /api/**
+ * (@PreAuthorize) y en el guard de rol del lado del cliente (Auth.requireAuth).
  */
 @Configuration
 @EnableWebSecurity
@@ -28,6 +30,7 @@ public class SecurityConfig {
     private static final String[] RUTAS_PUBLICAS_VISTAS = {
             "/", "/login", "/registro", "/catalogo", "/pieza",
             "/comprador", "/propietario", "/restaurador",
+            "/transportista", "/administrador",
             "/css/**", "/js/**"
     };
 

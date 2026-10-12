@@ -67,7 +67,7 @@ const Auth = {
         this.actualizarDesdeServidor().then(user => {
             if (!user) { window.location.replace(redirectTo); return; }
             if (rolEsperado && user.tipo !== rolEsperado) {
-                window.location.replace({ propietario:'/propietario', restaurador:'/restaurador', comprador:'/comprador' }[user.tipo] || '/login');
+                window.location.replace({ propietario:'/propietario', restaurador:'/restaurador', comprador:'/comprador', transportista:'/transportista', administrador:'/administrador' }[user.tipo] || '/login');
                 return;
             }
             // Datos de la cabecera actuales, si existían antes de validar la sesión.
@@ -83,7 +83,7 @@ const Auth = {
     async redirectIfLoggedIn() {
         const user = await this.actualizarDesdeServidor();
         if (!user) return;
-        window.location.replace({ propietario:'/propietario', restaurador:'/restaurador', comprador:'/comprador' }[user.tipo] || '/login');
+        window.location.replace({ propietario:'/propietario', restaurador:'/restaurador', comprador:'/comprador', transportista:'/transportista', administrador:'/administrador' }[user.tipo] || '/login');
     },
 };
 

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Transportista — MJ Renew</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<header class="site-header" id="site-header"></header>
+
+<div class="dashboard-layout">
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-section">
+      <div style="padding:16px 12px 20px;border-bottom:1px solid var(--bg3);margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="user-avatar" id="sb-avatar" style="width:42px;height:42px;font-size:1rem;background:var(--brown3)"></div>
+          <div>
+            <div style="font-weight:600;font-size:1rem;color:var(--ink)" id="sb-name"></div>
+            <div style="font-size:1rem;color:var(--ink2)">Transportista</div>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-label">Trabajo</div>
+      <button class="sidebar-nav-item active" onclick="showSection('inicio')">Inicio</button>
+      <button class="sidebar-nav-item" onclick="showSection('recoleccion')">Recolecciones <span class="sidebar-badge" id="recoleccion-badge">0</span></button>
+      <button class="sidebar-nav-item" onclick="showSection('entrega')">Entregas al propietario <span class="sidebar-badge" id="entrega-badge">0</span></button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Cuenta</div>
+      <button class="sidebar-nav-item" onclick="Auth.logout().then(() => window.location.href='/login')">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <main class="dashboard-main">
+
+    <!-- INICIO -->
+    <div id="section-inicio" class="dash-section">
+      <div style="margin-bottom:28px">
+        <h2 id="welcome-title" style="font-size:1.8rem"></h2>
+        <p style="color:var(--ink2)">Tus traslados asignados, organizados por etapa.</p>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card"><span class="stat-card-value" id="stat-recoleccion">—</span><div class="stat-card-label">Recolecciones pendientes</div></div>
+        <div class="stat-card"><span class="stat-card-value" id="stat-entrega">—</span><div class="stat-card-label">Entregas pendientes</div></div>
+        <div class="stat-card"><span class="stat-card-value" id="stat-completados" style="color:var(--gold)">—</span><div class="stat-card-label">Completados</div></div>
+      </div>
+    </div>
+
+    <!-- RECOLECCIÓN -->
+    <div id="section-recoleccion" class="dash-section" style="display:none">
+      <div style="margin-bottom:24px">
+        <h2 style="font-size:1.5rem">Traslados de recolección</h2>
+        <p style="color:var(--ink2)">Recoges la pieza en casa del propietario y la llevas al taller.</p>
+      </div>
+      <div id="recoleccion-list"></div>
+    </div>
+
+    <!-- ENTREGA AL PROPIETARIO -->
+    <div id="section-entrega" class="dash-section" style="display:none">
+      <div style="margin-bottom:24px">
+        <h2 style="font-size:1.5rem">Traslados de entrega al propietario</h2>
+        <p style="color:var(--ink2)">Llevas la pieza restaurada de vuelta a casa del propietario.</p>
+      </div>
+      <div id="entrega-list"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL: evidencia fotográfica (salida de recolección / entrega al propietario) -->
+<div class="modal-overlay" id="modal-fotos-traslado">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 style="font-family:'Playfair Display',serif" id="fotos-modal-titulo">Evidencia fotográfica</h3>
+      <button class="modal-close" onclick="Modal.close('modal-fotos-traslado')">×</button>
+    </div>
+    <p style="font-size:1rem;color:var(--ink2);margin-bottom:12px">Se requieren al menos 4 fotos. Por ahora solo aceptamos URLs ya subidas a algún sitio (no hay carga de archivos todavía).</p>
+    <div class="form-group">
+      <label class="form-label">URLs de fotografías (una por línea)</label>
+      <textarea id="ft-fotos" class="form-control" rows="5" placeholder="https://...&#10;https://...&#10;https://...&#10;https://..."></textarea>
+    </div>
+    <div id="ft-error" class="form-error"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" id="ft-submit" onclick="confirmarFotosTraslado()">Confirmar</button>
+      <button class="btn btn-ghost" onclick="Modal.close('modal-fotos-traslado')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script th:src="@{/js/data/afd-estados.js}"></script>
+<script th:src="@{/js/data/catalogo.js}"></script>
+<script th:src="@{/js/data/restauradores.js}"></script>
+<script th:src="@{/js/data/piezas-propietario.js}"></script>
+<script th:src="@{/js/data/panel-restaurador.js}"></script>
+<script th:src="@{/js/autenticacion.js}"></script>
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/utilidades.js}"></script>
+<script th:src="@{/js/notificaciones.js}"></script>
+<script th:src="@{/js/modal.js}"></script>
+<script th:src="@{/js/app.js}"></script>
+<script>
+  const user = Auth.requireAuth('/login', 'transportista');
+  if (user) {
+    document.getElementById('welcome-title').textContent = `Hola, ${user.name.split(' ')[0]}`;
+    document.getElementById('sb-name').textContent = user.name;
+    document.getElementById('sb-avatar').textContent = Utils.initials(user.name);
+    renderHeader(false);
+  }
+
+  function showSection(id) {
+    document.querySelectorAll('.dash-section').forEach(s => s.style.display = 'none');
+    document.getElementById('section-' + id).style.display = 'block';
+    document.querySelectorAll('.sidebar-nav-item').forEach(b => b.classList.remove('active'));
+    const btn = [...document.querySelectorAll('.sidebar-nav-item')].find(b => b.onclick?.toString().includes(`'${id}'`));
+    if (btn) btn.classList.add('active');
+  }
+
+  let traslados = [];
+  let errorTraslados = null;
+
+  // obtenerMisTraslados (resumen) no trae direcciones ni si ya se confirmó la
+  // salida — eso solo lo tiene el detalle. Se completa cada traslado con su
+  // detalle para poder mostrar direcciones y decidir qué botón corresponde.
+  async function cargarTraslados() {
+    const recoleccionList = document.getElementById('recoleccion-list');
+    const entregaList = document.getElementById('entrega-list');
+    recoleccionList.innerHTML = '<p style="color:var(--ink2)">Cargando...</p>';
+    entregaList.innerHTML = '<p style="color:var(--ink2)">Cargando...</p>';
+    try {
+      const page = await Api.obtenerMisTraslados();
+      const resumenes = page.content || [];
+      traslados = await Promise.all(resumenes.map(async r => {
+        try {
+          const detalle = await Api.obtenerDetalleTraslado(r.trasladoId);
+          return { ...r, ...detalle };
+        } catch {
+          return r; // si falla el detalle de uno, igual se muestra con lo que hay
+        }
+      }));
+      errorTraslados = null;
+    } catch (err) {
+      errorTraslados = err.message;
+      traslados = [];
+    }
+    renderTraslados();
+  }
+
+  function trasladoCardHtml(t) {
+    const info = resultadoTrasladoInfo(t.resultadoTraslado);
+    let accion;
+    if (t.resultadoTraslado === 'EXITOSO') {
+      accion = `<p style="color:var(--ink2);font-size:1rem">Traslado completado.</p>`;
+    } else if (t.resultadoTraslado === 'CANCELADO' || t.resultadoTraslado === 'NADIE_EN_CASA') {
+      accion = `<p style="color:var(--error);font-size:1rem">Resultado: ${info.label}</p>`;
+    } else if (t.tipoTraslado === 'RECOLECCION') {
+      accion = !t.salidaConfirmadaEn
+        ? `<button class="btn btn-primary btn-sm" onclick="abrirModalFotos('${t.trasladoId}','salida-recoleccion')">Confirmar salida</button>`
+        : `<button class="btn btn-primary btn-sm" onclick="confirmarLlegadaTaller('${t.trasladoId}')">Confirmar llegada al taller</button>`;
+    } else {
+      accion = !t.salidaConfirmadaEn
+        ? `<button class="btn btn-primary btn-sm" onclick="confirmarSalidaEntrega('${t.trasladoId}')">Confirmar salida de entrega</button>`
+        : `<button class="btn btn-primary btn-sm" onclick="abrirModalFotos('${t.trasladoId}','entrega-propietario')">Confirmar entrega al propietario</button>`;
+    }
+
+    return `
+      <div class="request-card" style="margin-bottom:16px">
+        <div class="request-card-header">
+          <div>
+            <span class="eyebrow">${tipoTrasladoLabel(t.tipoTraslado)}</span>
+            <h4 style="font-family:'Playfair Display',serif">${t.direccionOrigen || '—'} → ${t.direccionDestino || '—'}</h4>
+          </div>
+          <span class="badge ${info.badge}">${info.label}</span>
+        </div>
+        <div class="request-card-meta">
+          <div class="meta-item"><div class="meta-label">Fecha acordada</div><div class="meta-value">${t.fechaAcordada || '—'}</div></div>
+          <div class="meta-item"><div class="meta-label">Horario</div><div class="meta-value">${(t.horaInicio || '—')} – ${(t.horaFin || '—')}</div></div>
+        </div>
+        <div class="request-card-actions">${accion}</div>
+      </div>
+    `;
+  }
+
+  function renderTraslados() {
+    const recoleccionList = document.getElementById('recoleccion-list');
+    const entregaList = document.getElementById('entrega-list');
+
+    if (errorTraslados) {
+      const error = `<div class="empty-state"><h3>No se pudieron consultar tus traslados</h3><p>${errorTraslados}</p>
+        <button class="btn btn-primary" onclick="cargarTraslados()">Reintentar</button></div>`;
+      recoleccionList.innerHTML = error;
+      entregaList.innerHTML = error;
+      return;
+    }
+
+    const recoleccion = traslados.filter(t => t.tipoTraslado === 'RECOLECCION');
+    const entrega = traslados.filter(t => t.tipoTraslado === 'ENTREGA_PROPIETARIO');
+    const pendientes = t => t.resultadoTraslado !== 'EXITOSO' && t.resultadoTraslado !== 'CANCELADO';
+
+    document.getElementById('recoleccion-badge').textContent = recoleccion.filter(pendientes).length;
+    document.getElementById('entrega-badge').textContent = entrega.filter(pendientes).length;
+    document.getElementById('stat-recoleccion').textContent = recoleccion.filter(pendientes).length;
+    document.getElementById('stat-entrega').textContent = entrega.filter(pendientes).length;
+    document.getElementById('stat-completados').textContent = traslados.filter(t => t.resultadoTraslado === 'EXITOSO').length;
+
+    recoleccionList.innerHTML = recoleccion.length
+      ? recoleccion.map(trasladoCardHtml).join('')
+      : `<div class="empty-state"><h3>Sin recolecciones asignadas</h3><p>Cuando el administrador te asigne una, aparecerá aquí.</p></div>`;
+
+    entregaList.innerHTML = entrega.length
+      ? entrega.map(trasladoCardHtml).join('')
+      : `<div class="empty-state"><h3>Sin entregas asignadas</h3><p>Cuando el administrador te asigne una, aparecerá aquí.</p></div>`;
+  }
+
+  // ── ACCIONES SIN FOTOS ──────────────────────────────────────────
+  async function confirmarLlegadaTaller(trasladoId) {
+    if (!confirm('¿Confirmas la llegada de la pieza al taller?')) return;
+    try {
+      await Api.confirmarLlegadaTaller(trasladoId);
+      Toast.show('Llegada al taller confirmada', 'success');
+      await cargarTraslados();
+    } catch (err) {
+      Toast.show(err.message, 'error');
+    }
+  }
+
+  async function confirmarSalidaEntrega(trasladoId) {
+    if (!confirm('¿Confirmas la salida para la entrega al propietario?')) return;
+    try {
+      await Api.confirmarSalidaEntregaPropietario(trasladoId);
+      Toast.show('Salida de entrega confirmada', 'success');
+      await cargarTraslados();
+    } catch (err) {
+      Toast.show(err.message, 'error');
+    }
+  }
+
+  // ── ACCIONES CON FOTOS (modal) ───────────────────────────────────
+  let fotosTrasladoId = null;
+  let fotosAccion = null;
+
+  function abrirModalFotos(trasladoId, accion) {
+    fotosTrasladoId = trasladoId;
+    fotosAccion = accion;
+    document.getElementById('fotos-modal-titulo').textContent =
+      accion === 'salida-recoleccion' ? 'Evidencia de salida (recolección)' : 'Evidencia de entrega al propietario';
+    document.getElementById('ft-fotos').value = '';
+    document.getElementById('ft-error').classList.remove('visible');
+    Modal.open('modal-fotos-traslado');
+  }
+
+  async function confirmarFotosTraslado() {
+    const fotos = document.getElementById('ft-fotos').value.split('\n').map(s => s.trim()).filter(Boolean);
+    const errEl = document.getElementById('ft-error');
+    if (fotos.length < 4) {
+      errEl.textContent = 'Se requieren al menos 4 fotografías.';
+      errEl.classList.add('visible');
+      return;
+    }
+    const btn = document.getElementById('ft-submit');
+    btn.disabled = true;
+    try {
+      if (fotosAccion === 'salida-recoleccion') {
+        await Api.confirmarSalidaRecoleccion(fotosTrasladoId, fotos);
+        Toast.show('Salida de recolección confirmada', 'success');
+      } else {
+        await Api.confirmarEntregaPropietario(fotosTrasladoId, fotos);
+        Toast.show('Entrega al propietario confirmada', 'success');
+      }
+      Modal.close('modal-fotos-traslado');
+      await cargarTraslados();
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.classList.add('visible');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  cargarTraslados();
+</script>
+</body>
+</html>
