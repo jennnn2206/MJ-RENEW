@@ -27,6 +27,7 @@
       <button class="sidebar-nav-item" onclick="showSection('restauradores')">Restauradores pendientes <span class="sidebar-badge" id="restauradores-badge">0</span></button>
       <button class="sidebar-nav-item" onclick="showSection('disputas')">Disputas abiertas <span class="sidebar-badge" id="disputas-badge">0</span></button>
       <button class="sidebar-nav-item" onclick="showSection('usuarios')">Usuarios registrados</button>
+      <button class="sidebar-nav-item" onclick="showSection('traslados')">Traslados</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">Cuenta</div>
@@ -77,6 +78,47 @@
       <div id="usuarios-list"></div>
     </div>
 
+    <!-- CREAR TRASLADO -->
+    <div id="section-traslados" class="dash-section" style="display:none">
+      <div style="margin-bottom:24px">
+        <h2 style="font-size:1.5rem">Crear traslado</h2>
+        <p style="color:var(--ink2)">Agenda la recolección o la entrega al propietario. Sin esto la pieza se queda
+          atascada en PAGO_EN_ESCROW (recolección) o RESTAURACION_LISTA (entrega) y nunca avanza.</p>
+      </div>
+      <div class="card-elevated" style="max-width:640px">
+        <div class="form-group">
+          <label class="form-label">ID de la antigüedad</label>
+          <input type="text" class="form-control" id="ct-antiguedad-id" placeholder="UUID de la antigüedad">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ID del transportista</label>
+          <input type="text" class="form-control" id="ct-transportista-id" placeholder="UUID del transportista (lo ves en Usuarios registrados)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo de traslado</label>
+          <select class="form-control" id="ct-tipo">
+            <option value="RECOLECCION">Recolección (de la casa del propietario al taller)</option>
+            <option value="ENTREGA_PROPIETARIO">Entrega al propietario (del taller a su casa)</option>
+          </select>
+        </div>
+        <div class="grid-2">
+          <div class="form-group"><label class="form-label">Dirección origen</label><input type="text" class="form-control" id="ct-origen" placeholder="Calle, número, ciudad"></div>
+          <div class="form-group"><label class="form-label">Dirección destino</label><input type="text" class="form-control" id="ct-destino" placeholder="Calle, número, ciudad"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha acordada</label>
+          <input type="date" class="form-control" id="ct-fecha">
+        </div>
+        <div class="grid-2">
+          <div class="form-group"><label class="form-label">Hora inicio acordada</label><input type="time" class="form-control" id="ct-hora-inicio"></div>
+          <div class="form-group"><label class="form-label">Hora fin acordada</label><input type="time" class="form-control" id="ct-hora-fin"></div>
+        </div>
+        <div id="ct-success" style="display:none;background:var(--bg2);border-radius:8px;padding:12px;margin-bottom:16px;font-size:1rem;color:var(--ink)"></div>
+        <div id="ct-error" class="form-error"></div>
+        <button class="btn btn-primary" id="ct-submit" onclick="crearTrasladoActual()">Crear traslado</button>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -119,6 +161,9 @@
     document.getElementById('sb-avatar').textContent = Utils.initials(user.name);
     renderHeader(false);
   }
+
+  // El backend exige fechaAcordadaTraslado >= hoy (@FutureOrPresent).
+  document.getElementById('ct-fecha').min = new Date().toISOString().split('T')[0];
 
   function showSection(id) {
     document.querySelectorAll('.dash-section').forEach(s => s.style.display = 'none');
@@ -288,6 +333,55 @@
     } catch (err) {
       cont.innerHTML = `<div class="empty-state"><h3>No se pudo consultar</h3><p>${err.message}</p>
         <button class="btn btn-primary" onclick="cargarUsuarios()">Reintentar</button></div>`;
+    }
+  }
+
+  // ── CREAR TRASLADO ────────────────────────────────────────────────
+  async function crearTrasladoActual() {
+    const antiguedadId = document.getElementById('ct-antiguedad-id').value.trim();
+    const transportistaId = document.getElementById('ct-transportista-id').value.trim();
+    const tipoTraslado = document.getElementById('ct-tipo').value;
+    const direccionOrigenTraslado = document.getElementById('ct-origen').value.trim();
+    const direccionDestinoTraslado = document.getElementById('ct-destino').value.trim();
+    const fechaAcordadaTraslado = document.getElementById('ct-fecha').value;
+    const horaInicioAcordadaTraslado = document.getElementById('ct-hora-inicio').value;
+    const horaFinAcordadaTraslado = document.getElementById('ct-hora-fin').value;
+
+    const errEl = document.getElementById('ct-error');
+    const successEl = document.getElementById('ct-success');
+    errEl.classList.remove('visible');
+    successEl.style.display = 'none';
+
+    if (!antiguedadId || !transportistaId || !tipoTraslado || !direccionOrigenTraslado ||
+        !direccionDestinoTraslado || !fechaAcordadaTraslado || !horaInicioAcordadaTraslado || !horaFinAcordadaTraslado) {
+      errEl.textContent = 'Completa todos los campos antes de crear el traslado.';
+      errEl.classList.add('visible');
+      return;
+    }
+
+    const btn = document.getElementById('ct-submit');
+    btn.disabled = true;
+    try {
+      const resp = await Api.crearTraslado({
+        antiguedadId, transportistaId, tipoTraslado,
+        direccionOrigenTraslado, direccionDestinoTraslado,
+        fechaAcordadaTraslado, horaInicioAcordadaTraslado, horaFinAcordadaTraslado,
+      });
+      successEl.textContent = `Traslado creado correctamente — ID: ${resp.trasladoId}`;
+      successEl.style.display = 'block';
+      Toast.show('Traslado creado', 'success');
+      // Se deja el tipo/fecha/horario tal cual (suele repetirse en el
+      // siguiente traslado) y solo se limpian los datos de esta pieza.
+      ['ct-antiguedad-id', 'ct-transportista-id', 'ct-origen', 'ct-destino']
+        .forEach(id => document.getElementById(id).value = '');
+    } catch (err) {
+      // err.message ya trae el mensaje específico del backend: 400 de
+      // validación (campo faltante/formato) o 409 de TransicionEstadoInvalidaException
+      // (p. ej. "La antigüedad debe estar en PAGO_EN_ESCROW...").
+      errEl.textContent = err.message;
+      errEl.classList.add('visible');
+    } finally {
+      btn.disabled = false;
     }
   }
 

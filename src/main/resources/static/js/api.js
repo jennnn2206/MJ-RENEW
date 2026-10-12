@@ -118,6 +118,12 @@ const Api = {
     },
 
     // ── TRANSPORTISTA ───────────────────────────────────────────
+    // crearTraslado vive bajo /api/transportista (así está mapeado el
+    // endpoint), pero lo usa el administrador: es quien despacha/asigna
+    // el traslado, @PreAuthorize exige ROLE_ADMINISTRADOR.
+    crearTraslado(body) {
+        return this.post('/api/transportista/crearTraslado', body);
+    },
     obtenerMisTraslados(page = 0, size = 50) {
         return this.get(`/api/transportista/obtenerMisTraslados?page=${page}&size=${size}`);
     },
