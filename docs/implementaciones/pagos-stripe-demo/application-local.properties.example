@@ -24,3 +24,8 @@ mjrenew.stripe.reconciliation-delay-ms=60000
 # minio.access-key=mjrenew
 # minio.secret-key=mjrenew123
 # minio.bucket=mjrenew-fotos
+
+# Límites de subida de fotos (MinIO): 10MB por foto, 50MB por envío.
+# Sin esto Spring usa 1MB por defecto y las fotos grandes fallan.
+spring.servlet.multipart.max-file-size=10MB
+spring.servlet.multipart.max-request-size=50MB
