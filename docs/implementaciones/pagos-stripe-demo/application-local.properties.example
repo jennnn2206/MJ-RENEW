@@ -16,3 +16,11 @@ app.base-url=http://localhost:8080
 mjrenew.stripe.reconciliation-enabled=false
 mjrenew.stripe.reconciliation-initial-delay-ms=120000
 mjrenew.stripe.reconciliation-delay-ms=60000
+
+# Almacenamiento de archivos (MinIO). Ya tiene valores por defecto en
+# application.properties que coinciden con docker-compose.yml; solo
+# sobreescribe aquí si usas credenciales o un bucket distintos.
+# minio.endpoint=http://localhost:9000
+# minio.access-key=mjrenew
+# minio.secret-key=mjrenew123
+# minio.bucket=mjrenew-fotos

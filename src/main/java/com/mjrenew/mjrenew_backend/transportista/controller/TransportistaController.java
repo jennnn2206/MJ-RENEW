@@ -11,11 +11,14 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -53,12 +56,12 @@ public class TransportistaController {
         return ResponseEntity.ok(trasladoService.obtenerDetalle(trasladoId, principal.getUsuario().getUsuariosId()));
     }
 
-    @PostMapping("/confirmarSalidaRecoleccion/{trasladoId}")
+    @PostMapping(value = "/confirmarSalidaRecoleccion/{trasladoId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('TRANSPORTISTA')")
     public ResponseEntity<TrasladoAntiguedadResumenResponse> confirmarSalidaRecoleccion(@PathVariable UUID trasladoId,
-                                                                                        @Valid @RequestBody ConfirmarSalidaRequest request,
+                                                                                        @RequestPart(value = "fotos", required = false) List<MultipartFile> fotos,
                                                                                         @AuthenticationPrincipal UsuarioPrincipal principal) {
-        return ResponseEntity.ok(trasladoService.confirmarSalidaRecoleccion(trasladoId, principal.getUsuario().getUsuariosId(), request));
+        return ResponseEntity.ok(trasladoService.confirmarSalidaRecoleccion(trasladoId, principal.getUsuario().getUsuariosId(), fotos));
     }
 
     @PostMapping("/confirmarLlegadaTaller/{trasladoId}")
@@ -77,11 +80,11 @@ public class TransportistaController {
         return ResponseEntity.ok(trasladoService.confirmarSalidaEntregaPropietario(trasladoId, principal.getUsuario().getUsuariosId(), request));
     }
 
-    @PostMapping("/confirmarEntregaPropietario/{trasladoId}")
+    @PostMapping(value = "/confirmarEntregaPropietario/{trasladoId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('TRANSPORTISTA')")
     public ResponseEntity<TrasladoAntiguedadResumenResponse> confirmarEntregaPropietario(@PathVariable UUID trasladoId,
-                                                                                         @Valid @RequestBody ConfirmarLlegadaRequest request,
+                                                                                         @RequestPart(value = "fotos", required = false) List<MultipartFile> fotos,
                                                                                          @AuthenticationPrincipal UsuarioPrincipal principal) {
-        return ResponseEntity.ok(trasladoService.confirmarEntregaPropietario(trasladoId, principal.getUsuario().getUsuariosId(), request));
+        return ResponseEntity.ok(trasladoService.confirmarEntregaPropietario(trasladoId, principal.getUsuario().getUsuariosId(), fotos));
     }
 }

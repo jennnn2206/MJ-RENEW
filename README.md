@@ -70,3 +70,21 @@ com.mjrenew.mjrenew_backend
 └── controller/PageController.java
 
 ```
+
+## Cómo correr el proyecto localmente
+
+1. Copia `docs/implementaciones/pagos-stripe-demo/application-local.properties.example`
+   a `src/main/resources/application-local.properties` y ajusta tus credenciales
+   de PostgreSQL y (si las vas a probar) de Stripe.
+2. Levanta MinIO (almacenamiento de fotos) con Docker:
+   ```bash
+   docker-compose up -d
+   ```
+   Consola web en http://localhost:9001 (usuario `mjrenew`, contraseña `mjrenew123`).
+   Si no corres este paso, la app arranca igual — solo falla la subida de fotos
+   hasta que MinIO esté disponible.
+3. Levanta el backend:
+   ```bash
+   ./gradlew bootRun
+   ```
+4. Abre http://localhost:8080

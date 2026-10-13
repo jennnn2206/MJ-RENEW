@@ -1,0 +1,15 @@
+services:
+  minio:
+    image: bitnami/minio:latest
+    container_name: mjrenew-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: mjrenew
+      MINIO_ROOT_PASSWORD: mjrenew123
+    volumes:
+      - minio-data:/bitnami/minio/data
+
+volumes:
+  minio-data:

@@ -370,13 +370,19 @@
     }
   }
 
+  const TIPOS_FOTO_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp'];
+  const TAMANO_MAX_FOTO_BYTES = 5 * 1024 * 1024;
+
   async function saveProgress() {
     const desc = document.getElementById('p-desc').value;
     const errEl = document.getElementById('p-error');
     if (!desc) { errEl.textContent = 'Describe el avance realizado.'; errEl.classList.add('visible'); return; }
-    const fotos = document.getElementById('p-fotos').value.split('\n').map(s => s.trim()).filter(Boolean);
+    const foto = document.getElementById('p-foto').files[0];
+    if (!foto) { errEl.textContent = 'Sube una fotografía del avance.'; errEl.classList.add('visible'); return; }
+    if (!TIPOS_FOTO_PERMITIDOS.includes(foto.type)) { errEl.textContent = 'La foto debe ser JPG, PNG o WEBP.'; errEl.classList.add('visible'); return; }
+    if (foto.size > TAMANO_MAX_FOTO_BYTES) { errEl.textContent = 'La foto no puede superar los 5 MB.'; errEl.classList.add('visible'); return; }
     try {
-      await Api.publicarAvanceRestauracion(antiguedadGestion.antiguedadId, { descripcionAvance: desc, fotos });
+      await Api.publicarAvanceRestauracion(antiguedadGestion.antiguedadId, { descripcionAvance: desc }, foto);
       Modal.close('modal-progress');
       Toast.show('Avance publicado. El propietario puede verlo ahora.', 'success');
       buscarAntiguedadGestion();

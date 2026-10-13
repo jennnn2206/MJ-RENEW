@@ -52,8 +52,9 @@
             </div>
             <div class="form-group"><label class="form-label">Descripción del avance</label><textarea id="p-desc" class="form-control" rows="3" placeholder="Describe el progreso realizado..."></textarea></div>
             <div class="form-group">
-                <label class="form-label">URLs de fotografías (una por línea)</label>
-                <textarea id="p-fotos" class="form-control" rows="2" placeholder="https://... (opcional, pero recomendado)"></textarea>
+                <label class="form-label">Fotografía del avance</label>
+                <input type="file" id="p-foto" class="form-control" accept="image/jpeg,image/png,image/webp">
+                <div class="form-hint">JPG, PNG o WEBP, máximo 5 MB.</div>
             </div>
             <div id="p-error" class="form-error"></div>
             <div style="display:flex;gap:10px">

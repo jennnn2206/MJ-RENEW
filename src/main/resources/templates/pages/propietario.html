@@ -142,10 +142,12 @@
 
     <hr class="divider">
 
-    <p class="eyebrow" style="margin-bottom:10px">Fotografías iniciales (mínimo 3)</p>
-    <p style="font-size:1rem;color:var(--ink2);margin-bottom:12px">Registra una URL pública por fotografía: frente, lado y parte posterior. De momento no hay subida directa de archivos (pendiente de implementar).</p>
-    <div id="np-fotos-list"></div>
-    <button type="button" class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="agregarCampoFoto()">+ Agregar otra foto</button>
+    <p class="eyebrow" style="margin-bottom:10px">Fotografías iniciales (mínimo 3, máximo 10)</p>
+    <p style="font-size:1rem;color:var(--ink2);margin-bottom:12px">Sube fotos de frente, lado y parte posterior. Formatos JPG, PNG o WEBP, máximo 5 MB cada una.</p>
+    <div class="form-group" style="margin-bottom:16px">
+      <input type="file" id="np-fotos" class="form-control" accept="image/jpeg,image/png,image/webp" multiple>
+      <div class="form-hint" id="np-fotos-hint"></div>
+    </div>
 
     <div id="np-error" class="form-error"></div>
     <div style="display:flex;gap:10px">
@@ -381,22 +383,31 @@
     document.getElementById('np-danios').value = '';
     document.getElementById('np-procedencia').value = '';
     ['np-alto', 'np-ancho', 'np-profundidad', 'np-peso'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('np-fotos-list').innerHTML = '';
-    agregarCampoFoto();
-    agregarCampoFoto();
-    agregarCampoFoto();
+    document.getElementById('np-fotos').value = '';
+    document.getElementById('np-fotos-hint').textContent = '';
     document.getElementById('np-error').classList.remove('visible');
     Modal.open('modal-nueva-pieza');
   }
 
-  // No hay carga de archivos todavía (sin S3/Cloudinary): se piden URLs
-  // de fotos ya subidas a algún sitio, con un botón para agregar más.
-  function agregarCampoFoto() {
-    const cont = document.getElementById('np-fotos-list');
-    const div = document.createElement('div');
-    div.className = 'form-group';
-    div.innerHTML = `<input type="url" class="form-control np-foto-input" placeholder="https://... (URL de la foto)">`;
-    cont.appendChild(div);
+  const TIPOS_FOTO_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp'];
+  const TAMANO_MAX_FOTO_BYTES = 5 * 1024 * 1024;
+
+  function validarFotos(archivos, minimo) {
+    if (archivos.length < minimo) {
+      return `Necesitas al menos ${minimo} fotografía${minimo === 1 ? '' : 's'}.`;
+    }
+    if (archivos.length > 10) {
+      return 'No puedes subir más de 10 fotografías.';
+    }
+    for (const archivo of archivos) {
+      if (!TIPOS_FOTO_PERMITIDOS.includes(archivo.type)) {
+        return `"${archivo.name}" no es JPG, PNG ni WEBP.`;
+      }
+      if (archivo.size > TAMANO_MAX_FOTO_BYTES) {
+        return `"${archivo.name}" supera los 5 MB permitidos.`;
+      }
+    }
+    return null;
   }
 
   async function registrarNuevaPieza() {
@@ -407,12 +418,10 @@
       errEl.classList.add('visible');
       return;
     }
-    const urlsFotografiasIniciales = [...document.querySelectorAll('.np-foto-input')]
-            .map(el => el.value.trim())
-            .filter(Boolean);
-    // MJRENEW-FLUJO: mismo contrato que @Size(min=3) y @Pattern del DTO.
-    if (urlsFotografiasIniciales.length < 3 || !urlsFotografiasIniciales.every(url => /^https?:\/\/.+/.test(url))) {
-      errEl.textContent = 'Necesitas al menos 3 URLs válidas (http/https) para evaluar la antigüedad.';
+    const fotos = [...document.getElementById('np-fotos').files];
+    const errorFotos = validarFotos(fotos, 3);
+    if (errorFotos) {
+      errEl.textContent = errorFotos;
       errEl.classList.add('visible');
       return;
     }
@@ -430,8 +439,7 @@
         anchoCmAntiguedad: document.getElementById('np-ancho').value || null,
         profundidadCmAntiguedad: document.getElementById('np-profundidad').value || null,
         pesoKgAntiguedad: document.getElementById('np-peso').value || null,
-        urlsFotografiasIniciales,
-      });
+      }, fotos);
       Modal.close('modal-nueva-pieza');
       Toast.show('Pieza registrada. Ya puedes buscar un restaurador.', 'success');
       await cargarMisPiezas();

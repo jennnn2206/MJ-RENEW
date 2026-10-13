@@ -3,13 +3,10 @@ package com.mjrenew.mjrenew_backend.restaurador.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-import java.util.List;
-
 /**
- * La cantidad mínima de fotos no se valida aquí con @Size porque el mensaje
- * de error necesita quedar consistente con el resto de las reglas de
- * evidencia fotográfica (ver TrasladoAntiguedadService.guardarFotos). Se
- * valida en RestauradorService.
+ * La fotografía del avance llega como archivo en una parte multipart
+ * separada ("foto", ver RestauradorController.publicarAvanceRestauracion),
+ * no en este JSON; se valida en RestauradorService.
  */
 public record PublicarAvanceRequest(
 
@@ -18,9 +15,7 @@ public record PublicarAvanceRequest(
                 max = 300,
                 message = "La descripción del avance no puede superar los 300 caracteres"
         )
-        String descripcionAvance,
-
-        List<String> fotos
+        String descripcionAvance
 
 ) {
 }

@@ -18,11 +18,14 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -40,16 +43,18 @@ public class AntiguedadController {
         this.restauradorService = restauradorService;
     }
 
-    @PostMapping("/registrarAntiguedad")
+    @PostMapping(value = "/registrarAntiguedad", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('PROPIETARIO')")
     public ResponseEntity<AntiguedadDetalleResponse> registrarAntiguedad(
-            @Valid @RequestBody AntiguedadCreateRequest request,
+            @Valid @RequestPart("datos") AntiguedadCreateRequest request,
+            @RequestPart(value = "fotos", required = false) List<MultipartFile> fotos,
             @AuthenticationPrincipal UsuarioPrincipal principal
     ) {
 
         AntiguedadDetalleResponse response =
                 antiguedadService.crear(
                         request,
+                        fotos,
                         principal.getUsuario()
                 );
 

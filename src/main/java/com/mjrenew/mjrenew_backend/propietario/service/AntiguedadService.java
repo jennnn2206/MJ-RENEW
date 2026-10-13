@@ -5,6 +5,7 @@ import com.mjrenew.mjrenew_backend.catalogo.dto.UrlPagoStripeResponse;
 import com.mjrenew.mjrenew_backend.catalogo.entity.CatalogoAntiguedad;
 import com.mjrenew.mjrenew_backend.catalogo.mapper.CatalogoAntiguedadMapper;
 import com.mjrenew.mjrenew_backend.catalogo.repository.CatalogoAntiguedadRepository;
+import com.mjrenew.mjrenew_backend.nucleo.almacenamiento.AlmacenamientoService;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.repository.AntiguedadRepository;
 import com.mjrenew.mjrenew_backend.nucleo.enums.DisponibilidadRestaurador;
@@ -48,6 +49,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -69,6 +71,7 @@ public class AntiguedadService {
     // MJRENEW-STRIPE: integración de pago real de restauración.
     private final TransaccionBancariaRepository transaccionRepository;
     private final StripeCheckoutService stripeCheckoutService;
+    private final AlmacenamientoService almacenamientoService;
 
     public AntiguedadService(
             AntiguedadRepository antiguedadRepository,
@@ -82,7 +85,8 @@ public class AntiguedadService {
             CatalogoAntiguedadRepository catalogoAntiguedadRepository,
             CatalogoAntiguedadMapper catalogoAntiguedadMapper,
             TransaccionBancariaRepository transaccionRepository,
-            StripeCheckoutService stripeCheckoutService
+            StripeCheckoutService stripeCheckoutService,
+            AlmacenamientoService almacenamientoService
     ) {
         this.antiguedadRepository = antiguedadRepository;
         this.fotografiaRepository = fotografiaRepository;
@@ -96,11 +100,13 @@ public class AntiguedadService {
         this.catalogoAntiguedadMapper = catalogoAntiguedadMapper;
         this.transaccionRepository = transaccionRepository;
         this.stripeCheckoutService = stripeCheckoutService;
+        this.almacenamientoService = almacenamientoService;
     }
 
     @Transactional
     public AntiguedadDetalleResponse crear(
             AntiguedadCreateRequest request,
+            List<MultipartFile> fotos,
             Usuario propietario
     ) {
 
@@ -143,22 +149,39 @@ public class AntiguedadService {
         }
 
         /*
-         * Fotos del estado inicial: tampoco hay servicio de almacenamiento
-         * (S3/Cloudinary) todavía, así que se reciben URLs externas ya
-         * subidas por el propietario, no archivos.
+         * Fotos del estado inicial: llegan como archivos (multipart), se
+         * suben a almacenamiento (MinIO) y se guarda la URL resultante.
+         * RF-008 exige un mínimo de 3; se limita a 10 para no saturar el
+         * bucket con una sola pieza.
          */
-        if (request.urlsFotografiasIniciales() != null) {
+        if (fotos == null || fotos.size() < 3) {
 
-            for (String url : request.urlsFotografiasIniciales()) {
+            throw new SolicitudInvalidaException(
+                    "Agrega al menos 3 fotografías de la antigüedad"
+            );
+        }
 
-                FotografiaAntiguedad foto = new FotografiaAntiguedad();
-                foto.setAntiguedad(guardada);
-                foto.setTipoFotografia(TipoFotografia.ESTADO_INICIAL);
-                foto.setUrlAlmacenFotografia(url);
-                foto.setSubidaEnFotografia(OffsetDateTime.now());
+        if (fotos.size() > 10) {
 
-                fotografiaRepository.save(foto);
-            }
+            throw new SolicitudInvalidaException(
+                    "No se pueden subir más de 10 fotografías"
+            );
+        }
+
+        for (MultipartFile archivo : fotos) {
+
+            String url = almacenamientoService.subirArchivo(
+                    archivo,
+                    "fotos-iniciales"
+            );
+
+            FotografiaAntiguedad foto = new FotografiaAntiguedad();
+            foto.setAntiguedad(guardada);
+            foto.setTipoFotografia(TipoFotografia.ESTADO_INICIAL);
+            foto.setUrlAlmacenFotografia(url);
+            foto.setSubidaEnFotografia(OffsetDateTime.now());
+
+            fotografiaRepository.save(foto);
         }
 
         return construirDetalle(guardada);

@@ -1,5 +1,6 @@
 package com.mjrenew.mjrenew_backend.transportista.service;
 
+import com.mjrenew.mjrenew_backend.nucleo.almacenamiento.AlmacenamientoService;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.repository.AntiguedadRepository;
 import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoAntiguedad;
@@ -26,6 +27,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -42,17 +44,20 @@ public class TrasladoAntiguedadService {
     private final FotografiaAntiguedadRepository fotografiaRepository;
     private final UsuarioRepository usuarioRepository;
     private final TrasladoMapper trasladoMapper;
+    private final AlmacenamientoService almacenamientoService;
 
     public TrasladoAntiguedadService(TrasladoAntiguedadRepository trasladoRepository,
                                      AntiguedadRepository antiguedadRepository,
                                      FotografiaAntiguedadRepository fotografiaRepository,
                                      UsuarioRepository usuarioRepository,
-                                     TrasladoMapper trasladoMapper) {
+                                     TrasladoMapper trasladoMapper,
+                                     AlmacenamientoService almacenamientoService) {
         this.trasladoRepository = trasladoRepository;
         this.antiguedadRepository = antiguedadRepository;
         this.fotografiaRepository = fotografiaRepository;
         this.usuarioRepository = usuarioRepository;
         this.trasladoMapper = trasladoMapper;
+        this.almacenamientoService = almacenamientoService;
     }
 
     /*
@@ -157,12 +162,12 @@ public class TrasladoAntiguedadService {
     }
 
     @Transactional
-    public TrasladoAntiguedadResumenResponse confirmarSalidaRecoleccion(UUID trasladoId, UUID transportistaId, ConfirmarSalidaRequest request) {
+    public TrasladoAntiguedadResumenResponse confirmarSalidaRecoleccion(UUID trasladoId, UUID transportistaId, List<MultipartFile> fotos) {
         TrasladoAntiguedad traslado = buscarAsignadoOFallar(trasladoId, transportistaId);
         validarTipo(traslado, TipoTraslado.RECOLECCION);
         validarEstadoOrigen(traslado.getAntiguedad(), EstadoAntiguedad.HORARIO_RECOLECCION_AGENDADO);
 
-        guardarFotos(traslado, request.fotos(), TipoFotografia.TRASLADO_SALIDA);
+        guardarFotos(traslado, fotos, TipoFotografia.TRASLADO_SALIDA);
         traslado.setSalidaConfirmadaEnTraslado(OffsetDateTime.now());
         traslado.getAntiguedad().setEstadoActualAntiguedad(EstadoAntiguedad.EN_RECOLECCION);
 
@@ -195,12 +200,12 @@ public class TrasladoAntiguedadService {
     }
 
     @Transactional
-    public TrasladoAntiguedadResumenResponse confirmarEntregaPropietario(UUID trasladoId, UUID transportistaId, ConfirmarLlegadaRequest request) {
+    public TrasladoAntiguedadResumenResponse confirmarEntregaPropietario(UUID trasladoId, UUID transportistaId, List<MultipartFile> fotos) {
         TrasladoAntiguedad traslado = buscarAsignadoOFallar(trasladoId, transportistaId);
         validarTipo(traslado, TipoTraslado.ENTREGA_PROPIETARIO);
         validarEstadoOrigen(traslado.getAntiguedad(), EstadoAntiguedad.EN_DEVOLUCION_PROPIETARIO);
 
-        guardarFotos(traslado, request.fotos(), TipoFotografia.TRASLADO_LLEGADA);
+        guardarFotos(traslado, fotos, TipoFotografia.TRASLADO_LLEGADA);
         traslado.setResultadoTraslado(ResultadoTraslado.EXITOSO);
         traslado.setEjecutadoEnTraslado(OffsetDateTime.now());
         traslado.getAntiguedad().setEstadoActualAntiguedad(EstadoAntiguedad.ENTREGADO_AL_PROPIETARIO);
@@ -208,18 +213,19 @@ public class TrasladoAntiguedadService {
         return guardarYResponder(traslado);
     }
 
-    private void guardarFotos(TrasladoAntiguedad traslado, List<String> fotos, TipoFotografia tipoFoto) {
+    private void guardarFotos(TrasladoAntiguedad traslado, List<MultipartFile> fotos, TipoFotografia tipoFoto) {
         if (fotos == null || fotos.size() < FOTOS_MINIMAS) {
             throw new SolicitudInvalidaException("Se requieren al menos " + FOTOS_MINIMAS + " fotografías de evidencia");
         }
-        for (String url : fotos) {
+        for (MultipartFile archivo : fotos) {
+            String url = almacenamientoService.subirArchivo(archivo, "traslados");
             FotografiaAntiguedad foto = new FotografiaAntiguedad();
             foto.setAntiguedad(traslado.getAntiguedad());
             foto.setTipoFotografia(tipoFoto);
             foto.setUrlAlmacenFotografia(url);
             foto.setSubidaEnFotografia(OffsetDateTime.now());
             fotografiaRepository.save(foto);
-        } // usar builder o check de los atributos de la entidad
+        }
     }
 
     private void validarTipo(TrasladoAntiguedad traslado, TipoTraslado esperado) {

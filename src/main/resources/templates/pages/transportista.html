@@ -77,10 +77,10 @@
       <h3 style="font-family:'Playfair Display',serif" id="fotos-modal-titulo">Evidencia fotográfica</h3>
       <button class="modal-close" onclick="Modal.close('modal-fotos-traslado')">×</button>
     </div>
-    <p style="font-size:1rem;color:var(--ink2);margin-bottom:12px">Se requieren al menos 4 fotos. Por ahora solo aceptamos URLs ya subidas a algún sitio (no hay carga de archivos todavía).</p>
+    <p style="font-size:1rem;color:var(--ink2);margin-bottom:12px">Se requieren al menos 4 fotos. Formatos JPG, PNG o WEBP, máximo 5 MB cada una.</p>
     <div class="form-group">
-      <label class="form-label">URLs de fotografías (una por línea)</label>
-      <textarea id="ft-fotos" class="form-control" rows="5" placeholder="https://...&#10;https://...&#10;https://...&#10;https://..."></textarea>
+      <label class="form-label">Fotografías</label>
+      <input type="file" id="ft-fotos" class="form-control" accept="image/jpeg,image/png,image/webp" multiple>
     </div>
     <div id="ft-error" class="form-error"></div>
     <div style="display:flex;gap:10px">
@@ -241,6 +241,9 @@
   let fotosTrasladoId = null;
   let fotosAccion = null;
 
+  const TIPOS_FOTO_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp'];
+  const TAMANO_MAX_FOTO_BYTES = 5 * 1024 * 1024;
+
   function abrirModalFotos(trasladoId, accion) {
     fotosTrasladoId = trasladoId;
     fotosAccion = accion;
@@ -252,10 +255,22 @@
   }
 
   async function confirmarFotosTraslado() {
-    const fotos = document.getElementById('ft-fotos').value.split('\n').map(s => s.trim()).filter(Boolean);
+    const fotos = [...document.getElementById('ft-fotos').files];
     const errEl = document.getElementById('ft-error');
     if (fotos.length < 4) {
       errEl.textContent = 'Se requieren al menos 4 fotografías.';
+      errEl.classList.add('visible');
+      return;
+    }
+    const fotoInvalida = fotos.find(f => !TIPOS_FOTO_PERMITIDOS.includes(f.type));
+    if (fotoInvalida) {
+      errEl.textContent = `"${fotoInvalida.name}" no es JPG, PNG ni WEBP.`;
+      errEl.classList.add('visible');
+      return;
+    }
+    const fotoGrande = fotos.find(f => f.size > TAMANO_MAX_FOTO_BYTES);
+    if (fotoGrande) {
+      errEl.textContent = `"${fotoGrande.name}" supera los 5 MB permitidos.`;
       errEl.classList.add('visible');
       return;
     }

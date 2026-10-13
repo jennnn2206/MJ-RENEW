@@ -1,5 +1,6 @@
 package com.mjrenew.mjrenew_backend.restaurador.service;
 
+import com.mjrenew.mjrenew_backend.nucleo.almacenamiento.AlmacenamientoService;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.repository.AntiguedadRepository;
 import com.mjrenew.mjrenew_backend.nucleo.enums.DisponibilidadRestaurador;
@@ -32,6 +33,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoCotizacion;
 import com.mjrenew.mjrenew_backend.restaurador.dto.CotizacionResumenResponse;
 import com.mjrenew.mjrenew_backend.restaurador.dto.GenerarCotizacionRequest;
@@ -40,7 +42,6 @@ import com.mjrenew.mjrenew_backend.restaurador.entity.PerfilRestaurador;
 import com.mjrenew.mjrenew_backend.restaurador.repository.CotizacionRepository;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -55,6 +56,7 @@ public class RestauradorService {
     private final AntiguedadMapper antiguedadMapper;
     private final CotizacionRepository cotizacionRepository;
     private final AvanceRestauracionRepository avanceRestauracionRepository;
+    private final AlmacenamientoService almacenamientoService;
 
 
     public RestauradorService(
@@ -65,7 +67,8 @@ public class RestauradorService {
             DimensionRepository dimensionRepository,
             AntiguedadMapper antiguedadMapper,
             CotizacionRepository cotizacionRepository,
-            AvanceRestauracionRepository avanceRestauracionRepository
+            AvanceRestauracionRepository avanceRestauracionRepository,
+            AlmacenamientoService almacenamientoService
     ) {
         this.antiguedadRepository = antiguedadRepository;
         this.fotografiaAntiguedadRepository = fotografiaAntiguedadRepository;
@@ -75,6 +78,7 @@ public class RestauradorService {
         this.antiguedadMapper = antiguedadMapper;
         this.cotizacionRepository = cotizacionRepository;
         this.avanceRestauracionRepository = avanceRestauracionRepository;
+        this.almacenamientoService = almacenamientoService;
     }
 
 
@@ -388,7 +392,8 @@ public class RestauradorService {
     public AvanceRestauracionResumenResponse publicarAvanceRestauracion(
             UUID antiguedadId,
             UUID restauradorId,
-            PublicarAvanceRequest request
+            PublicarAvanceRequest request,
+            MultipartFile foto
     ) {
 
         Antiguedad antiguedad =
@@ -399,10 +404,10 @@ public class RestauradorService {
 
         validarEstadoEnRestauracion(antiguedad);
 
-        if (request.fotos() == null || request.fotos().isEmpty()) {
+        if (foto == null || foto.isEmpty()) {
 
             throw new SolicitudInvalidaException(
-                    "Se requiere al menos una fotografía del avance"
+                    "Se requiere una fotografía del avance"
             );
         }
 
@@ -415,20 +420,16 @@ public class RestauradorService {
         AvanceRestauracion avanceGuardado =
                 avanceRestauracionRepository.save(avance);
 
-        List<String> fotosGuardadas = new ArrayList<>();
+        String url = almacenamientoService.subirArchivo(foto, "avances");
 
-        for (String url : request.fotos()) {
+        FotografiaAntiguedad fotografia = new FotografiaAntiguedad();
+        fotografia.setAntiguedad(antiguedad);
+        fotografia.setAvance(avanceGuardado);
+        fotografia.setTipoFotografia(TipoFotografia.AVANCE);
+        fotografia.setUrlAlmacenFotografia(url);
+        fotografia.setSubidaEnFotografia(OffsetDateTime.now());
 
-            FotografiaAntiguedad foto = new FotografiaAntiguedad();
-            foto.setAntiguedad(antiguedad);
-            foto.setAvance(avanceGuardado);
-            foto.setTipoFotografia(TipoFotografia.AVANCE);
-            foto.setUrlAlmacenFotografia(url);
-            foto.setSubidaEnFotografia(OffsetDateTime.now());
-
-            fotografiaAntiguedadRepository.save(foto);
-            fotosGuardadas.add(url);
-        }
+        fotografiaAntiguedadRepository.save(fotografia);
 
         antiguedad.setEstadoActualAntiguedad(
                 EstadoAntiguedad.AVANCE_PUBLICADO
@@ -436,7 +437,7 @@ public class RestauradorService {
 
         return restauradorMapper.toAvanceResumen(
                 avanceGuardado,
-                fotosGuardadas
+                List.of(url)
         );
     }
 

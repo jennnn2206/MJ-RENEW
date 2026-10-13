@@ -5,9 +5,13 @@
 
 const Api = {
     async _req(url, options = {}) {
+        // MJRENEW-FLUJO: si el body es FormData, el navegador pone su propio
+        // Content-Type (multipart/form-data; boundary=...); fijarlo a mano
+        // rompe el parseo del multipart en el servidor.
+        const headers = options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' };
         const res = await fetch(url, {
             credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             ...options,
         });
 
@@ -34,6 +38,12 @@ const Api = {
             body: data !== undefined ? JSON.stringify(data) : undefined,
         });
     },
+    postForm(url, formData) {
+        return this._req(url, {
+            method: 'POST',
+            body: formData,
+        });
+    },
 
     // ── PROPIETARIO ────────────────────────────────────────────
     misAntiguedades(page = 0, size = 50) {
@@ -42,8 +52,12 @@ const Api = {
     detalleAntiguedad(antiguedadId) {
         return this.get(`/api/propietario/obtenerDetalleAntiguedad/${antiguedadId}`);
     },
-    registrarAntiguedad(data) {
-        return this.post('/api/propietario/registrarAntiguedad', data);
+    // fotos: FileList/Array<File> de las fotos del estado inicial (mínimo 3, máximo 10).
+    registrarAntiguedad(data, fotos) {
+        const form = new FormData();
+        form.append('datos', new Blob([JSON.stringify(data)], { type: 'application/json' }));
+        (fotos || []).forEach(archivo => form.append('fotos', archivo));
+        return this.postForm('/api/propietario/registrarAntiguedad', form);
     },
     buscarRestauradores(page = 0, size = 50) {
         return this.get(`/api/propietario/buscarRestauradores?page=${page}&size=${size}`);
@@ -90,8 +104,12 @@ const Api = {
     iniciarRestauracion(antiguedadId) {
         return this.post(`/api/restaurador/iniciarRestauracion/${antiguedadId}`);
     },
-    publicarAvanceRestauracion(antiguedadId, data) {
-        return this.post(`/api/restaurador/publicarAvanceRestauracion/${antiguedadId}`, data);
+    // foto: un único File con la evidencia del avance (obligatorio).
+    publicarAvanceRestauracion(antiguedadId, data, foto) {
+        const form = new FormData();
+        form.append('datos', new Blob([JSON.stringify(data)], { type: 'application/json' }));
+        if (foto) form.append('foto', foto);
+        return this.postForm(`/api/restaurador/publicarAvanceRestauracion/${antiguedadId}`, form);
     },
     marcarRestauracionLista(antiguedadId) {
         return this.post(`/api/restaurador/marcarRestauracionLista/${antiguedadId}`);
@@ -130,9 +148,11 @@ const Api = {
     obtenerDetalleTraslado(trasladoId) {
         return this.get(`/api/transportista/obtenerDetalleTraslado/${trasladoId}`);
     },
-    // fotos: mínimo 4 URLs de evidencia; el backend las exige y rechaza si faltan.
+    // fotos: mínimo 4 archivos de evidencia; el backend los exige y rechaza si faltan.
     confirmarSalidaRecoleccion(trasladoId, fotos) {
-        return this.post(`/api/transportista/confirmarSalidaRecoleccion/${trasladoId}`, { fotos });
+        const form = new FormData();
+        (fotos || []).forEach(archivo => form.append('fotos', archivo));
+        return this.postForm(`/api/transportista/confirmarSalidaRecoleccion/${trasladoId}`, form);
     },
     confirmarLlegadaTaller(trasladoId) {
         return this.post(`/api/transportista/confirmarLlegadaTaller/${trasladoId}`, {});
@@ -141,7 +161,9 @@ const Api = {
         return this.post(`/api/transportista/confirmarSalidaEntregaPropietario/${trasladoId}`, {});
     },
     confirmarEntregaPropietario(trasladoId, fotos) {
-        return this.post(`/api/transportista/confirmarEntregaPropietario/${trasladoId}`, { fotos });
+        const form = new FormData();
+        (fotos || []).forEach(archivo => form.append('fotos', archivo));
+        return this.postForm(`/api/transportista/confirmarEntregaPropietario/${trasladoId}`, form);
     },
 
     // ── ADMINISTRADOR ───────────────────────────────────────────

@@ -14,6 +14,7 @@ import com.mjrenew.mjrenew_backend.restaurador.service.RestauradorService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,7 +23,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import com.mjrenew.mjrenew_backend.restaurador.dto.CotizacionResumenResponse;
 import com.mjrenew.mjrenew_backend.restaurador.dto.GenerarCotizacionRequest;
 
@@ -300,7 +303,7 @@ public class RestauradorController {
      * POST /api/restaurador/publicarAvanceRestauracion/{antiguedadId}
      */
 
-    @PostMapping("/publicarAvanceRestauracion/{antiguedadId}")
+    @PostMapping(value = "/publicarAvanceRestauracion/{antiguedadId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('RESTAURADOR')")
     public ResponseEntity<AvanceRestauracionResumenResponse>
     publicarAvanceRestauracion(
@@ -309,8 +312,11 @@ public class RestauradorController {
             UUID antiguedadId,
 
             @Valid
-            @RequestBody
+            @RequestPart("datos")
             PublicarAvanceRequest request,
+
+            @RequestPart(value = "foto", required = false)
+            MultipartFile foto,
 
             @AuthenticationPrincipal
             UsuarioPrincipal principal
@@ -320,7 +326,8 @@ public class RestauradorController {
                 restauradorService.publicarAvanceRestauracion(
                         antiguedadId,
                         principal.getUsuario().getUsuariosId(),
-                        request
+                        request,
+                        foto
                 )
         );
     }
