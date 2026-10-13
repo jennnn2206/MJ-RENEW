@@ -72,7 +72,7 @@
 
 <!-- MODAL: evidencia fotográfica (salida de recolección / entrega al propietario) -->
 <div class="modal-overlay" id="modal-fotos-traslado">
-  <div class="modal-box">
+  <div class="modal-box modal-sm">
     <div class="modal-header">
       <h3 style="font-family:'Playfair Display',serif" id="fotos-modal-titulo">Evidencia fotográfica</h3>
       <button class="modal-close" onclick="Modal.close('modal-fotos-traslado')">×</button>
@@ -83,7 +83,7 @@
       <input type="file" id="ft-fotos" class="form-control" accept="image/jpeg,image/png,image/webp" multiple>
     </div>
     <div id="ft-error" class="form-error"></div>
-    <div style="display:flex;gap:10px">
+    <div class="modal-actions">
       <button class="btn btn-primary" id="ft-submit" onclick="confirmarFotosTraslado()">Confirmar</button>
       <button class="btn btn-ghost" onclick="Modal.close('modal-fotos-traslado')">Cancelar</button>
     </div>

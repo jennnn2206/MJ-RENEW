@@ -11,7 +11,7 @@
             </div>
             <div id="revision-contenido"></div>
             <div id="revision-error" class="form-error"></div>
-            <div style="display:flex;gap:8px;margin-top:16px">
+            <div class="modal-actions">
                 <button id="confirmar-evaluacion-btn" class="btn btn-primary" onclick="confirmarEvaluacionActual()">Confirmar evaluación</button>
                 <button class="btn btn-ghost" onclick="Modal.close('modal-revision-evaluacion')">Cancelar</button>
             </div>
@@ -28,15 +28,19 @@
             <div id="modal-quote-piece" style="background:var(--bg2);border-radius:8px;padding:12px;margin-bottom:20px;font-size:1rem;color:var(--ink2)"></div>
 
             <p class="eyebrow" style="margin-bottom:10px">Cotización</p>
-            <div class="grid-2">
-                <div class="form-group"><label class="form-label">Costo mínimo (MXN)</label><input type="number" id="q-costo-min" class="form-control" placeholder="Ej. 4500"></div>
-                <div class="form-group"><label class="form-label">Costo máximo (MXN)</label><input type="number" id="q-costo-max" class="form-control" placeholder="Ej. 6500"></div>
+            <div class="modal-grid">
+                <div>
+                    <div class="grid-2" style="gap:0 16px">
+                        <div class="form-group"><label class="form-label">Costo mínimo (MXN)</label><input type="number" id="q-costo-min" class="form-control" placeholder="Ej. 4500"></div>
+                        <div class="form-group"><label class="form-label">Costo máximo (MXN)</label><input type="number" id="q-costo-max" class="form-control" placeholder="Ej. 6500"></div>
+                    </div>
+                    <div class="form-group"><label class="form-label">Tiempo estimado (semanas)</label><input type="number" id="q-tiempo" class="form-control" placeholder="Ej. 3"></div>
+                </div>
+                <div class="form-group"><label class="form-label">Descripción del proceso</label><textarea id="q-desc" class="form-control" rows="5" placeholder="Describe el proceso de restauración que realizarías..."></textarea></div>
             </div>
-            <div class="form-group"><label class="form-label">Tiempo estimado (semanas)</label><input type="number" id="q-tiempo" class="form-control" placeholder="Ej. 3"></div>
-            <div class="form-group"><label class="form-label">Descripción del proceso</label><textarea id="q-desc" class="form-control" rows="3" placeholder="Describe el proceso de restauración que realizarías..."></textarea></div>
 
             <div id="q-error" class="form-error"></div>
-            <div style="display:flex;gap:10px">
+            <div class="modal-actions">
                 <button class="btn btn-primary" id="q-submit" onclick="sendQuote()">Enviar cotización</button>
                 <button class="btn btn-ghost" onclick="Modal.close('modal-quote')">Cancelar</button>
             </div>
@@ -50,14 +54,16 @@
                 <h3 style="font-family:'Playfair Display',serif">Publicar avance</h3>
                 <button class="modal-close" onclick="Modal.close('modal-progress')">×</button>
             </div>
-            <div class="form-group"><label class="form-label">Descripción del avance</label><textarea id="p-desc" class="form-control" rows="3" placeholder="Describe el progreso realizado..."></textarea></div>
-            <div class="form-group">
-                <label class="form-label">Fotografía del avance</label>
-                <input type="file" id="p-foto" class="form-control" accept="image/jpeg,image/png,image/webp">
-                <div class="form-hint">JPG, PNG o WEBP, máximo 5 MB.</div>
+            <div class="modal-grid">
+                <div class="form-group"><label class="form-label">Descripción del avance</label><textarea id="p-desc" class="form-control" rows="4" placeholder="Describe el progreso realizado..."></textarea></div>
+                <div class="form-group">
+                    <label class="form-label">Fotografía del avance</label>
+                    <input type="file" id="p-foto" class="form-control" accept="image/jpeg,image/png,image/webp">
+                    <div class="form-hint">JPG, PNG o WEBP, máximo 5 MB.</div>
+                </div>
             </div>
             <div id="p-error" class="form-error"></div>
-            <div style="display:flex;gap:10px">
+            <div class="modal-actions">
                 <button class="btn btn-primary" onclick="saveProgress()">Publicar avance</button>
                 <button class="btn btn-ghost" onclick="Modal.close('modal-progress')">Cancelar</button>
             </div>

@@ -44,7 +44,7 @@
 
 <!-- Modal: Comprar -->
 <div class="modal-overlay" id="modal-buy">
-  <div class="modal-box">
+  <div class="modal-box modal-sm">
     <div class="modal-header">
       <h3 style="font-family:'Playfair Display',serif">Comprar pieza</h3>
       <button class="modal-close" onclick="Modal.close('modal-buy')">×</button>
@@ -53,7 +53,7 @@
     <p style="font-size:1rem;color:var(--ink2);margin-bottom:20px">Al confirmar, se abrirá Stripe Checkout. La compra se confirma únicamente después de verificar el pago.</p>
     <div id="buy-error" class="form-error"></div>
     <div id="buy-success" style="display:none;background:var(--bg2);border-radius:8px;padding:14px;margin-bottom:16px;word-break:break-all"></div>
-    <div style="display:flex;gap:10px">
+    <div class="modal-actions">
       <button class="btn btn-gold btn-lg" id="buy-confirm-btn" onclick="confirmPurchase()" style="flex:2;justify-content:center">Confirmar compra</button>
       <button class="btn btn-ghost" onclick="Modal.close('modal-buy')" style="flex:1;justify-content:center">Cancelar</button>
     </div>

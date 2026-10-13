@@ -328,24 +328,75 @@ p  { color: var(--ink2); line-height: 1.7; }
   transition: opacity 0.25s;
 }
 .modal-overlay.open { opacity: 1; pointer-events: all; }
+/* Ancho: 90% de la pantalla, con tope de 1100px en pantallas grandes */
 .modal-box {
   background: var(--white);
   border-radius: var(--radius-lg);
-  padding: 36px;
-  max-width: 540px;
+  padding: 24px 32px;
   width: 100%;
+  min-width: 0;
+  max-width: min(90vw, 1100px);
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: var(--shadow-lg);
   transform: translateY(10px);
   transition: transform 0.25s cubic-bezier(0.22,1,0.36,1);
 }
+/* Modales con poco contenido (un campo o una confirmación) */
+.modal-box.modal-sm { max-width: min(90vw, 720px); }
 .modal-overlay.open .modal-box { transform: translateY(0); }
 .modal-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
+}
+/* Menos espacio vertical dentro del modal */
+.modal-box .form-group { margin-bottom: 14px; }
+.modal-box .divider { margin: 16px 0; }
+.modal-box .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* Contenido del modal en 2 columnas */
+.modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 32px;
+  align-items: start;
+}
+.modal-grid-full { grid-column: 1 / -1; }
+
+/* Listas largas: tarjetas en columnas con scroll interno */
+.modal-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 12px;
+  align-items: start;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.modal-list > p { grid-column: 1 / -1; }
+
+/* Galería de fotos con scroll interno */
+.modal-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.modal-gallery img {
+  width: 110px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
 }
 .modal-close {
   background: none;
@@ -1286,6 +1337,12 @@ p  { color: var(--ink2); line-height: 1.7; }
   .piece-specs     { grid-template-columns: 1fr; }
   h1               { font-size: 2rem; }
   .section         { padding: 48px 0; }
+  .modal-overlay   { padding: 12px; }
+  .modal-box       { max-width: 100%; padding: 20px 16px; }
+  .modal-box.modal-sm { max-width: 100%; }
+  .modal-grid,
+  .modal-box .grid-2 { grid-template-columns: minmax(0, 1fr); }
+  .modal-list      { max-height: 50vh; }
 }
 @media (max-width: 480px) {
   .stats-row { grid-template-columns: 1fr 1fr; }

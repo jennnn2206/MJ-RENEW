@@ -201,11 +201,17 @@
       const a = await Api.detalleAntiguedadAsignada(antiguedadId);
       const fotos = a.fotosEstadoInicial || [];
       document.getElementById('confirmar-evaluacion-btn').disabled = fotos.length < 3;
-      cont.innerHTML = `<p><strong>${tipoMuebleLabel(a.tipoMueble)}</strong></p>
-        <p><strong>Daños:</strong> ${a.descripcionDaniosAntiguedad || 'Sin descripción'}</p>
-        <p><strong>Procedencia:</strong> ${a.procedenciaMueble || 'Sin información'}</p>
-        ${fotos.length ? fotos.map(url => `<img src="${url}" alt="Evidencia inicial" style="width:120px;height:90px;object-fit:cover;margin:5px">`).join('')
-              : '<p style="color:var(--error)">Sin suficientes fotografías para evaluar (mínimo 3). Contacta al propietario antes de confirmar.</p>'}`;
+      cont.innerHTML = `<div class="modal-grid">
+        <div>
+          <p><strong>${tipoMuebleLabel(a.tipoMueble)}</strong></p>
+          <p><strong>Daños:</strong> ${a.descripcionDaniosAntiguedad || 'Sin descripción'}</p>
+          <p><strong>Procedencia:</strong> ${a.procedenciaMueble || 'Sin información'}</p>
+        </div>
+        <div>
+          ${fotos.length ? `<div class="modal-gallery">${fotos.map(url => `<img src="${url}" alt="Evidencia inicial">`).join('')}</div>`
+                : '<p style="color:var(--error)">Sin suficientes fotografías para evaluar (mínimo 3). Contacta al propietario antes de confirmar.</p>'}
+        </div>
+      </div>`;
     } catch (err) {
       error.textContent = err.message;
       error.classList.add('visible');

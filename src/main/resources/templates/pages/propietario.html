@@ -106,51 +106,55 @@
       <h3 style="font-family:'Playfair Display',serif">Registrar nueva pieza</h3>
       <button class="modal-close" onclick="Modal.close('modal-nueva-pieza')">×</button>
     </div>
-    <div class="form-group">
-      <label class="form-label">Tipo de mueble</label>
-      <select class="form-control" id="np-tipo"></select>
-    </div>
-    <div class="grid-2">
-      <div class="form-group">
-        <label class="form-label">Estilo</label>
-        <select class="form-control" id="np-estilo"></select>
+    <div class="modal-grid">
+      <!-- Columna izquierda: datos de la pieza -->
+      <div>
+        <div class="form-group">
+          <label class="form-label">Tipo de mueble</label>
+          <select class="form-control" id="np-tipo"></select>
+        </div>
+        <div class="grid-2" style="gap:0 16px">
+          <div class="form-group">
+            <label class="form-label">Estilo</label>
+            <select class="form-control" id="np-estilo"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Material principal</label>
+            <select class="form-control" id="np-material"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">¿Qué daños tiene?</label>
+          <textarea class="form-control" id="np-danios" rows="3" placeholder="Ej. Barniz desgastado, una pata floja..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Procedencia / historia de la pieza</label>
+          <textarea class="form-control" id="np-procedencia" rows="3" placeholder="Ej. Heredada de mis abuelos..."></textarea>
+        </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Material principal</label>
-        <select class="form-control" id="np-material"></select>
+
+      <!-- Columna derecha: dimensiones y fotos -->
+      <div>
+        <p class="eyebrow" style="margin-bottom:4px">Dimensiones (opcional)</p>
+        <p style="font-size:1rem;color:var(--ink2);margin-bottom:10px">Ayudan al restaurador a evaluar tu pieza sin tenerla en sus manos.</p>
+        <div class="grid-2" style="gap:0 16px">
+          <div class="form-group"><label class="form-label">Alto (cm)</label><input type="number" id="np-alto" class="form-control" placeholder="Ej. 80"></div>
+          <div class="form-group"><label class="form-label">Ancho (cm)</label><input type="number" id="np-ancho" class="form-control" placeholder="Ej. 50"></div>
+          <div class="form-group"><label class="form-label">Profundidad (cm)</label><input type="number" id="np-profundidad" class="form-control" placeholder="Ej. 40"></div>
+          <div class="form-group"><label class="form-label">Peso (kg)</label><input type="number" id="np-peso" class="form-control" placeholder="Ej. 15"></div>
+        </div>
+
+        <p class="eyebrow" style="margin:6px 0 4px">Fotografías (mínimo 3, máximo 10)</p>
+        <p style="font-size:1rem;color:var(--ink2);margin-bottom:10px">Sube fotos de frente, lado y parte posterior. Formatos JPG, PNG o WEBP, máximo 5 MB cada una.</p>
+        <div class="form-group">
+          <input type="file" id="np-fotos" class="form-control" accept="image/jpeg,image/png,image/webp" multiple>
+          <div class="form-hint" id="np-fotos-hint"></div>
+        </div>
       </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">¿Qué daños tiene?</label>
-      <textarea class="form-control" id="np-danios" rows="2" placeholder="Ej. Barniz desgastado, una pata floja..."></textarea>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Procedencia / historia de la pieza</label>
-      <textarea class="form-control" id="np-procedencia" rows="2" placeholder="Ej. Heredada de mis abuelos..."></textarea>
-    </div>
-
-    <hr class="divider">
-
-    <p class="eyebrow" style="margin-bottom:10px">Dimensiones (opcional)</p>
-    <p style="font-size:1rem;color:var(--ink2);margin-bottom:12px">Ayudan al restaurador a evaluar tu pieza sin tenerla en sus manos.</p>
-    <div class="grid-2">
-      <div class="form-group"><label class="form-label">Alto (cm)</label><input type="number" id="np-alto" class="form-control" placeholder="Ej. 80"></div>
-      <div class="form-group"><label class="form-label">Ancho (cm)</label><input type="number" id="np-ancho" class="form-control" placeholder="Ej. 50"></div>
-      <div class="form-group"><label class="form-label">Profundidad (cm)</label><input type="number" id="np-profundidad" class="form-control" placeholder="Ej. 40"></div>
-      <div class="form-group"><label class="form-label">Peso (kg)</label><input type="number" id="np-peso" class="form-control" placeholder="Ej. 15"></div>
-    </div>
-
-    <hr class="divider">
-
-    <p class="eyebrow" style="margin-bottom:10px">Fotografías iniciales (mínimo 3, máximo 10)</p>
-    <p style="font-size:1rem;color:var(--ink2);margin-bottom:12px">Sube fotos de frente, lado y parte posterior. Formatos JPG, PNG o WEBP, máximo 5 MB cada una.</p>
-    <div class="form-group" style="margin-bottom:16px">
-      <input type="file" id="np-fotos" class="form-control" accept="image/jpeg,image/png,image/webp" multiple>
-      <div class="form-hint" id="np-fotos-hint"></div>
     </div>
 
     <div id="np-error" class="form-error"></div>
-    <div style="display:flex;gap:10px">
+    <div class="modal-actions">
       <button class="btn btn-primary" id="np-submit" onclick="registrarNuevaPieza()">Registrar pieza</button>
       <button class="btn btn-ghost" onclick="Modal.close('modal-nueva-pieza')">Cancelar</button>
     </div>
@@ -170,25 +174,25 @@
 
 <!-- MODAL: Buscar restauradores -->
 <div class="modal-overlay" id="modal-restauradores">
-  <div class="modal-box" style="max-width:640px">
+  <div class="modal-box">
     <div class="modal-header">
       <h3 style="font-family:'Playfair Display',serif">Elige un restaurador</h3>
       <button class="modal-close" onclick="Modal.close('modal-restauradores')">×</button>
     </div>
-    <div id="restauradores-list" style="display:flex;flex-direction:column;gap:12px;max-height:60vh;overflow-y:auto"></div>
+    <div id="restauradores-list" class="modal-list"></div>
   </div>
 </div>
 
 <!-- MODAL: Cotización -->
 <div class="modal-overlay" id="modal-cotizacion">
-  <div class="modal-box">
+  <div class="modal-box modal-sm">
     <div class="modal-header">
       <h3 style="font-family:'Playfair Display',serif">Cotización recibida</h3>
       <button class="modal-close" onclick="Modal.close('modal-cotizacion')">×</button>
     </div>
     <div id="cotizacion-content"></div>
     <div id="cotizacion-error" class="form-error"></div>
-    <div style="display:flex;gap:10px;margin-top:16px">
+    <div class="modal-actions">
       <button class="btn btn-primary" id="cot-aceptar-btn" onclick="aceptarCotizacionActual()">Aceptar cotización</button>
       <button class="btn btn-sm" style="background:#FFEBEE;color:#C62828" onclick="rechazarCotizacionActual()">Rechazar</button>
     </div>
@@ -202,13 +206,13 @@
       <h3 style="font-family:'Playfair Display',serif">Avances de la restauración</h3>
       <button class="modal-close" onclick="Modal.close('modal-avances')">×</button>
     </div>
-    <div id="avances-content"></div>
+    <div id="avances-content" class="modal-list"></div>
   </div>
 </div>
 
 <!-- MODAL: Publicar en catálogo -->
 <div class="modal-overlay" id="modal-publicar-catalogo">
-  <div class="modal-box">
+  <div class="modal-box modal-sm">
     <div class="modal-header">
       <h3 style="font-family:'Playfair Display',serif">Publicar en catálogo</h3>
       <button class="modal-close" onclick="Modal.close('modal-publicar-catalogo')">×</button>
@@ -219,7 +223,7 @@
       <input type="number" class="form-control" id="pub-precio" placeholder="Ej. 15000">
     </div>
     <div id="pub-error" class="form-error"></div>
-    <div style="display:flex;gap:10px">
+    <div class="modal-actions">
       <button class="btn btn-primary" onclick="publicarEnCatalogoActual()">Publicar</button>
       <button class="btn btn-ghost" onclick="Modal.close('modal-publicar-catalogo')">Cancelar</button>
     </div>
@@ -378,8 +382,8 @@
 
   function openNuevaPiezaModal() {
     llenarSelect('np-tipo', TIPO_MUEBLE_LABELS, 'Selecciona el tipo de mueble');
-    llenarSelect('np-estilo', ESTILO_MUEBLE_LABELS, 'Selecciona el estilo (opcional)');
-    llenarSelect('np-material', MATERIAL_MUEBLE_LABELS, 'Selecciona el material (opcional)');
+    llenarSelect('np-estilo', ESTILO_MUEBLE_LABELS, 'Selecciona (opcional)');
+    llenarSelect('np-material', MATERIAL_MUEBLE_LABELS, 'Selecciona (opcional)');
     document.getElementById('np-danios').value = '';
     document.getElementById('np-procedencia').value = '';
     ['np-alto', 'np-ancho', 'np-profundidad', 'np-peso'].forEach(id => document.getElementById(id).value = '');
@@ -471,19 +475,25 @@
           <h4 style="font-family:'Playfair Display',serif">${tipoMuebleLabel(a.tipoMueble)}</h4>
           <span class="badge ${info.badge}">${info.label}</span>
         </div>
-        ${fotos.length ? `
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-            ${fotos.map(f => `<img src="${f}" style="width:110px;height:90px;object-fit:cover;border-radius:8px">`).join('')}
+        <div class="modal-grid">
+          <div>
+            ${fotos.length ? `
+              <div class="modal-gallery" style="margin-bottom:16px">
+                ${fotos.map(f => `<img src="${f}" alt="Foto de la pieza">`).join('')}
+              </div>
+            ` : `<p style="color:var(--ink2);margin-bottom:16px">Todavía no registraste fotos de esta pieza.</p>`}
           </div>
-        ` : `<p style="color:var(--ink2);margin-bottom:16px">Todavía no registraste fotos de esta pieza.</p>`}
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px">
-          <div class="meta-item"><div class="meta-label">Estilo</div><div class="meta-value">${estiloMuebleLabel(a.estiloMueble) || '—'}</div></div>
-          <div class="meta-item"><div class="meta-label">Material</div><div class="meta-value">${materialMuebleLabel(a.materialMueble) || '—'}</div></div>
-          <div class="meta-item"><div class="meta-label">Restaurador</div><div class="meta-value">${a.nombreCompletoRestaurador || 'Sin asignar'}</div></div>
-          <div class="meta-item"><div class="meta-label">Dimensiones</div><div class="meta-value">${dim ? `${dim.altoCm ?? '—'} × ${dim.anchoCm ?? '—'} × ${dim.profundidadCm ?? '—'} cm` : 'No registradas'}</div></div>
+          <div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+              <div class="meta-item"><div class="meta-label">Estilo</div><div class="meta-value">${estiloMuebleLabel(a.estiloMueble) || '—'}</div></div>
+              <div class="meta-item"><div class="meta-label">Material</div><div class="meta-value">${materialMuebleLabel(a.materialMueble) || '—'}</div></div>
+              <div class="meta-item"><div class="meta-label">Restaurador</div><div class="meta-value">${a.nombreCompletoRestaurador || 'Sin asignar'}</div></div>
+              <div class="meta-item"><div class="meta-label">Dimensiones</div><div class="meta-value">${dim ? `${dim.altoCm ?? '—'} × ${dim.anchoCm ?? '—'} × ${dim.profundidadCm ?? '—'} cm` : 'No registradas'}</div></div>
+            </div>
+            ${a.descripcionDaniosAntiguedad ? `<p><strong>Daños:</strong> ${a.descripcionDaniosAntiguedad}</p>` : ''}
+            ${a.procedenciaMueble ? `<p style="margin-top:8px"><strong>Procedencia:</strong> ${a.procedenciaMueble}</p>` : ''}
+          </div>
         </div>
-        ${a.descripcionDaniosAntiguedad ? `<p><strong>Daños:</strong> ${a.descripcionDaniosAntiguedad}</p>` : ''}
-        ${a.procedenciaMueble ? `<p style="margin-top:8px"><strong>Procedencia:</strong> ${a.procedenciaMueble}</p>` : ''}
       `;
     } catch (err) {
       cont.innerHTML = `<p style="color:var(--error)">${err.message}</p>`;
@@ -546,11 +556,14 @@
       const c = await Api.obtenerCotizacion(antiguedadId);
       cont.innerHTML = `
         <div style="background:var(--bg2);border-radius:8px;padding:16px;margin-bottom:16px">
-          <div class="meta-item" style="margin-bottom:8px"><div class="meta-label">Rango de costo</div><div class="meta-value">${Utils.formatCurrency(c.costoMinimoCotizacion)} – ${Utils.formatCurrency(c.costoMaximoCotizacion)}</div></div>
+          <div class="modal-grid" style="margin-bottom:8px">
+            <div><div class="meta-label">Rango de costo</div><div class="meta-value">${Utils.formatCurrency(c.costoMinimoCotizacion)} – ${Utils.formatCurrency(c.costoMaximoCotizacion)}</div></div>
+            <div><div class="meta-label">Tiempo estimado</div><div class="meta-value">${c.tipoSemanasCotizacion} semana(s)</div></div>
+          </div>
           <!-- MJRENEW-STRIPE: transparentar el importe que se envía en el prototipo. -->
-          <p style="color:var(--ink2);font-size:.9rem;margin-bottom:12px">En esta demo, Stripe cobrará el costo máximo mostrado arriba. El cálculo de logística y comisiones está pendiente de aprobación.</p>
-          <div class="meta-item" style="margin-bottom:8px"><div class="meta-label">Tiempo estimado</div><div class="meta-value">${c.tipoSemanasCotizacion} semana(s)</div></div>
-          <div class="meta-item"><div class="meta-label">Proceso propuesto</div><div class="meta-value" style="font-weight:400">${c.descripcionProcesoCotizacion}</div></div>
+          <p style="color:var(--ink2);font-size:1rem;margin-bottom:12px">En esta demo, Stripe cobrará el costo máximo mostrado arriba. El cálculo de logística y comisiones está pendiente de aprobación.</p>
+          <div class="meta-label" style="margin-bottom:4px">Proceso propuesto</div>
+          <p style="color:var(--ink)">${c.descripcionProcesoCotizacion}</p>
         </div>
       `;
     } catch (err) {
@@ -600,10 +613,10 @@
         return;
       }
       cont.innerHTML = avances.map(a => `
-        <div class="card-elevated" style="margin-bottom:12px">
+        <div class="card-elevated" style="padding:20px">
           <p style="font-size:1rem;color:var(--ink2);margin-bottom:8px">${new Date(a.publicadoEn).toLocaleDateString('es-MX', { day:'numeric', month:'long', year:'numeric' })}</p>
           <p style="margin-bottom:10px">${a.descripcionAvance}</p>
-          ${(a.fotos||[]).length ? `<div style="display:flex;gap:8px;flex-wrap:wrap">${a.fotos.map(f => `<img src="${f}" style="width:90px;height:70px;object-fit:cover;border-radius:6px">`).join('')}</div>` : ''}
+          ${(a.fotos||[]).length ? `<div class="modal-gallery">${a.fotos.map(f => `<img src="${f}" alt="Foto del avance">`).join('')}</div>` : ''}
         </div>
       `).join('');
     } catch (err) {
