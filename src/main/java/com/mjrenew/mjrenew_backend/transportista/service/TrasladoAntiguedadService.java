@@ -18,6 +18,7 @@ import com.mjrenew.mjrenew_backend.propietario.repository.FotografiaAntiguedadRe
 import com.mjrenew.mjrenew_backend.transportista.dto.ConfirmarLlegadaRequest;
 import com.mjrenew.mjrenew_backend.transportista.dto.ConfirmarSalidaRequest;
 import com.mjrenew.mjrenew_backend.transportista.dto.CrearTrasladoRequest;
+import com.mjrenew.mjrenew_backend.transportista.dto.RegistrarIntentoFallidoRequest;
 import com.mjrenew.mjrenew_backend.transportista.dto.TrasladoAntiguedadDetalleResponse;
 import com.mjrenew.mjrenew_backend.transportista.dto.TrasladoAntiguedadResumenResponse;
 import com.mjrenew.mjrenew_backend.transportista.entity.TrasladoAntiguedad;
@@ -30,7 +31,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -38,6 +41,8 @@ public class TrasladoAntiguedadService {
 
     //Cantidad de evidencias fotograficas minimas
     private static final int FOTOS_MINIMAS = 4;
+
+    private static final Set<String> TIPOS_FOTO_PERMITIDOS = Set.of("image/jpeg", "image/png", "image/webp");
 
     private final TrasladoAntiguedadRepository trasladoRepository;
     private final AntiguedadRepository antiguedadRepository;
@@ -73,6 +78,9 @@ public class TrasladoAntiguedadService {
      * ENTREGA_PROPIETARIO: RESTAURACION_LISTA  -> HORARIO_ENTREGA_AGENDADO
      *
      * ENTREGA_COMPRADOR queda fuera de alcance (ver validarOrigenYObtenerDestino).
+     *
+     * Si un intento anterior del mismo tipo terminó en NADIE_EN_CASA, se
+     * permite agendar otro y se numera como el siguiente intento.
      */
     @Transactional
     public TrasladoAntiguedadDetalleResponse crearTraslado(CrearTrasladoRequest request) {
@@ -92,12 +100,16 @@ public class TrasladoAntiguedadService {
                     "El usuario seleccionado no es un transportista activo");
         }
 
-        if (trasladoRepository.existsByAntiguedad_AntiguedadesIdAndTipoTraslado(
-                request.antiguedadId(), request.tipoTraslado())) {
+        if (trasladoRepository.existsByAntiguedad_AntiguedadesIdAndTipoTrasladoAndResultadoTrasladoIn(
+                request.antiguedadId(), request.tipoTraslado(),
+                List.of(ResultadoTraslado.PENDIENTE, ResultadoTraslado.EXITOSO))) {
 
             throw new SolicitudInvalidaException(
-                    "Ya existe un traslado de tipo " + request.tipoTraslado() + " para esta antigüedad");
+                    "Ya existe un traslado de tipo " + request.tipoTraslado() + " pendiente o completado para esta antigüedad");
         }
+
+        short numeroIntento = (short) (trasladoRepository.countByAntiguedad_AntiguedadesIdAndTipoTraslado(
+                request.antiguedadId(), request.tipoTraslado()) + 1);
 
         EstadoAntiguedad estadoDestino = validarOrigenYObtenerDestino(antiguedad, request.tipoTraslado());
 
@@ -111,7 +123,7 @@ public class TrasladoAntiguedadService {
         traslado.setHoraInicioAcordadaTraslado(request.horaInicioAcordadaTraslado());
         traslado.setHoraFinAcordadaTraslado(request.horaFinAcordadaTraslado());
         traslado.setCostoEstimadoMxnTraslado(request.costoEstimadoMxnTraslado());
-        traslado.setNumeroIntentoTraslado((short) 1);
+        traslado.setNumeroIntentoTraslado(numeroIntento);
         traslado.setResultadoTraslado(ResultadoTraslado.PENDIENTE);
         traslado.setAgendadoEnTraslado(OffsetDateTime.now());
 
@@ -213,19 +225,79 @@ public class TrasladoAntiguedadService {
         return guardarYResponder(traslado);
     }
 
+    /*
+     * ============================================================
+     * INTENTO FALLIDO (el propietario no estaba en casa)
+     * ============================================================
+     *
+     * El traslado se cierra como NADIE_EN_CASA con la nota del transportista
+     * y la antigüedad regresa al estado desde el que se agenda, para que el
+     * administrador cree un nuevo intento con crearTraslado. El propietario
+     * ve el aviso en su lista de piezas (AntiguedadService.construirResumen).
+     *
+     * RECOLECCION:         HORARIO_RECOLECCION_AGENDADO -> PAGO_EN_ESCROW
+     * ENTREGA_PROPIETARIO: EN_DEVOLUCION_PROPIETARIO    -> RESTAURACION_LISTA
+     */
+    @Transactional
+    public TrasladoAntiguedadResumenResponse registrarIntentoFallido(UUID trasladoId, UUID transportistaId,
+                                                                     RegistrarIntentoFallidoRequest request,
+                                                                     MultipartFile foto) {
+        TrasladoAntiguedad traslado = buscarAsignadoOFallar(trasladoId, transportistaId);
+
+        if (traslado.getResultadoTraslado() != ResultadoTraslado.PENDIENTE) {
+            throw new TransicionEstadoInvalidaException(
+                    "Este traslado ya está cerrado como " + traslado.getResultadoTraslado());
+        }
+
+        EstadoAntiguedad estadoDestino = switch (traslado.getTipoTraslado()) {
+            case RECOLECCION -> {
+                validarEstadoOrigen(traslado.getAntiguedad(), EstadoAntiguedad.HORARIO_RECOLECCION_AGENDADO);
+                yield EstadoAntiguedad.PAGO_EN_ESCROW;
+            }
+            case ENTREGA_PROPIETARIO -> {
+                validarEstadoOrigen(traslado.getAntiguedad(), EstadoAntiguedad.EN_DEVOLUCION_PROPIETARIO);
+                yield EstadoAntiguedad.RESTAURACION_LISTA;
+            }
+            case ENTREGA_COMPRADOR -> throw new SolicitudInvalidaException(
+                    "Los traslados de entrega a comprador aún no están soportados");
+        };
+
+        // Misma marca de tiempo para la foto y el traslado: así el aviso al
+        // propietario encuentra la foto de este intento y no la de uno anterior.
+        OffsetDateTime ahora = OffsetDateTime.now().truncatedTo(ChronoUnit.MICROS);
+
+        if (foto != null && !foto.isEmpty()) {
+            if (!TIPOS_FOTO_PERMITIDOS.contains(foto.getContentType())) {
+                throw new SolicitudInvalidaException("La foto debe ser JPG, PNG o WEBP");
+            }
+            guardarFoto(traslado, foto, TipoFotografia.TRASLADO_INTENTO_FALLIDO, ahora);
+        }
+
+        traslado.setResultadoTraslado(ResultadoTraslado.NADIE_EN_CASA);
+        traslado.setMotivoFalloTraslado(request.motivoFallo().trim());
+        traslado.setEjecutadoEnTraslado(ahora);
+        traslado.getAntiguedad().setEstadoActualAntiguedad(estadoDestino);
+
+        return guardarYResponder(traslado);
+    }
+
     private void guardarFotos(TrasladoAntiguedad traslado, List<MultipartFile> fotos, TipoFotografia tipoFoto) {
         if (fotos == null || fotos.size() < FOTOS_MINIMAS) {
             throw new SolicitudInvalidaException("Se requieren al menos " + FOTOS_MINIMAS + " fotografías de evidencia");
         }
         for (MultipartFile archivo : fotos) {
-            String url = almacenamientoService.subirArchivo(archivo, "traslados");
-            FotografiaAntiguedad foto = new FotografiaAntiguedad();
-            foto.setAntiguedad(traslado.getAntiguedad());
-            foto.setTipoFotografia(tipoFoto);
-            foto.setUrlAlmacenFotografia(url);
-            foto.setSubidaEnFotografia(OffsetDateTime.now());
-            fotografiaRepository.save(foto);
+            guardarFoto(traslado, archivo, tipoFoto, OffsetDateTime.now());
         }
+    }
+
+    private void guardarFoto(TrasladoAntiguedad traslado, MultipartFile archivo, TipoFotografia tipoFoto, OffsetDateTime subidaEn) {
+        String url = almacenamientoService.subirArchivo(archivo, "traslados");
+        FotografiaAntiguedad foto = new FotografiaAntiguedad();
+        foto.setAntiguedad(traslado.getAntiguedad());
+        foto.setTipoFotografia(tipoFoto);
+        foto.setUrlAlmacenFotografia(url);
+        foto.setSubidaEnFotografia(subidaEn);
+        fotografiaRepository.save(foto);
     }
 
     private void validarTipo(TrasladoAntiguedad traslado, TipoTraslado esperado) {

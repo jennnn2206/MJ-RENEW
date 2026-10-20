@@ -4,6 +4,7 @@ import com.mjrenew.mjrenew_backend.nucleo.enums.TipoFotografia;
 import com.mjrenew.mjrenew_backend.propietario.entity.FotografiaAntiguedad;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,4 +18,8 @@ public interface FotografiaAntiguedadRepository extends JpaRepository<Fotografia
             UUID antiguedadId, TipoFotografia tipoFotografia);
 
     List<FotografiaAntiguedad> findByAvance_AvancesRestauracionId(UUID avanceId);
+
+    // Foto de un intento de traslado concreto: se guarda con la misma marca de tiempo que el traslado.
+    Optional<FotografiaAntiguedad> findFirstByAntiguedad_AntiguedadesIdAndTipoFotografiaAndSubidaEnFotografiaGreaterThanEqualOrderBySubidaEnFotografiaAsc(
+            UUID antiguedadId, TipoFotografia tipoFotografia, OffsetDateTime desde);
 }

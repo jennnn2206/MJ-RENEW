@@ -165,6 +165,13 @@ const Api = {
         (fotos || []).forEach(archivo => form.append('fotos', archivo));
         return this.postForm(`/api/transportista/confirmarEntregaPropietario/${trasladoId}`, form);
     },
+    // foto: un único File de evidencia (opcional).
+    registrarIntentoFallido(trasladoId, motivoFallo, foto) {
+        const form = new FormData();
+        form.append('datos', new Blob([JSON.stringify({ motivoFallo })], { type: 'application/json' }));
+        if (foto) form.append('foto', foto);
+        return this.postForm(`/api/transportista/registrarIntentoFallido/${trasladoId}`, form);
+    },
 
     // ── ADMINISTRADOR ───────────────────────────────────────────
     obtenerRestauradoresPendientes(page = 0, size = 50) {

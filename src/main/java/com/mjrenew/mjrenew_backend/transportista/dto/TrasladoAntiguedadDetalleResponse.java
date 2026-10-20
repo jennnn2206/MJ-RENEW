@@ -22,6 +22,7 @@ public record TrasladoAntiguedadDetalleResponse(
         ResultadoTraslado resultadoTraslado,
         BigDecimal costoEstimado,
         OffsetDateTime salidaConfirmadaEn,
-        OffsetDateTime ejecutadoEn
+        OffsetDateTime ejecutadoEn,
+        String motivoFallo
 ) {
 }

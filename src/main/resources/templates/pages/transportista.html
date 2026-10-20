@@ -90,6 +90,34 @@
   </div>
 </div>
 
+<!-- MODAL: intento fallido (el propietario no estaba en casa) -->
+<div class="modal-overlay" id="modal-intento-fallido">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 style="font-family:'Playfair Display',serif">Registrar intento fallido</h3>
+      <button class="modal-close" onclick="Modal.close('modal-intento-fallido')">×</button>
+    </div>
+    <p style="font-size:1rem;color:var(--ink2);margin-bottom:12px">El traslado se cerrará como "Nadie en casa" y se avisará al propietario. El administrador agendará un nuevo intento.</p>
+    <div class="modal-grid">
+      <div class="form-group">
+        <label class="form-label" for="if-nota">¿Qué pasó?</label>
+        <textarea id="if-nota" class="form-control" rows="4" maxlength="255" placeholder="Ej. No había nadie en casa, toqué el timbre y llamé dos veces."></textarea>
+        <div class="form-hint">Máximo 255 caracteres.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="if-foto">Foto de evidencia (opcional)</label>
+        <input type="file" id="if-foto" class="form-control" accept="image/jpeg,image/png,image/webp">
+        <div class="form-hint">Por ejemplo, la fachada o la puerta. JPG, PNG o WEBP, máximo 5 MB.</div>
+      </div>
+    </div>
+    <div id="if-error" class="form-error"></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="if-submit" onclick="confirmarIntentoFallido()">Registrar intento fallido</button>
+      <button class="btn btn-ghost" onclick="Modal.close('modal-intento-fallido')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <script th:src="@{/js/data/afd-estados.js}"></script>
 <script th:src="@{/js/data/catalogo.js}"></script>
 <script th:src="@{/js/data/restauradores.js}"></script>
@@ -153,16 +181,22 @@
     let accion;
     if (t.resultadoTraslado === 'EXITOSO') {
       accion = `<p style="color:var(--ink2);font-size:1rem">Traslado completado.</p>`;
-    } else if (t.resultadoTraslado === 'CANCELADO' || t.resultadoTraslado === 'NADIE_EN_CASA') {
+    } else if (t.resultadoTraslado === 'NADIE_EN_CASA') {
+      accion = `<p style="color:var(--error);font-size:1rem">Intento fallido: ${Utils.escapeHtml(t.motivoFallo || info.label)}</p>`;
+    } else if (t.resultadoTraslado === 'CANCELADO') {
       accion = `<p style="color:var(--error);font-size:1rem">Resultado: ${info.label}</p>`;
     } else if (t.tipoTraslado === 'RECOLECCION') {
+      // Si nadie está en casa, se registra antes de recoger la pieza.
       accion = !t.salidaConfirmadaEn
-        ? `<button class="btn btn-primary btn-sm" onclick="abrirModalFotos('${t.trasladoId}','salida-recoleccion')">Confirmar salida</button>`
+        ? `<button class="btn btn-primary btn-sm" onclick="abrirModalFotos('${t.trasladoId}','salida-recoleccion')">Confirmar salida</button>
+           <button class="btn btn-danger btn-sm" onclick="abrirIntentoFallido('${t.trasladoId}')">Registrar intento fallido</button>`
         : `<button class="btn btn-primary btn-sm" onclick="confirmarLlegadaTaller('${t.trasladoId}')">Confirmar llegada al taller</button>`;
     } else {
+      // Si nadie está en casa, se registra al llegar con la pieza.
       accion = !t.salidaConfirmadaEn
         ? `<button class="btn btn-primary btn-sm" onclick="confirmarSalidaEntrega('${t.trasladoId}')">Confirmar salida de entrega</button>`
-        : `<button class="btn btn-primary btn-sm" onclick="abrirModalFotos('${t.trasladoId}','entrega-propietario')">Confirmar entrega al propietario</button>`;
+        : `<button class="btn btn-primary btn-sm" onclick="abrirModalFotos('${t.trasladoId}','entrega-propietario')">Confirmar entrega al propietario</button>
+           <button class="btn btn-danger btn-sm" onclick="abrirIntentoFallido('${t.trasladoId}')">Registrar intento fallido</button>`;
     }
 
     return `
@@ -177,6 +211,7 @@
         <div class="request-card-meta">
           <div class="meta-item"><div class="meta-label">Fecha acordada</div><div class="meta-value">${t.fechaAcordada || '—'}</div></div>
           <div class="meta-item"><div class="meta-label">Horario</div><div class="meta-value">${(t.horaInicio || '—')} – ${(t.horaFin || '—')}</div></div>
+          ${t.numeroIntento > 1 ? `<div class="meta-item"><div class="meta-label">Intento</div><div class="meta-value">#${t.numeroIntento}</div></div>` : ''}
         </div>
         <div class="request-card-actions">${accion}</div>
       </div>
@@ -197,7 +232,7 @@
 
     const recoleccion = traslados.filter(t => t.tipoTraslado === 'RECOLECCION');
     const entrega = traslados.filter(t => t.tipoTraslado === 'ENTREGA_PROPIETARIO');
-    const pendientes = t => t.resultadoTraslado !== 'EXITOSO' && t.resultadoTraslado !== 'CANCELADO';
+    const pendientes = t => t.resultadoTraslado === 'PENDIENTE';
 
     document.getElementById('recoleccion-badge').textContent = recoleccion.filter(pendientes).length;
     document.getElementById('entrega-badge').textContent = entrega.filter(pendientes).length;
@@ -285,6 +320,51 @@
         Toast.show('Entrega al propietario confirmada', 'success');
       }
       Modal.close('modal-fotos-traslado');
+      await cargarTraslados();
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.classList.add('visible');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ── INTENTO FALLIDO (modal) ──────────────────────────────────────
+  let intentoFallidoId = null;
+
+  function abrirIntentoFallido(trasladoId) {
+    intentoFallidoId = trasladoId;
+    document.getElementById('if-nota').value = '';
+    document.getElementById('if-foto').value = '';
+    document.getElementById('if-error').classList.remove('visible');
+    Modal.open('modal-intento-fallido');
+  }
+
+  async function confirmarIntentoFallido() {
+    const nota = document.getElementById('if-nota').value.trim();
+    const foto = document.getElementById('if-foto').files[0];
+    const errEl = document.getElementById('if-error');
+    if (!nota) {
+      errEl.textContent = 'Describe qué pasó (por ejemplo, "No había nadie en casa").';
+      errEl.classList.add('visible');
+      return;
+    }
+    if (foto && !TIPOS_FOTO_PERMITIDOS.includes(foto.type)) {
+      errEl.textContent = 'La foto debe ser JPG, PNG o WEBP.';
+      errEl.classList.add('visible');
+      return;
+    }
+    if (foto && foto.size > TAMANO_MAX_FOTO_BYTES) {
+      errEl.textContent = 'La foto no puede superar los 5 MB.';
+      errEl.classList.add('visible');
+      return;
+    }
+    const btn = document.getElementById('if-submit');
+    btn.disabled = true;
+    try {
+      await Api.registrarIntentoFallido(intentoFallidoId, nota, foto);
+      Modal.close('modal-intento-fallido');
+      Toast.show('Intento fallido registrado. Se avisó al propietario.', 'info');
       await cargarTraslados();
     } catch (err) {
       errEl.textContent = err.message;

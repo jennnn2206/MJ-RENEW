@@ -317,6 +317,7 @@
 
     return `
       <div style="background:var(--white);border-radius:var(--radius);border:1px solid var(--bg3);overflow:hidden;margin-bottom:20px">
+        ${avisoIntentoFallidoHtml(p.avisoIntentoFallido)}
         <div style="display:grid;grid-template-columns:160px 1fr;gap:0">
           <img src="${img}" alt="${nombre}" style="width:160px;height:140px;object-fit:cover">
           <div style="padding:20px">
@@ -334,6 +335,22 @@
         </div>
       </div>
     `;
+  }
+
+  // Aviso cuando el transportista no encontró a nadie en casa.
+  function avisoIntentoFallidoHtml(aviso) {
+    if (!aviso) return '';
+    const accion = aviso.tipoTraslado === 'RECOLECCION' ? 'recoger' : 'entregar';
+    const fecha = aviso.registradoEn
+      ? new Date(aviso.registradoEn).toLocaleString('es-MX', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
+      : '';
+    return `
+      <div role="alert" style="background:#FFEBEE;border-bottom:1px solid #EF9A9A;padding:14px 20px;color:var(--ink)">
+        <strong style="color:#C62828">No pudimos ${accion} tu pieza${fecha ? ' (' + fecha + ')' : ''}</strong>
+        <p style="color:var(--ink);margin-top:4px">Nota del transportista: ${Utils.escapeHtml(aviso.motivoFallo)}</p>
+        <p style="color:var(--ink2);margin-top:4px">Te contactaremos para agendar un nuevo horario.
+          ${aviso.urlFotoEvidencia ? `<a href="${Utils.escapeHtml(aviso.urlFotoEvidencia)}" target="_blank" rel="noopener" style="color:var(--brown);font-weight:600;text-decoration:underline">Ver foto de evidencia</a>` : ''}</p>
+      </div>`;
   }
 
   function renderPieces() {

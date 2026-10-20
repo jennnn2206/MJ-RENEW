@@ -11,7 +11,11 @@ import com.mjrenew.mjrenew_backend.nucleo.antiguedad.repository.AntiguedadReposi
 import com.mjrenew.mjrenew_backend.nucleo.enums.DisponibilidadRestaurador;
 import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoAntiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoCotizacion;
+import com.mjrenew.mjrenew_backend.nucleo.enums.ResultadoTraslado;
 import com.mjrenew.mjrenew_backend.nucleo.enums.TipoFotografia;
+import com.mjrenew.mjrenew_backend.propietario.dto.AvisoIntentoFallidoResponse;
+import com.mjrenew.mjrenew_backend.transportista.entity.TrasladoAntiguedad;
+import com.mjrenew.mjrenew_backend.transportista.repository.TrasladoAntiguedadRepository;
 // MJRENEW-STRIPE: tipos propios del flujo bancario; no cadenas mágicas.
 import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoTransaccion;
 import com.mjrenew.mjrenew_backend.nucleo.enums.FlujoTransaccion;
@@ -72,6 +76,7 @@ public class AntiguedadService {
     private final TransaccionBancariaRepository transaccionRepository;
     private final StripeCheckoutService stripeCheckoutService;
     private final AlmacenamientoService almacenamientoService;
+    private final TrasladoAntiguedadRepository trasladoRepository;
 
     public AntiguedadService(
             AntiguedadRepository antiguedadRepository,
@@ -86,7 +91,8 @@ public class AntiguedadService {
             CatalogoAntiguedadMapper catalogoAntiguedadMapper,
             TransaccionBancariaRepository transaccionRepository,
             StripeCheckoutService stripeCheckoutService,
-            AlmacenamientoService almacenamientoService
+            AlmacenamientoService almacenamientoService,
+            TrasladoAntiguedadRepository trasladoRepository
     ) {
         this.antiguedadRepository = antiguedadRepository;
         this.fotografiaRepository = fotografiaRepository;
@@ -101,6 +107,7 @@ public class AntiguedadService {
         this.transaccionRepository = transaccionRepository;
         this.stripeCheckoutService = stripeCheckoutService;
         this.almacenamientoService = almacenamientoService;
+        this.trasladoRepository = trasladoRepository;
     }
 
     @Transactional
@@ -499,9 +506,50 @@ public class AntiguedadService {
                 )
                 .orElse(null);
 
+        AvisoIntentoFallidoResponse avisoIntentoFallido = trasladoRepository
+                .findFirstByAntiguedad_AntiguedadesIdOrderByAgendadoEnTrasladoDesc(
+                        antiguedad.getAntiguedadesId()
+                )
+                .filter(traslado ->
+                        traslado.getResultadoTraslado() == ResultadoTraslado.NADIE_EN_CASA
+                )
+                .map(this::construirAvisoIntentoFallido)
+                .orElse(null);
+
         return antiguedadMapper.toResumen(
                 antiguedad,
-                urlFotoPortada
+                urlFotoPortada,
+                avisoIntentoFallido
+        );
+    }
+
+    /*
+     * El aviso se muestra mientras el último traslado de la pieza sea el
+     * intento fallido; desaparece en cuanto el administrador agenda otro.
+     */
+    private AvisoIntentoFallidoResponse construirAvisoIntentoFallido(
+            TrasladoAntiguedad traslado
+    ) {
+
+        String urlFotoEvidencia = traslado.getEjecutadoEnTraslado() == null
+                ? null
+                : fotografiaRepository
+                .findFirstByAntiguedad_AntiguedadesIdAndTipoFotografiaAndSubidaEnFotografiaGreaterThanEqualOrderBySubidaEnFotografiaAsc(
+                        traslado.getAntiguedad().getAntiguedadesId(),
+                        TipoFotografia.TRASLADO_INTENTO_FALLIDO,
+                        traslado.getEjecutadoEnTraslado()
+                )
+                .map(foto ->
+                        foto.getUrlAlmacenFotografia()
+                )
+                .orElse(null);
+
+        return new AvisoIntentoFallidoResponse(
+                traslado.getTipoTraslado(),
+                traslado.getNumeroIntentoTraslado(),
+                traslado.getMotivoFalloTraslado(),
+                traslado.getEjecutadoEnTraslado(),
+                urlFotoEvidencia
         );
     }
 

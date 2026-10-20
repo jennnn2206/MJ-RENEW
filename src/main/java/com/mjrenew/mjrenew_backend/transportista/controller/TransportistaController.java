@@ -4,6 +4,7 @@ import com.mjrenew.mjrenew_backend.nucleo.security.UsuarioPrincipal;
 import com.mjrenew.mjrenew_backend.transportista.dto.ConfirmarLlegadaRequest;
 import com.mjrenew.mjrenew_backend.transportista.dto.ConfirmarSalidaRequest;
 import com.mjrenew.mjrenew_backend.transportista.dto.CrearTrasladoRequest;
+import com.mjrenew.mjrenew_backend.transportista.dto.RegistrarIntentoFallidoRequest;
 import com.mjrenew.mjrenew_backend.transportista.dto.TrasladoAntiguedadDetalleResponse;
 import com.mjrenew.mjrenew_backend.transportista.dto.TrasladoAntiguedadResumenResponse;
 import com.mjrenew.mjrenew_backend.transportista.service.TrasladoAntiguedadService;
@@ -86,5 +87,14 @@ public class TransportistaController {
                                                                                          @RequestPart(value = "fotos", required = false) List<MultipartFile> fotos,
                                                                                          @AuthenticationPrincipal UsuarioPrincipal principal) {
         return ResponseEntity.ok(trasladoService.confirmarEntregaPropietario(trasladoId, principal.getUsuario().getUsuariosId(), fotos));
+    }
+
+    @PostMapping(value = "/registrarIntentoFallido/{trasladoId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('TRANSPORTISTA')")
+    public ResponseEntity<TrasladoAntiguedadResumenResponse> registrarIntentoFallido(@PathVariable UUID trasladoId,
+                                                                                     @Valid @RequestPart("datos") RegistrarIntentoFallidoRequest request,
+                                                                                     @RequestPart(value = "foto", required = false) MultipartFile foto,
+                                                                                     @AuthenticationPrincipal UsuarioPrincipal principal) {
+        return ResponseEntity.ok(trasladoService.registrarIntentoFallido(trasladoId, principal.getUsuario().getUsuariosId(), request, foto));
     }
 }

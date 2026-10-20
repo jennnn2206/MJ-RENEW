@@ -10,6 +10,8 @@ public record AntiguedadResumenResponse(
         TipoMueble tipoMueble,
         EstadoAntiguedad estadoActualAntiguedad,
         String urlFotoPortada,
-        String nombreRestaurador
+        String nombreRestaurador,
+        // null salvo que el último traslado haya terminado en NADIE_EN_CASA
+        AvisoIntentoFallidoResponse avisoIntentoFallido
 ) {
 }

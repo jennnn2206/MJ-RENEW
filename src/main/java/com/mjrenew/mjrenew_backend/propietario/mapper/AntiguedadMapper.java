@@ -4,6 +4,7 @@ import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadCreateRequest;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadDetalleResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadResumenResponse;
+import com.mjrenew.mjrenew_backend.propietario.dto.AvisoIntentoFallidoResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.DimensionResponse;
 import com.mjrenew.mjrenew_backend.propietario.entity.Dimension;
 import org.mapstruct.Mapper;
@@ -32,7 +33,8 @@ public interface AntiguedadMapper {
     @Mapping(target = "antiguedadId", source = "antiguedad.antiguedadesId")
     @Mapping(target = "nombreRestaurador", source = "antiguedad.restaurador.nombreCompletoUsuario")
     @Mapping(target = "urlFotoPortada", source = "urlFotoPortada")
-    AntiguedadResumenResponse toResumen(Antiguedad antiguedad, String urlFotoPortada);
+    @Mapping(target = "avisoIntentoFallido", source = "avisoIntentoFallido")
+    AntiguedadResumenResponse toResumen(Antiguedad antiguedad, String urlFotoPortada, AvisoIntentoFallidoResponse avisoIntentoFallido);
 
     @Mapping(target = "antiguedadId", source = "antiguedad.antiguedadesId")
     @Mapping(target = "nombreCompletoRestaurador", source = "antiguedad.restaurador.nombreCompletoUsuario")
