@@ -1,5 +1,7 @@
 package com.mjrenew.mjrenew_backend.transportista.service;
 
+import com.mjrenew.mjrenew_backend.catalogo.entity.CatalogoAntiguedad;
+import com.mjrenew.mjrenew_backend.catalogo.repository.CatalogoAntiguedadRepository;
 import com.mjrenew.mjrenew_backend.nucleo.almacenamiento.AlmacenamientoService;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.repository.AntiguedadRepository;
@@ -46,6 +48,7 @@ public class TrasladoAntiguedadService {
 
     private final TrasladoAntiguedadRepository trasladoRepository;
     private final AntiguedadRepository antiguedadRepository;
+    private final CatalogoAntiguedadRepository catalogoRepository;
     private final FotografiaAntiguedadRepository fotografiaRepository;
     private final UsuarioRepository usuarioRepository;
     private final TrasladoMapper trasladoMapper;
@@ -53,12 +56,14 @@ public class TrasladoAntiguedadService {
 
     public TrasladoAntiguedadService(TrasladoAntiguedadRepository trasladoRepository,
                                      AntiguedadRepository antiguedadRepository,
+                                     CatalogoAntiguedadRepository catalogoRepository,
                                      FotografiaAntiguedadRepository fotografiaRepository,
                                      UsuarioRepository usuarioRepository,
                                      TrasladoMapper trasladoMapper,
                                      AlmacenamientoService almacenamientoService) {
         this.trasladoRepository = trasladoRepository;
         this.antiguedadRepository = antiguedadRepository;
+        this.catalogoRepository = catalogoRepository;
         this.fotografiaRepository = fotografiaRepository;
         this.usuarioRepository = usuarioRepository;
         this.trasladoMapper = trasladoMapper;
@@ -77,7 +82,8 @@ public class TrasladoAntiguedadService {
      * RECOLECCION:         PAGO_EN_ESCROW      -> HORARIO_RECOLECCION_AGENDADO
      * ENTREGA_PROPIETARIO: RESTAURACION_LISTA  -> HORARIO_ENTREGA_AGENDADO
      *
-     * ENTREGA_COMPRADOR queda fuera de alcance (ver validarOrigenYObtenerDestino).
+     * ENTREGA_COMPRADOR: VENTA_COMPLETADA -> VENTA_COMPLETADA.
+     * La venta conserva su estado terminal; el seguimiento se guarda en traslado.
      *
      * Si un intento anterior del mismo tipo terminó en NADIE_EN_CASA, se
      * permite agendar otro y se numera como el siguiente intento.
@@ -157,10 +163,10 @@ public class TrasladoAntiguedadService {
                 yield EstadoAntiguedad.HORARIO_ENTREGA_AGENDADO;
             }
 
-            // TODO: falta el flujo de confirmación de pago del comprador (más allá
-            // de LINK_PAGO_ENVIADO) del cual dependería este traslado.
-            case ENTREGA_COMPRADOR -> throw new SolicitudInvalidaException(
-                    "La creación de traslados de entrega a comprador aún no está soportada");
+            case ENTREGA_COMPRADOR -> {
+                validarVentaPagada(antiguedad);
+                yield EstadoAntiguedad.VENTA_COMPLETADA; // No cambiar el AFD terminal.
+            }
         };
     }
 
@@ -226,6 +232,58 @@ public class TrasladoAntiguedadService {
     }
 
     /*
+     * MJRENEW-ENTREGA-COMPRADOR: este flujo es logístico, NO una nueva
+     * transición de EstadoAntiguedad ni una orden a Stripe.
+     */
+    @Transactional
+    public TrasladoAntiguedadResumenResponse confirmarSalidaEntregaComprador(UUID trasladoId, UUID transportistaId) {
+        TrasladoAntiguedad traslado = buscarAsignadoOFallar(trasladoId, transportistaId);
+        validarTipo(traslado, TipoTraslado.ENTREGA_COMPRADOR);
+        validarVentaPagada(traslado.getAntiguedad());
+        validarPendiente(traslado);
+        if (traslado.getSalidaConfirmadaEnTraslado() != null) {
+            throw new TransicionEstadoInvalidaException("La salida de este traslado ya fue confirmada");
+        }
+        traslado.setSalidaConfirmadaEnTraslado(OffsetDateTime.now());
+        return guardarYResponder(traslado);
+    }
+
+    @Transactional
+    public TrasladoAntiguedadResumenResponse confirmarEntregaComprador(UUID trasladoId, UUID transportistaId,
+                                                                       List<MultipartFile> fotos) {
+        TrasladoAntiguedad traslado = buscarAsignadoOFallar(trasladoId, transportistaId);
+        validarTipo(traslado, TipoTraslado.ENTREGA_COMPRADOR);
+        validarVentaPagada(traslado.getAntiguedad());
+        validarPendiente(traslado);
+        if (traslado.getSalidaConfirmadaEnTraslado() == null) {
+            throw new TransicionEstadoInvalidaException("Primero confirma la salida hacia el comprador");
+        }
+
+        guardarFotos(traslado, fotos, TipoFotografia.TRASLADO_LLEGADA);
+        traslado.setResultadoTraslado(ResultadoTraslado.EXITOSO);
+        traslado.setEjecutadoEnTraslado(OffsetDateTime.now());
+        // El comprador aún debe confirmar personalmente la recepción.
+        return guardarYResponder(traslado);
+    }
+
+    private void validarVentaPagada(Antiguedad antiguedad) {
+        validarEstadoOrigen(antiguedad, EstadoAntiguedad.VENTA_COMPLETADA);
+        CatalogoAntiguedad catalogo = catalogoRepository
+                .findByAntiguedad_AntiguedadesId(antiguedad.getAntiguedadesId())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Esta antigüedad no tiene venta registrada"));
+        if (catalogo.getComprador() == null || catalogo.getCompletadaEnCatalogo() == null
+                || Boolean.TRUE.equals(catalogo.getActivaCatalogo())) {
+            throw new SolicitudInvalidaException("La compra no está confirmada; no se puede entregar");
+        }
+    }
+
+    private void validarPendiente(TrasladoAntiguedad traslado) {
+        if (traslado.getResultadoTraslado() != ResultadoTraslado.PENDIENTE) {
+            throw new TransicionEstadoInvalidaException("El traslado ya fue cerrado");
+        }
+    }
+
+    /*
      * ============================================================
      * INTENTO FALLIDO (el propietario no estaba en casa)
      * ============================================================
@@ -258,8 +316,13 @@ public class TrasladoAntiguedadService {
                 validarEstadoOrigen(traslado.getAntiguedad(), EstadoAntiguedad.EN_DEVOLUCION_PROPIETARIO);
                 yield EstadoAntiguedad.RESTAURACION_LISTA;
             }
-            case ENTREGA_COMPRADOR -> throw new SolicitudInvalidaException(
-                    "Los traslados de entrega a comprador aún no están soportados");
+            case ENTREGA_COMPRADOR -> {
+                validarVentaPagada(traslado.getAntiguedad());
+                if (traslado.getSalidaConfirmadaEnTraslado() == null) {
+                    throw new TransicionEstadoInvalidaException("Primero confirma la salida hacia el comprador");
+                }
+                yield EstadoAntiguedad.VENTA_COMPLETADA; // Permite un nuevo intento sin alterar el AFD.
+            }
         };
 
         // Misma marca de tiempo para la foto y el traslado: así el aviso al
@@ -286,6 +349,11 @@ public class TrasladoAntiguedadService {
             throw new SolicitudInvalidaException("Se requieren al menos " + FOTOS_MINIMAS + " fotografías de evidencia");
         }
         for (MultipartFile archivo : fotos) {
+            if (archivo == null || archivo.isEmpty() || !TIPOS_FOTO_PERMITIDOS.contains(archivo.getContentType())) {
+                throw new SolicitudInvalidaException("Todas las evidencias deben ser imágenes JPG, PNG o WEBP válidas");
+            }
+        }
+        for (MultipartFile archivo : fotos) {
             guardarFoto(traslado, archivo, tipoFoto, OffsetDateTime.now());
         }
     }
@@ -294,6 +362,7 @@ public class TrasladoAntiguedadService {
         String url = almacenamientoService.subirArchivo(archivo, "traslados");
         FotografiaAntiguedad foto = new FotografiaAntiguedad();
         foto.setAntiguedad(traslado.getAntiguedad());
+        foto.setTraslado(traslado);  // Vincula fotos con este intento específico.
         foto.setTipoFotografia(tipoFoto);
         foto.setUrlAlmacenFotografia(url);
         foto.setSubidaEnFotografia(subidaEn);

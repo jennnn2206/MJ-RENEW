@@ -11,6 +11,8 @@ import java.util.UUID;
 
 public interface FotografiaAntiguedadRepository extends JpaRepository<FotografiaAntiguedad, UUID> {
 
+    long countByTraslado_TrasladosAntiguedadIdAndTipoFotografia(UUID trasladoId, TipoFotografia tipoFotografia);
+
     Optional<FotografiaAntiguedad> findFirstByAntiguedad_AntiguedadesIdAndTipoFotografiaOrderBySubidaEnFotografiaAsc(
             UUID antiguedadId, TipoFotografia tipoFotografia);
 

@@ -89,6 +89,25 @@ public class TransportistaController {
         return ResponseEntity.ok(trasladoService.confirmarEntregaPropietario(trasladoId, principal.getUsuario().getUsuariosId(), fotos));
     }
 
+    // MJRENEW-ENTREGA-COMPRADOR: endpoints atómicos del transportista.
+    @PostMapping("/confirmarSalidaEntregaComprador/{trasladoId}")
+    @PreAuthorize("hasRole('TRANSPORTISTA')")
+    public ResponseEntity<TrasladoAntiguedadResumenResponse> confirmarSalidaEntregaComprador(
+            @PathVariable UUID trasladoId, @AuthenticationPrincipal UsuarioPrincipal principal) {
+        return ResponseEntity.ok(trasladoService.confirmarSalidaEntregaComprador(
+                trasladoId, principal.getUsuario().getUsuariosId()));
+    }
+
+    @PostMapping(value = "/confirmarEntregaComprador/{trasladoId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('TRANSPORTISTA')")
+    public ResponseEntity<TrasladoAntiguedadResumenResponse> confirmarEntregaComprador(
+            @PathVariable UUID trasladoId,
+            @RequestPart(value = "fotos", required = false) List<MultipartFile> fotos,
+            @AuthenticationPrincipal UsuarioPrincipal principal) {
+        return ResponseEntity.ok(trasladoService.confirmarEntregaComprador(
+                trasladoId, principal.getUsuario().getUsuariosId(), fotos));
+    }
+
     @PostMapping(value = "/registrarIntentoFallido/{trasladoId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('TRANSPORTISTA')")
     public ResponseEntity<TrasladoAntiguedadResumenResponse> registrarIntentoFallido(@PathVariable UUID trasladoId,

@@ -18,6 +18,8 @@ public interface CatalogoAntiguedadRepository extends JpaRepository<CatalogoAnti
 
     boolean existsByAntiguedad_AntiguedadesId(UUID antiguedadId);
 
+    Optional<CatalogoAntiguedad> findByAntiguedad_AntiguedadesId(UUID antiguedadId);
+
     // MJRENEW-STRIPE: solo un comprador puede reservar una antigüedad a la vez.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select c from CatalogoAntiguedad c where c.catalogoAntiguedadId = :catalogoId")

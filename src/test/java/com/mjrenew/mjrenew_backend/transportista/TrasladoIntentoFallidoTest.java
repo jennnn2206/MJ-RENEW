@@ -1,5 +1,6 @@
 package com.mjrenew.mjrenew_backend.transportista;
 
+import com.mjrenew.mjrenew_backend.catalogo.repository.CatalogoAntiguedadRepository;
 import com.mjrenew.mjrenew_backend.nucleo.almacenamiento.AlmacenamientoService;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.repository.AntiguedadRepository;
@@ -43,6 +44,7 @@ import static org.mockito.Mockito.*;
 class TrasladoIntentoFallidoTest {
     @Mock TrasladoAntiguedadRepository trasladoRepo;
     @Mock AntiguedadRepository antiguedadRepo;
+    @Mock CatalogoAntiguedadRepository catalogoRepo;
     @Mock FotografiaAntiguedadRepository fotoRepo;
     @Mock UsuarioRepository usuarioRepo;
     @Mock TrasladoMapper mapper;

@@ -32,6 +32,10 @@ public interface TrasladoAntiguedadRepository extends JpaRepository<TrasladoAnti
             TipoTraslado tipoTraslado
     );
 
+    // Se acredita la entrega real de una venta mediante su traslado exitoso.
+    Optional<TrasladoAntiguedad> findFirstByAntiguedad_AntiguedadesIdAndTipoTrasladoAndResultadoTrasladoOrderByEjecutadoEnTrasladoDesc(
+            UUID antiguedadId, TipoTraslado tipoTraslado, ResultadoTraslado resultadoTraslado);
+
     // Último traslado agendado de la pieza (para avisar al propietario si falló).
     Optional<TrasladoAntiguedad> findFirstByAntiguedad_AntiguedadesIdOrderByAgendadoEnTrasladoDesc(UUID antiguedadId);
 }

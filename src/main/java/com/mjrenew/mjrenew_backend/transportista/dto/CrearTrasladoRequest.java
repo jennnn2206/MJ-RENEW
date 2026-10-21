@@ -14,10 +14,9 @@ import java.time.LocalTime;
 import java.util.UUID;
 
 /**
- * Agenda un traslado (RECOLECCION o ENTREGA_PROPIETARIO) para una antigüedad,
- * asignando un transportista y una ventana horaria. ENTREGA_COMPRADOR queda
- * fuera de alcance por ahora: no existe todavía el flujo de confirmación de
- * pago del comprador que la precede.
+ * Agenda un traslado (RECOLECCION, ENTREGA_PROPIETARIO o ENTREGA_COMPRADOR)
+ * para una antigüedad, asignando un transportista y una ventana horaria.
+ * Para ENTREGA_COMPRADOR exige venta confirmada por el webhook Stripe.
  */
 public record CrearTrasladoRequest(
 
