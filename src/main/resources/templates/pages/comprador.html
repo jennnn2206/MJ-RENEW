@@ -65,10 +65,12 @@
     <!-- COMPRAS -->
     <div id="section-compras" class="dash-section" style="display:none">
       <h2 style="font-size:1.5rem;margin-bottom:24px">Mis compras</h2>
-      <div class="empty-state">
-        <h3>Aún no tienes compras</h3>
-        <p>Las piezas que adquieras aparecerán aquí con su estado de envío.</p>
-        <button class="btn btn-primary" onclick="showSection('catalogo')">Explorar el catálogo</button>
+      <!-- Compras pagadas consultadas desde PostgreSQL; no se usan mocks ni localStorage. -->
+      <div id="compras-estado" role="status" aria-live="polite">Cargando tus compras...</div>
+      <div id="compras-listado" class="compras-listado" aria-live="polite"></div>
+      <div class="compras-acciones">
+        <button id="compras-mas" class="btn btn-secondary" type="button" hidden>Cargar más compras</button>
+        <button id="compras-actualizar" class="btn btn-ghost" type="button">Actualizar estados</button>
       </div>
     </div>
 
@@ -86,6 +88,7 @@
 <script th:src="@{/js/notificaciones.js}"></script>
 <script th:src="@{/js/modal.js}"></script>
 <script th:src="@{/js/app.js}"></script>
+<script th:src="@{/js/comprador-compras.js}"></script>
 <script>
   const user = Auth.requireAuth('/login', 'comprador');
   if (user) {
@@ -102,6 +105,7 @@
     const btn = [...document.querySelectorAll('.sidebar-nav-item')].find(b => b.onclick?.toString().includes(`'${id}'`));
     if (btn) btn.classList.add('active');
     if (id === 'favoritos') renderFavs();
+    if (id === 'compras') ComprasComprador.cargar();
   }
 
   let catalogoCompleto = [];

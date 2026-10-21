@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,6 +26,10 @@ public interface TrasladoAntiguedadRepository extends JpaRepository<TrasladoAnti
             TipoTraslado tipoTraslado,
             Collection<ResultadoTraslado> resultados
     );
+
+    // Consulta por lote para obtener la entrega más reciente de cada compra del listado.
+    List<TrasladoAntiguedad> findByAntiguedad_AntiguedadesIdInAndTipoTrasladoOrderByAgendadoEnTrasladoDesc(
+            Collection<UUID> antiguedadesId, TipoTraslado tipoTraslado);
 
     // Intentos previos del mismo tipo, para numerar el siguiente (#2, #3...).
     long countByAntiguedad_AntiguedadesIdAndTipoTraslado(

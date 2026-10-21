@@ -1,11 +1,17 @@
 package com.mjrenew.mjrenew_backend.comprador.controller;
 
 import com.mjrenew.mjrenew_backend.comprador.dto.ConfirmarRecepcionCompraResponse;
+import com.mjrenew.mjrenew_backend.comprador.dto.CompraResumenResponse;
 import com.mjrenew.mjrenew_backend.comprador.service.CompraService;
 import com.mjrenew.mjrenew_backend.nucleo.security.UsuarioPrincipal;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,6 +26,19 @@ public class CompraController {
 
     public CompraController(CompraService compras) {
         this.compras = compras;
+    }
+
+    /** DTO atómico de "Mis compras"; identidad tomada de la sesión, no de la URL. */
+    @GetMapping("/obtenerMisCompras")
+    @PreAuthorize("hasRole('COMPRADOR')")
+    public ResponseEntity<Page<CompraResumenResponse>> obtenerMisCompras(
+            Pageable pageable,
+            @AuthenticationPrincipal UsuarioPrincipal principal) {
+        Pageable paginaSegura = PageRequest.of(pageable.getPageNumber(),
+                Math.min(pageable.getPageSize(), 50),
+                Sort.by(Sort.Direction.DESC, "completadaEnCatalogo"));
+        return ResponseEntity.ok(compras.obtenerMisCompras(
+                principal.getUsuario().getUsuariosId(), paginaSegura));
     }
 
     /** Ampliación a API v4, no transferencias financieras. */

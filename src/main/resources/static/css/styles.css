@@ -533,8 +533,8 @@ p  { color: var(--ink2); line-height: 1.7; }
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(ellipse at 70% 50%, rgba(184,134,11,0.15) 0%, transparent 60%),
-    radial-gradient(ellipse at 20% 80%, rgba(201,168,124,0.1) 0%, transparent 50%);
+          radial-gradient(ellipse at 70% 50%, rgba(184,134,11,0.15) 0%, transparent 60%),
+          radial-gradient(ellipse at 20% 80%, rgba(201,168,124,0.1) 0%, transparent 50%);
 }
 .hero-content {
   position: relative;
@@ -1457,3 +1457,18 @@ p  { color: var(--ink2); line-height: 1.7; }
 
 /* ─── GOLD ACCENT LINE ───────────────────────────────────── */
 .accent-line { width: 3px; background: var(--gold); border-radius: 2px; flex-shrink: 0; }
+/* MJRENEW-COMPRADOR: listado de compras reales y acuse de recepción */
+.compras-listado { display: grid; gap: 16px; }
+.compra-tarjeta { display: flex; align-items: flex-start; gap: 20px; padding: 20px; background: var(--white, #fff); border: 1px solid var(--bg3); border-radius: 12px; }
+.compra-tarjeta-imagen { width: 150px; height: 130px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+.compra-tarjeta-cuerpo { min-width: 0; flex: 1; }
+.compra-tarjeta-cuerpo h3 { margin: 0 0 8px; font-size: 1.1rem; }
+.compra-tarjeta-precio { margin: 0 0 8px; font-weight: 600; }
+.compra-tarjeta-meta { margin: 8px 0 12px; color: var(--ink2); font-size: .95rem; }
+.compra-tarjeta-estado { margin: 12px 0; }
+.compras-acciones { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+#compras-estado:not(:empty) { margin-bottom: 12px; color: var(--ink2); }
+@media (max-width: 600px) {
+  .compra-tarjeta { flex-direction: column; }
+  .compra-tarjeta-imagen { width: 100%; height: 185px; }
+}

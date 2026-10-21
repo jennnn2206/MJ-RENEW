@@ -4,6 +4,7 @@ import com.mjrenew.mjrenew_backend.catalogo.entity.CatalogoAntiguedad;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,6 +16,11 @@ import java.util.UUID;
 public interface CatalogoAntiguedadRepository extends JpaRepository<CatalogoAntiguedad, UUID> {
 
     Page<CatalogoAntiguedad> findByActivaCatalogoTrue(Pageable pageable);
+
+    // Solo compras realmente confirmadas por Stripe del comprador autenticado.
+    @EntityGraph(attributePaths = "antiguedad")
+    Page<CatalogoAntiguedad> findByComprador_UsuariosIdAndCompletadaEnCatalogoIsNotNull(
+            UUID compradorId, Pageable pageable);
 
     boolean existsByAntiguedad_AntiguedadesId(UUID antiguedadId);
 

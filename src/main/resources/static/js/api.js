@@ -135,6 +135,14 @@ const Api = {
         return this.post(`/api/catalogo/iniciarCompraPiezaCatalogo/${catalogoId}`);
     },
 
+    // ── COMPRADOR: historial real y acuse de recepción ───────
+    obtenerMisCompras(page = 0, size = 10) {
+        return this.get(`/api/comprador/obtenerMisCompras?page=${page}&size=${size}`);
+    },
+    confirmarRecepcionCompra(catalogoId) {
+        return this.post(`/api/comprador/confirmarRecepcionCompra/${encodeURIComponent(catalogoId)}`);
+    },
+
     // ── TRANSPORTISTA ───────────────────────────────────────────
     // crearTraslado vive bajo /api/transportista (así está mapeado el
     // endpoint), pero lo usa el administrador: es quien despacha/asigna
