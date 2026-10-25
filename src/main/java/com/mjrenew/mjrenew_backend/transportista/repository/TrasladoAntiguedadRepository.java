@@ -6,6 +6,10 @@ import com.mjrenew.mjrenew_backend.transportista.entity.TrasladoAntiguedad;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import jakarta.persistence.LockModeType;
 
 import java.util.Collection;
 import java.util.List;
@@ -15,6 +19,13 @@ import java.util.UUID;
 public interface TrasladoAntiguedadRepository extends JpaRepository<TrasladoAntiguedad, UUID> {
 
     Page<TrasladoAntiguedad> findByTransportista_UsuariosId(UUID transportistaId, Pageable pageable);
+
+    Page<TrasladoAntiguedad> findByTipoTrasladoAndTransportistaIsNullAndResultadoTraslado(
+            TipoTraslado tipoTraslado, ResultadoTraslado resultadoTraslado, Pageable pageable);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select t from TrasladoAntiguedad t where t.trasladosAntiguedadId = :trasladoId")
+    Optional<TrasladoAntiguedad> buscarParaAsignacion(@Param("trasladoId") UUID trasladoId);
 
     /*
      * Evita agendar dos traslados del mismo tipo para la misma antigüedad

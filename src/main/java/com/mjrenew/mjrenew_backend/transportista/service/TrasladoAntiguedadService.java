@@ -32,7 +32,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Set;
@@ -139,6 +143,122 @@ public class TrasladoAntiguedadService {
         antiguedadRepository.save(antiguedad);
 
         return trasladoMapper.toDetalle(guardado);
+    }
+
+    /**
+     * Registra la ventana elegida por el comprador después de que Stripe confirmó
+     * la venta. La solicitud queda sin transportista para que el administrador
+     * haga una asignación explícita; nunca se elige uno al azar.
+     */
+    @Transactional
+    public TrasladoAntiguedadDetalleResponse solicitarEntregaComprador(
+            UUID catalogoId, UUID compradorId, LocalDate fechaAcordada,
+            LocalTime horaInicio, LocalTime horaFin) {
+        CatalogoAntiguedad catalogo = catalogoRepository.buscarParaCompra(catalogoId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No existe esta compra"));
+
+        if (catalogo.getComprador() == null
+                || !catalogo.getComprador().getUsuariosId().equals(compradorId)) {
+            throw new RecursoNoEncontradoException("No existe esta compra para el comprador autenticado");
+        }
+        if (catalogo.getRecepcionConfirmadaEnCatalogo() != null) {
+            throw new TransicionEstadoInvalidaException("La recepción de esta compra ya fue confirmada");
+        }
+
+        Antiguedad antiguedad = catalogo.getAntiguedad();
+        validarVentaPagada(antiguedad);
+        validarVentanaEntrega(fechaAcordada, horaInicio, horaFin);
+
+        if (trasladoRepository.existsByAntiguedad_AntiguedadesIdAndTipoTrasladoAndResultadoTrasladoIn(
+                antiguedad.getAntiguedadesId(), TipoTraslado.ENTREGA_COMPRADOR,
+                List.of(ResultadoTraslado.PENDIENTE, ResultadoTraslado.EXITOSO))) {
+            throw new SolicitudInvalidaException(
+                    "Ya existe una solicitud de entrega pendiente o una entrega completada para esta compra");
+        }
+
+        Usuario propietario = antiguedad.getPropietario();
+        String direccionOrigen = propietario == null ? null : propietario.getDireccionTextoUsuario();
+        String direccionDestino = catalogo.getComprador().getDireccionTextoUsuario();
+        if (direccionOrigen == null || direccionOrigen.isBlank()) {
+            throw new SolicitudInvalidaException(
+                    "El propietario debe registrar su domicilio antes de coordinar la entrega");
+        }
+        if (direccionDestino == null || direccionDestino.isBlank()) {
+            throw new SolicitudInvalidaException(
+                    "Registra tu domicilio en el perfil antes de coordinar la entrega");
+        }
+
+        long intentosPrevios = trasladoRepository.countByAntiguedad_AntiguedadesIdAndTipoTraslado(
+                antiguedad.getAntiguedadesId(), TipoTraslado.ENTREGA_COMPRADOR);
+        if (intentosPrevios >= Short.MAX_VALUE) {
+            throw new SolicitudInvalidaException("La entrega alcanzó el máximo de intentos permitidos");
+        }
+
+        TrasladoAntiguedad traslado = new TrasladoAntiguedad();
+        traslado.setAntiguedad(antiguedad);
+        traslado.setTransportista(null);
+        traslado.setTipoTraslado(TipoTraslado.ENTREGA_COMPRADOR);
+        traslado.setDireccionOrigenTraslado(direccionOrigen.trim());
+        traslado.setDireccionDestinoTraslado(direccionDestino.trim());
+        traslado.setFechaAcordadaTraslado(fechaAcordada);
+        traslado.setHoraInicioAcordadaTraslado(horaInicio);
+        traslado.setHoraFinAcordadaTraslado(horaFin);
+        traslado.setNumeroIntentoTraslado((short) (intentosPrevios + 1));
+        traslado.setResultadoTraslado(ResultadoTraslado.PENDIENTE);
+        traslado.setAgendadoEnTraslado(OffsetDateTime.now(ZoneOffset.UTC));
+
+        return trasladoMapper.toDetalle(trasladoRepository.save(traslado));
+    }
+
+    private void validarVentanaEntrega(LocalDate fechaAcordada, LocalTime horaInicio, LocalTime horaFin) {
+        if (fechaAcordada == null || horaInicio == null || horaFin == null) {
+            throw new SolicitudInvalidaException("La fecha y la ventana de entrega son obligatorias");
+        }
+        if (!horaInicio.isBefore(horaFin)) {
+            throw new SolicitudInvalidaException("La hora de fin debe ser posterior a la hora de inicio");
+        }
+        ZoneId zonaLocal = ZoneId.of("America/Merida");
+        LocalDate hoy = LocalDate.now(zonaLocal);
+        LocalTime horaActual = LocalTime.now(zonaLocal);
+        if (fechaAcordada.isBefore(hoy)
+                || (fechaAcordada.isEqual(hoy) && !horaInicio.isAfter(horaActual))) {
+            throw new SolicitudInvalidaException("Selecciona una fecha y hora de entrega futuras");
+        }
+    }
+
+    /** Solicitudes que aún no tienen transportista asignado; solo para administración. */
+    @Transactional(readOnly = true)
+    public Page<TrasladoAntiguedadDetalleResponse> obtenerEntregasCompradorPendientesAsignacion(Pageable pageable) {
+        return trasladoRepository.findByTipoTrasladoAndTransportistaIsNullAndResultadoTraslado(
+                        TipoTraslado.ENTREGA_COMPRADOR, ResultadoTraslado.PENDIENTE, pageable)
+                .map(trasladoMapper::toDetalle);
+    }
+
+    /** Asigna explícitamente un transportista activo a una solicitud pendiente. */
+    @Transactional
+    public TrasladoAntiguedadDetalleResponse asignarTransportistaEntregaComprador(
+            UUID trasladoId, UUID transportistaId) {
+        TrasladoAntiguedad traslado = trasladoRepository.buscarParaAsignacion(trasladoId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No existe un traslado con id " + trasladoId));
+        validarTipo(traslado, TipoTraslado.ENTREGA_COMPRADOR);
+        if (traslado.getResultadoTraslado() != ResultadoTraslado.PENDIENTE) {
+            throw new TransicionEstadoInvalidaException("Solo se pueden asignar solicitudes pendientes");
+        }
+        if (traslado.getTransportista() != null) {
+            throw new SolicitudInvalidaException("Esta solicitud ya tiene un transportista asignado");
+        }
+        validarVentaPagada(traslado.getAntiguedad());
+
+        Usuario transportista = usuarioRepository.findById(transportistaId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No existe un transportista con id " + transportistaId));
+        if (transportista.getTipoUsuario() != TipoUsuario.TRANSPORTISTA
+                || !Boolean.TRUE.equals(transportista.getActivoUsuario())) {
+            throw new SolicitudInvalidaException("El usuario seleccionado no es un transportista activo");
+        }
+
+        traslado.setTransportista(transportista);
+        return trasladoMapper.toDetalle(trasladoRepository.save(traslado));
     }
 
     private EstadoAntiguedad validarOrigenYObtenerDestino(Antiguedad antiguedad, TipoTraslado tipoTraslado) {
