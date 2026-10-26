@@ -42,6 +42,8 @@ public class DatosDemoInitializer implements ApplicationRunner {
         crearOActualizarDemo("propietario1@test.mx", "Propietario Demo", TipoUsuario.PROPIETARIO);
         Usuario restaurador = crearOActualizarDemo("restaurador1@test.mx", "Restaurador Demo", TipoUsuario.RESTAURADOR);
         crearOActualizarDemo("comprador1@test.mx", "Comprador Demo", TipoUsuario.COMPRADOR);
+        crearOActualizarDemo("transportista1@test.mx", "Transportista Demo", TipoUsuario.TRANSPORTISTA);
+        crearOActualizarDemo("admin@mjrenew.mx", "Administrador Demo", TipoUsuario.ADMINISTRADOR);
 
         PerfilRestaurador perfil = perfilRepository.findByRestaurador_UsuariosId(restaurador.getUsuariosId())
                 .orElseGet(PerfilRestaurador::new);

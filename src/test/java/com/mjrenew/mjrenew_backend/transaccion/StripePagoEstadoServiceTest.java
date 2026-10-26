@@ -9,6 +9,8 @@ import com.mjrenew.mjrenew_backend.nucleo.exception.SolicitudInvalidaException;
 import com.mjrenew.mjrenew_backend.transaccion.dto.StripeCheckoutEstado;
 import com.mjrenew.mjrenew_backend.transaccion.entity.TransaccionBancaria;
 import com.mjrenew.mjrenew_backend.transaccion.repository.TransaccionBancariaRepository;
+import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
+import com.mjrenew.mjrenew_backend.transaccion.service.LiberacionPropietarioService;
 import com.mjrenew.mjrenew_backend.transaccion.service.StripePagoEstadoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,7 @@ class StripePagoEstadoServiceTest {
     @Mock TransaccionBancariaRepository transacciones;
     @Mock AntiguedadRepository antiguedades;
     @Mock CatalogoAntiguedadRepository catalogos;
+    @Mock LiberacionPropietarioService liberacionPropietarioService;
     StripePagoEstadoService servicio;
     TransaccionBancaria transaccion;
     Antiguedad antiguedad;
@@ -35,7 +38,8 @@ class StripePagoEstadoServiceTest {
 
     @BeforeEach
     void preparar() {
-        servicio = new StripePagoEstadoService(transacciones, antiguedades, catalogos, "sk_test_fake");
+        servicio = new StripePagoEstadoService(transacciones, antiguedades, catalogos,
+                liberacionPropietarioService, "sk_test_fake");
         sesionId = "cs_test_" + UUID.randomUUID();
         antiguedad = new Antiguedad();
         antiguedad.setAntiguedadesId(UUID.randomUUID());
@@ -70,6 +74,7 @@ class StripePagoEstadoServiceTest {
         assertEquals(EstadoTransaccion.EXITOSA, transaccion.getEstadoTransaccion());
         assertEquals(EstadoAntiguedad.PAGO_EN_ESCROW, antiguedad.getEstadoActualAntiguedad());
         assertNotNull(transaccion.getProcesadaEnTransaccion());
+        verifyNoInteractions(liberacionPropietarioService);
     }
 
     @Test
@@ -106,6 +111,58 @@ class StripePagoEstadoServiceTest {
         antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.PAGO_EN_ESCROW);
         servicio.confirmar(correcta());
         assertEquals(EstadoAntiguedad.PAGO_EN_ESCROW, antiguedad.getEstadoActualAntiguedad());
+    }
+
+    @Test
+    void reintentoDePagoVentaExitosaVuelveAComprobarLiberacion() {
+        transaccion.setTipoTransaccion(TipoTransaccion.PAGO_VENTA);
+        transaccion.setEstadoTransaccion(EstadoTransaccion.EXITOSA);
+        antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.VENTA_COMPLETADA);
+        simularPersistencia();
+        when(antiguedades.bloquearParaConfirmarPago(antiguedad.getAntiguedadesId()))
+                .thenReturn(Optional.of(antiguedad));
+
+        servicio.confirmar(sesion("PAGO_VENTA", transaccion.getTransaccionId().toString(),
+                650000L, "mxn", "complete", "paid"));
+
+        verify(liberacionPropietarioService).registrarPendiente(transaccion);
+        assertEquals(EstadoTransaccion.EXITOSA, transaccion.getEstadoTransaccion());
+    }
+
+    @Test
+    void pagoVentaConfirmadoPreparaLiberacionAlPropietario() {
+        transaccion.setTipoTransaccion(TipoTransaccion.PAGO_VENTA);
+        antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.LINK_PAGO_ENVIADO);
+
+        Usuario comprador = new Usuario();
+        comprador.setUsuariosId(UUID.randomUUID());
+        Usuario propietario = new Usuario();
+        propietario.setUsuariosId(UUID.randomUUID());
+        antiguedad.setPropietario(propietario);
+
+        CatalogoAntiguedad catalogo = new CatalogoAntiguedad();
+        UUID catalogoId = UUID.randomUUID();
+        catalogo.setCatalogoAntiguedadId(catalogoId);
+        catalogo.setAntiguedad(antiguedad);
+        catalogo.setComprador(comprador);
+        catalogo.setIdLinkStripeCatalogo(sesionId);
+        catalogo.setActivaCatalogo(false);
+        transaccion.setCatalogoAntiguedad(catalogo);
+        transaccion.setOriginator(comprador);
+        transaccion.setBeneficiario(propietario);
+
+        simularPersistencia();
+        when(antiguedades.bloquearParaConfirmarPago(antiguedad.getAntiguedadesId()))
+                .thenReturn(Optional.of(antiguedad));
+        when(catalogos.buscarParaCompra(catalogoId)).thenReturn(Optional.of(catalogo));
+
+        servicio.confirmar(sesion("PAGO_VENTA", transaccion.getTransaccionId().toString(),
+                650000L, "mxn", "complete", "paid"));
+
+        assertEquals(EstadoTransaccion.EXITOSA, transaccion.getEstadoTransaccion());
+        assertEquals(EstadoAntiguedad.VENTA_COMPLETADA, antiguedad.getEstadoActualAntiguedad());
+        assertFalse(catalogo.getActivaCatalogo());
+        verify(liberacionPropietarioService).registrarPendiente(transaccion);
     }
 
     @Test

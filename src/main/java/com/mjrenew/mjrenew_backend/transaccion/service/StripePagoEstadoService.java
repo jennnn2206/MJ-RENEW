@@ -32,15 +32,18 @@ public class StripePagoEstadoService {
     private final TransaccionBancariaRepository transacciones;
     private final AntiguedadRepository antiguedades;
     private final CatalogoAntiguedadRepository catalogos;
+    private final LiberacionPropietarioService liberacionPropietarioService;
     private final boolean entornoProduccion;
 
     public StripePagoEstadoService(TransaccionBancariaRepository transacciones,
                                    AntiguedadRepository antiguedades,
                                    CatalogoAntiguedadRepository catalogos,
+                                   LiberacionPropietarioService liberacionPropietarioService,
                                    @Value("${stripe.secret-key}") String stripeSecretKey) {
         this.transacciones = transacciones;
         this.antiguedades = antiguedades;
         this.catalogos = catalogos;
+        this.liberacionPropietarioService = liberacionPropietarioService;
         this.entornoProduccion = stripeSecretKey.startsWith("sk_live_");
     }
 
@@ -57,7 +60,12 @@ public class StripePagoEstadoService {
                 .orElseThrow(() -> new SolicitudInvalidaException("La antigüedad pagada no existe"));
 
         if (transaccion.getEstadoTransaccion() == EstadoTransaccion.EXITOSA) {
-            return; // Stripe reenvía eventos; una confirmación debe aplicarse una sola vez.
+            // Un reintento también repara el registro de liberación si faltara por una versión previa.
+            // El servicio es idempotente y solo aplica al flujo de catálogo.
+            if (transaccion.getTipoTransaccion() == TipoTransaccion.PAGO_VENTA) {
+                liberacionPropietarioService.registrarPendiente(transaccion);
+            }
+            return; // Stripe reenvía eventos; una confirmación no duplica la liberación.
         }
         if (transaccion.getEstadoTransaccion() != EstadoTransaccion.PENDIENTE
                 && transaccion.getEstadoTransaccion() != EstadoTransaccion.FALLIDA) {
@@ -81,6 +89,13 @@ public class StripePagoEstadoService {
         }
         transaccion.setEstadoTransaccion(EstadoTransaccion.EXITOSA);
         transaccion.setProcesadaEnTransaccion(OffsetDateTime.now());
+
+        // RF-023: el pago confirmado del catálogo prepara la liberación al propietario.
+        // No se reutiliza para LIBERACION_RESTAURADOR (RF-019).
+        if (transaccion.getTipoTransaccion() == TipoTransaccion.PAGO_VENTA) {
+            liberacionPropietarioService.registrarPendiente(transaccion);
+        }
+
         log.info("Pago Stripe confirmado para transaccionId={}", transaccion.getTransaccionId());
     }
 
