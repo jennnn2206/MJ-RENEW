@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import java.time.OffsetDateTime;
+
 @ExtendWith(MockitoExtension.class)
 class CuentaStripeConectadaServiceTest {
 
@@ -112,6 +114,36 @@ class CuentaStripeConectadaServiceTest {
         verify(stripeConnect).consultarEstado("acct_test_existente");
         verify(cuentas).saveAndFlush(existente);
     }
+
+
+    @Test
+    void noPersisteCuandoStripeDevuelveElMismoEstado() {
+        CuentaStripeConectada existente = cuentaExistente();
+
+        OffsetDateTime ultimaActualizacion =
+                OffsetDateTime.parse("2026-10-30T10:00:00Z");
+
+        existente.setDetallesEnviados(true);
+        existente.setTransferenciasHabilitadas(true);
+        existente.setPayoutsHabilitados(true);
+        existente.setActualizadaEn(ultimaActualizacion);
+
+        when(cuentas.findByUsuario_UsuariosId(propietario.getUsuariosId()))
+                .thenReturn(Optional.of(existente));
+
+        when(stripeConnect.consultarEstado("acct_test_existente"))
+                .thenReturn(new StripeCuentaConectadaEstado(true, true, true));
+
+        CuentaStripeEstadoResponse respuesta =
+                servicio.obtenerEstado(propietario);
+
+        assertEquals("LISTA_PARA_RECIBIR_FONDOS", respuesta.estado());
+        assertEquals(ultimaActualizacion, respuesta.actualizadaEn());
+
+        verify(stripeConnect).consultarEstado("acct_test_existente");
+        verify(cuentas, never()).saveAndFlush(any());
+    }
+
 
     @Test
     void rechazaUnUsuarioQueNoSeaPropietario() {

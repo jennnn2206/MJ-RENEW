@@ -40,7 +40,10 @@ public class CuentaStripeConectadaService {
     /** Devuelve un estado actualizado consultando Stripe, no datos controlados por el frontend. */
     public CuentaStripeEstadoResponse obtenerEstado(Usuario propietario) {
         validarPropietario(propietario);
-        Optional<CuentaStripeConectada> encontrada = cuentas.findByUsuario_UsuariosId(propietario.getUsuariosId());
+
+        Optional<CuentaStripeConectada> encontrada =
+                cuentas.findByUsuario_UsuariosId(propietario.getUsuariosId());
+
         if (encontrada.isEmpty()) {
             return new CuentaStripeEstadoResponse(
                     false, false, false, false, "NO_CONFIGURADA", null
@@ -48,13 +51,32 @@ public class CuentaStripeConectadaService {
         }
 
         CuentaStripeConectada cuenta = encontrada.get();
-        StripeCuentaConectadaEstado estadoStripe = stripeConnect.consultarEstado(cuenta.getStripeAccountId());
-        cuenta.setDetallesEnviados(estadoStripe.detallesEnviados());
-        cuenta.setTransferenciasHabilitadas(estadoStripe.transferenciasHabilitadas());
-        cuenta.setPayoutsHabilitados(estadoStripe.payoutsHabilitados());
-        CuentaStripeConectada actualizada = cuentas.saveAndFlush(cuenta);
 
-        return respuestaEstado(actualizada);
+        StripeCuentaConectadaEstado estadoStripe =
+                stripeConnect.consultarEstado(cuenta.getStripeAccountId());
+
+        // Comprobar si realmente cambió alguna capacidad de Stripe.
+        boolean cambioEstado =
+                cuenta.isDetallesEnviados() != estadoStripe.detallesEnviados()
+                        || cuenta.isTransferenciasHabilitadas()
+                        != estadoStripe.transferenciasHabilitadas()
+                        || cuenta.isPayoutsHabilitados()
+                        != estadoStripe.payoutsHabilitados();
+
+        // Solo persistir cuando existe un cambio real.
+        if (cambioEstado) {
+            cuenta.setDetallesEnviados(estadoStripe.detallesEnviados());
+            cuenta.setTransferenciasHabilitadas(
+                    estadoStripe.transferenciasHabilitadas()
+            );
+            cuenta.setPayoutsHabilitados(
+                    estadoStripe.payoutsHabilitados()
+            );
+
+            cuenta = cuentas.saveAndFlush(cuenta);
+        }
+
+        return respuestaEstado(cuenta);
     }
 
     private CuentaStripeConectada obtenerOCrearCuenta(Usuario propietario) {
