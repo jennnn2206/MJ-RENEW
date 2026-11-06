@@ -40,17 +40,21 @@ public class CatalogoAntiguedad {
     @JoinColumn(name = "comprador_id")
     private Usuario comprador;
 
-    @Column(name = "id_link_stripe_catalogo", length = 50)
+    @Column(name = "id_link_stripe_catalogo", length = 255)
     private String idLinkStripeCatalogo;
 
-    @Column(name = "url_link_pago_catalogo", length = 300)
+    @Column(name = "url_link_pago_catalogo", columnDefinition = "text")
     private String urlLinkPagoCatalogo;
 
-    @Column(name = "id_pago_stripe_catalogo", length = 50)
+    @Column(name = "id_pago_stripe_catalogo", length = 255)
     private String idPagoStripeCatalogo;
 
     @Column(name = "completada_en_catalogo")
     private OffsetDateTime completadaEnCatalogo;
+
+    // MJRENEW-ENTREGA-COMPRADOR: acuse del comprador; NO implica liberar dinero.
+    @Column(name = "recepcion_confirmada_en_catalogo")
+    private OffsetDateTime recepcionConfirmadaEnCatalogo;
 
     public UUID getCatalogoAntiguedadId() {
         return catalogoAntiguedadId;
@@ -146,5 +150,13 @@ public class CatalogoAntiguedad {
 
     public void setCompletadaEnCatalogo(OffsetDateTime completadaEnCatalogo) {
         this.completadaEnCatalogo = completadaEnCatalogo;
+    }
+
+    public OffsetDateTime getRecepcionConfirmadaEnCatalogo() {
+        return recepcionConfirmadaEnCatalogo;
+    }
+
+    public void setRecepcionConfirmadaEnCatalogo(OffsetDateTime recepcionConfirmadaEnCatalogo) {
+        this.recepcionConfirmadaEnCatalogo = recepcionConfirmadaEnCatalogo;
     }
 }

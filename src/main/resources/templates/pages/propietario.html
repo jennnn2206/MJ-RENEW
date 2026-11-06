@@ -31,7 +31,7 @@
     <div class="sidebar-section">
       <div class="sidebar-label">Explorar</div>
       <button class="sidebar-nav-item" onclick="window.location.href='/catalogo'">Ver catálogo</button>
-      <button class="sidebar-nav-item" onclick="Auth.logout();window.location.href='/'">Cerrar sesión</button>
+      <button class="sidebar-nav-item" onclick="Auth.logout().then(() => window.location.href='/login')">Cerrar sesión</button>
     </div>
   </aside>
 
@@ -106,57 +106,93 @@
       <h3 style="font-family:'Playfair Display',serif">Registrar nueva pieza</h3>
       <button class="modal-close" onclick="Modal.close('modal-nueva-pieza')">×</button>
     </div>
-    <div class="form-group">
-      <label class="form-label">Tipo de mueble</label>
-      <select class="form-control" id="np-tipo"></select>
-    </div>
-    <div class="grid-2">
-      <div class="form-group">
-        <label class="form-label">Estilo</label>
-        <select class="form-control" id="np-estilo"></select>
+    <div class="modal-grid">
+      <!-- Columna izquierda: datos de la pieza -->
+      <div>
+        <div class="form-group">
+          <label class="form-label">Tipo de mueble</label>
+          <select class="form-control" id="np-tipo"></select>
+        </div>
+        <div class="grid-2" style="gap:0 16px">
+          <div class="form-group">
+            <label class="form-label">Estilo</label>
+            <select class="form-control" id="np-estilo"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Material principal</label>
+            <select class="form-control" id="np-material"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">¿Qué daños tiene?</label>
+          <textarea class="form-control" id="np-danios" rows="3" placeholder="Ej. Barniz desgastado, una pata floja..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Procedencia / historia de la pieza</label>
+          <textarea class="form-control" id="np-procedencia" rows="3" placeholder="Ej. Heredada de mis abuelos..."></textarea>
+        </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Material principal</label>
-        <select class="form-control" id="np-material"></select>
+
+      <!-- Columna derecha: dimensiones y fotos -->
+      <div>
+        <p class="eyebrow" style="margin-bottom:4px">Dimensiones (opcional)</p>
+        <p style="font-size:1rem;color:var(--ink2);margin-bottom:10px">Ayudan al restaurador a evaluar tu pieza sin tenerla en sus manos.</p>
+        <div class="grid-2" style="gap:0 16px">
+          <div class="form-group"><label class="form-label">Alto (cm)</label><input type="number" id="np-alto" class="form-control" placeholder="Ej. 80"></div>
+          <div class="form-group"><label class="form-label">Ancho (cm)</label><input type="number" id="np-ancho" class="form-control" placeholder="Ej. 50"></div>
+          <div class="form-group"><label class="form-label">Profundidad (cm)</label><input type="number" id="np-profundidad" class="form-control" placeholder="Ej. 40"></div>
+          <div class="form-group"><label class="form-label">Peso (kg)</label><input type="number" id="np-peso" class="form-control" placeholder="Ej. 15"></div>
+        </div>
+
+        <p class="eyebrow" style="margin:6px 0 4px">Fotografías (mínimo 3, máximo 10)</p>
+        <p style="font-size:1rem;color:var(--ink2);margin-bottom:10px">Sube fotos de frente, lado y parte posterior. Formatos JPG, PNG o WEBP, máximo 5 MB cada una.</p>
+        <div class="form-group">
+          <input type="file" id="np-fotos" class="form-control" accept="image/jpeg,image/png,image/webp" multiple>
+          <div class="form-hint" id="np-fotos-hint"></div>
+        </div>
       </div>
     </div>
-    <div class="form-group">
-      <label class="form-label">¿Qué daños tiene?</label>
-      <textarea class="form-control" id="np-danios" rows="2" placeholder="Ej. Barniz desgastado, una pata floja..."></textarea>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Procedencia / historia de la pieza</label>
-      <textarea class="form-control" id="np-procedencia" rows="2" placeholder="Ej. Heredada de mis abuelos..."></textarea>
-    </div>
+
     <div id="np-error" class="form-error"></div>
-    <div style="display:flex;gap:10px">
+    <div class="modal-actions">
       <button class="btn btn-primary" id="np-submit" onclick="registrarNuevaPieza()">Registrar pieza</button>
       <button class="btn btn-ghost" onclick="Modal.close('modal-nueva-pieza')">Cancelar</button>
     </div>
   </div>
 </div>
 
+<!-- MODAL: Detalle de pieza -->
+<div class="modal-overlay" id="modal-detalle-pieza">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 style="font-family:'Playfair Display',serif">Detalle de la pieza</h3>
+      <button class="modal-close" onclick="Modal.close('modal-detalle-pieza')">×</button>
+    </div>
+    <div id="detalle-pieza-content"></div>
+  </div>
+</div>
+
 <!-- MODAL: Buscar restauradores -->
 <div class="modal-overlay" id="modal-restauradores">
-  <div class="modal-box" style="max-width:640px">
+  <div class="modal-box">
     <div class="modal-header">
       <h3 style="font-family:'Playfair Display',serif">Elige un restaurador</h3>
       <button class="modal-close" onclick="Modal.close('modal-restauradores')">×</button>
     </div>
-    <div id="restauradores-list" style="display:flex;flex-direction:column;gap:12px;max-height:60vh;overflow-y:auto"></div>
+    <div id="restauradores-list" class="modal-list"></div>
   </div>
 </div>
 
 <!-- MODAL: Cotización -->
 <div class="modal-overlay" id="modal-cotizacion">
-  <div class="modal-box">
+  <div class="modal-box modal-sm">
     <div class="modal-header">
       <h3 style="font-family:'Playfair Display',serif">Cotización recibida</h3>
       <button class="modal-close" onclick="Modal.close('modal-cotizacion')">×</button>
     </div>
     <div id="cotizacion-content"></div>
     <div id="cotizacion-error" class="form-error"></div>
-    <div style="display:flex;gap:10px;margin-top:16px">
+    <div class="modal-actions">
       <button class="btn btn-primary" id="cot-aceptar-btn" onclick="aceptarCotizacionActual()">Aceptar cotización</button>
       <button class="btn btn-sm" style="background:#FFEBEE;color:#C62828" onclick="rechazarCotizacionActual()">Rechazar</button>
     </div>
@@ -170,13 +206,13 @@
       <h3 style="font-family:'Playfair Display',serif">Avances de la restauración</h3>
       <button class="modal-close" onclick="Modal.close('modal-avances')">×</button>
     </div>
-    <div id="avances-content"></div>
+    <div id="avances-content" class="modal-list"></div>
   </div>
 </div>
 
 <!-- MODAL: Publicar en catálogo -->
 <div class="modal-overlay" id="modal-publicar-catalogo">
-  <div class="modal-box">
+  <div class="modal-box modal-sm">
     <div class="modal-header">
       <h3 style="font-family:'Playfair Display',serif">Publicar en catálogo</h3>
       <button class="modal-close" onclick="Modal.close('modal-publicar-catalogo')">×</button>
@@ -187,7 +223,7 @@
       <input type="number" class="form-control" id="pub-precio" placeholder="Ej. 15000">
     </div>
     <div id="pub-error" class="form-error"></div>
-    <div style="display:flex;gap:10px">
+    <div class="modal-actions">
       <button class="btn btn-primary" onclick="publicarEnCatalogoActual()">Publicar</button>
       <button class="btn btn-ghost" onclick="Modal.close('modal-publicar-catalogo')">Cancelar</button>
     </div>
@@ -206,7 +242,7 @@
 <script th:src="@{/js/modal.js}"></script>
 <script th:src="@{/js/app.js}"></script>
 <script>
-  const user = Auth.requireAuth('/login');
+  const user = Auth.requireAuth('/login', 'propietario');
   if (user) {
     document.getElementById('welcome-title').textContent = `Hola, ${user.name.split(' ')[0]}`;
     document.getElementById('sb-name').textContent = user.name;
@@ -223,6 +259,7 @@
   }
 
   let misPiezas = [];
+  let errorCargaMisPiezas = null;
 
   // Estados en los que ya se puede ver el historial de avances publicados.
   const ESTADOS_CON_AVANCES = [
@@ -240,7 +277,9 @@
     try {
       const page = await Api.misAntiguedades();
       misPiezas = page.content || [];
+      errorCargaMisPiezas = null;
     } catch (err) {
+      errorCargaMisPiezas = err.message;
       Toast.show('No se pudieron cargar tus piezas: ' + err.message, 'error');
       misPiezas = [];
     }
@@ -262,7 +301,7 @@
     const nombre = `${tipoMuebleLabel(p.tipoMueble)}`;
     const img = fotoConFallback(p.urlFotoPortada);
 
-    let acciones = '';
+    let acciones = `<button class="btn btn-ghost btn-sm" onclick="abrirDetallePieza('${p.antiguedadId}')">Ver detalle</button>`;
     if (p.estadoActualAntiguedad === 'PIEZA_CAPTURADA' && !p.nombreRestaurador) {
       acciones += `<button class="btn btn-primary btn-sm" onclick="abrirBuscarRestauradores('${p.antiguedadId}')">Buscar restaurador</button>`;
     }
@@ -278,6 +317,7 @@
 
     return `
       <div style="background:var(--white);border-radius:var(--radius);border:1px solid var(--bg3);overflow:hidden;margin-bottom:20px">
+        ${avisoIntentoFallidoHtml(p.avisoIntentoFallido)}
         <div style="display:grid;grid-template-columns:160px 1fr;gap:0">
           <img src="${img}" alt="${nombre}" style="width:160px;height:140px;object-fit:cover">
           <div style="padding:20px">
@@ -297,10 +337,32 @@
     `;
   }
 
+  // Aviso cuando el transportista no encontró a nadie en casa.
+  function avisoIntentoFallidoHtml(aviso) {
+    if (!aviso) return '';
+    const accion = aviso.tipoTraslado === 'RECOLECCION' ? 'recoger' : 'entregar';
+    const fecha = aviso.registradoEn
+      ? new Date(aviso.registradoEn).toLocaleString('es-MX', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
+      : '';
+    return `
+      <div role="alert" style="background:#FFEBEE;border-bottom:1px solid #EF9A9A;padding:14px 20px;color:var(--ink)">
+        <strong style="color:#C62828">No pudimos ${accion} tu pieza${fecha ? ' (' + fecha + ')' : ''}</strong>
+        <p style="color:var(--ink);margin-top:4px">Nota del transportista: ${Utils.escapeHtml(aviso.motivoFallo)}</p>
+        <p style="color:var(--ink2);margin-top:4px">Te contactaremos para agendar un nuevo horario.
+          ${aviso.urlFotoEvidencia ? `<a href="${Utils.escapeHtml(aviso.urlFotoEvidencia)}" target="_blank" rel="noopener" style="color:var(--brown);font-weight:600;text-decoration:underline">Ver foto de evidencia</a>` : ''}</p>
+      </div>`;
+  }
+
   function renderPieces() {
     const list = document.getElementById('pieces-list');
     const preview = document.getElementById('active-preview');
 
+    if (errorCargaMisPiezas) {
+      list.innerHTML = `<div class="empty-state"><h3>Error al cargar antigüedades</h3><p>${errorCargaMisPiezas}</p>
+        <button class="btn btn-primary" onclick="cargarMisPiezas()">Reintentar</button></div>`;
+      preview.innerHTML = '';
+      return;
+    }
     if (!misPiezas.length) {
       list.innerHTML = `<div class="empty-state"><h3>Aún no tienes piezas</h3><p>Registra tu primera antigüedad para empezar.</p><button class="btn btn-primary" onclick="openNuevaPiezaModal()">Registrar pieza</button></div>`;
       preview.innerHTML = '';
@@ -332,17 +394,41 @@
   function llenarSelect(id, labels, placeholder) {
     const el = document.getElementById(id);
     el.innerHTML = `<option value="">${placeholder}</option>` +
-      Object.entries(labels).map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
+            Object.entries(labels).map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
   }
 
   function openNuevaPiezaModal() {
     llenarSelect('np-tipo', TIPO_MUEBLE_LABELS, 'Selecciona el tipo de mueble');
-    llenarSelect('np-estilo', ESTILO_MUEBLE_LABELS, 'Selecciona el estilo (opcional)');
-    llenarSelect('np-material', MATERIAL_MUEBLE_LABELS, 'Selecciona el material (opcional)');
+    llenarSelect('np-estilo', ESTILO_MUEBLE_LABELS, 'Selecciona (opcional)');
+    llenarSelect('np-material', MATERIAL_MUEBLE_LABELS, 'Selecciona (opcional)');
     document.getElementById('np-danios').value = '';
     document.getElementById('np-procedencia').value = '';
+    ['np-alto', 'np-ancho', 'np-profundidad', 'np-peso'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('np-fotos').value = '';
+    document.getElementById('np-fotos-hint').textContent = '';
     document.getElementById('np-error').classList.remove('visible');
     Modal.open('modal-nueva-pieza');
+  }
+
+  const TIPOS_FOTO_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp'];
+  const TAMANO_MAX_FOTO_BYTES = 5 * 1024 * 1024;
+
+  function validarFotos(archivos, minimo) {
+    if (archivos.length < minimo) {
+      return `Necesitas al menos ${minimo} fotografía${minimo === 1 ? '' : 's'}.`;
+    }
+    if (archivos.length > 10) {
+      return 'No puedes subir más de 10 fotografías.';
+    }
+    for (const archivo of archivos) {
+      if (!TIPOS_FOTO_PERMITIDOS.includes(archivo.type)) {
+        return `"${archivo.name}" no es JPG, PNG ni WEBP.`;
+      }
+      if (archivo.size > TAMANO_MAX_FOTO_BYTES) {
+        return `"${archivo.name}" supera los 5 MB permitidos.`;
+      }
+    }
+    return null;
   }
 
   async function registrarNuevaPieza() {
@@ -353,25 +439,81 @@
       errEl.classList.add('visible');
       return;
     }
+    const fotos = [...document.getElementById('np-fotos').files];
+    const errorFotos = validarFotos(fotos, 3);
+    if (errorFotos) {
+      errEl.textContent = errorFotos;
+      errEl.classList.add('visible');
+      return;
+    }
+
     const btn = document.getElementById('np-submit');
     btn.disabled = true;
     try {
-      await Api.registrarAntiguedad({
+      const nuevaAntiguedad = await Api.registrarAntiguedad({
         tipoMueble,
         estiloMueble: document.getElementById('np-estilo').value || null,
         materialMueble: document.getElementById('np-material').value || null,
         descripcionDaniosAntiguedad: document.getElementById('np-danios').value || null,
         procedenciaMueble: document.getElementById('np-procedencia').value || null,
-      });
+        altoCmAntiguedad: document.getElementById('np-alto').value || null,
+        anchoCmAntiguedad: document.getElementById('np-ancho').value || null,
+        profundidadCmAntiguedad: document.getElementById('np-profundidad').value || null,
+        pesoKgAntiguedad: document.getElementById('np-peso').value || null,
+      }, fotos);
       Modal.close('modal-nueva-pieza');
       Toast.show('Pieza registrada. Ya puedes buscar un restaurador.', 'success');
       await cargarMisPiezas();
+      if (!misPiezas.some(p => p.antiguedadId === nuevaAntiguedad.antiguedadId)) {
+        Toast.show('La antigüedad se registró, pero no apareció en la lista. Actualiza la página y revisa la sesión.', 'error');
+      }
       showSection('mis-piezas');
     } catch (err) {
       errEl.textContent = err.message;
       errEl.classList.add('visible');
     } finally {
       btn.disabled = false;
+    }
+  }
+
+  // ── VER DETALLE DE PIEZA ────────────────────────────────────────
+  async function abrirDetallePieza(antiguedadId) {
+    const cont = document.getElementById('detalle-pieza-content');
+    cont.innerHTML = '<p style="color:var(--ink2)">Cargando...</p>';
+    Modal.open('modal-detalle-pieza');
+    try {
+      const a = await Api.detalleAntiguedad(antiguedadId);
+      const info = estadoAntiguedadInfo(a.estadoActualAntiguedad);
+      const fotos = a.fotosEstadoInicial || [];
+      const dim = a.dimension;
+
+      cont.innerHTML = `
+        <div style="margin-bottom:16px">
+          <h4 style="font-family:'Playfair Display',serif">${tipoMuebleLabel(a.tipoMueble)}</h4>
+          <span class="badge ${info.badge}">${info.label}</span>
+        </div>
+        <div class="modal-grid">
+          <div>
+            ${fotos.length ? `
+              <div class="modal-gallery" style="margin-bottom:16px">
+                ${fotos.map(f => `<img src="${f}" alt="Foto de la pieza">`).join('')}
+              </div>
+            ` : `<p style="color:var(--ink2);margin-bottom:16px">Todavía no registraste fotos de esta pieza.</p>`}
+          </div>
+          <div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+              <div class="meta-item"><div class="meta-label">Estilo</div><div class="meta-value">${estiloMuebleLabel(a.estiloMueble) || '—'}</div></div>
+              <div class="meta-item"><div class="meta-label">Material</div><div class="meta-value">${materialMuebleLabel(a.materialMueble) || '—'}</div></div>
+              <div class="meta-item"><div class="meta-label">Restaurador</div><div class="meta-value">${a.nombreCompletoRestaurador || 'Sin asignar'}</div></div>
+              <div class="meta-item"><div class="meta-label">Dimensiones</div><div class="meta-value">${dim ? `${dim.altoCm ?? '—'} × ${dim.anchoCm ?? '—'} × ${dim.profundidadCm ?? '—'} cm` : 'No registradas'}</div></div>
+            </div>
+            ${a.descripcionDaniosAntiguedad ? `<p><strong>Daños:</strong> ${a.descripcionDaniosAntiguedad}</p>` : ''}
+            ${a.procedenciaMueble ? `<p style="margin-top:8px"><strong>Procedencia:</strong> ${a.procedenciaMueble}</p>` : ''}
+          </div>
+        </div>
+      `;
+    } catch (err) {
+      cont.innerHTML = `<p style="color:var(--error)">${err.message}</p>`;
     }
   }
 
@@ -431,9 +573,14 @@
       const c = await Api.obtenerCotizacion(antiguedadId);
       cont.innerHTML = `
         <div style="background:var(--bg2);border-radius:8px;padding:16px;margin-bottom:16px">
-          <div class="meta-item" style="margin-bottom:8px"><div class="meta-label">Rango de costo</div><div class="meta-value">${Utils.formatCurrency(c.costoMinimoCotizacion)} – ${Utils.formatCurrency(c.costoMaximoCotizacion)}</div></div>
-          <div class="meta-item" style="margin-bottom:8px"><div class="meta-label">Tiempo estimado</div><div class="meta-value">${c.tipoSemanasCotizacion} semana(s)</div></div>
-          <div class="meta-item"><div class="meta-label">Proceso propuesto</div><div class="meta-value" style="font-weight:400">${c.descripcionProcesoCotizacion}</div></div>
+          <div class="modal-grid" style="margin-bottom:8px">
+            <div><div class="meta-label">Rango de costo</div><div class="meta-value">${Utils.formatCurrency(c.costoMinimoCotizacion)} – ${Utils.formatCurrency(c.costoMaximoCotizacion)}</div></div>
+            <div><div class="meta-label">Tiempo estimado</div><div class="meta-value">${c.tipoSemanasCotizacion} semana(s)</div></div>
+          </div>
+          <!-- MJRENEW-STRIPE: transparentar el importe que se envía en el prototipo. -->
+          <p style="color:var(--ink2);font-size:1rem;margin-bottom:12px">En esta demo, Stripe cobrará el costo máximo mostrado arriba. El cálculo de logística y comisiones está pendiente de aprobación.</p>
+          <div class="meta-label" style="margin-bottom:4px">Proceso propuesto</div>
+          <p style="color:var(--ink)">${c.descripcionProcesoCotizacion}</p>
         </div>
       `;
     } catch (err) {
@@ -443,10 +590,13 @@
 
   async function aceptarCotizacionActual() {
     try {
-      await Api.aceptarCotizacion(antiguedadConCotizacion);
-      Modal.close('modal-cotizacion');
-      Toast.show('Cotización aceptada. El pago quedó en garantía (escrow).', 'success');
-      await cargarMisPiezas();
+      // MJRENEW-STRIPE: una URL creada NO equivale a pago confirmado.
+      const resp = await Api.aceptarCotizacion(antiguedadConCotizacion);
+      const destino = new URL(resp.urlPagoStripe);
+      if (destino.protocol !== 'https:' || destino.hostname !== 'checkout.stripe.com') {
+        throw new Error('Stripe devolvió un enlace de pago inválido.');
+      }
+      window.location.assign(destino.href);
     } catch (err) {
       const el = document.getElementById('cotizacion-error');
       el.textContent = err.message;
@@ -480,10 +630,10 @@
         return;
       }
       cont.innerHTML = avances.map(a => `
-        <div class="card-elevated" style="margin-bottom:12px">
+        <div class="card-elevated" style="padding:20px">
           <p style="font-size:1rem;color:var(--ink2);margin-bottom:8px">${new Date(a.publicadoEn).toLocaleDateString('es-MX', { day:'numeric', month:'long', year:'numeric' })}</p>
           <p style="margin-bottom:10px">${a.descripcionAvance}</p>
-          ${(a.fotos||[]).length ? `<div style="display:flex;gap:8px;flex-wrap:wrap">${a.fotos.map(f => `<img src="${f}" style="width:90px;height:70px;object-fit:cover;border-radius:6px">`).join('')}</div>` : ''}
+          ${(a.fotos||[]).length ? `<div class="modal-gallery">${a.fotos.map(f => `<img src="${f}" alt="Foto del avance">`).join('')}</div>` : ''}
         </div>
       `).join('');
     } catch (err) {
@@ -521,6 +671,13 @@
   }
 
   cargarMisPiezas();
+  // MJRENEW-STRIPE: la redirección de Stripe NO confirma el pago.
+  const resultadoPago = new URLSearchParams(window.location.search).get('pago');
+  if (resultadoPago === 'exitoso') {
+    Toast.show('Regresaste de Stripe. Estamos verificando tu pago; el estado se actualizará al confirmarlo.', 'info', 7000);
+  } else if (resultadoPago === 'cancelado') {
+    Toast.show('No se completó el pago. Puedes retomarlo desde la cotización.', 'info', 6000);
+  }
 </script>
 </body>
 </html>

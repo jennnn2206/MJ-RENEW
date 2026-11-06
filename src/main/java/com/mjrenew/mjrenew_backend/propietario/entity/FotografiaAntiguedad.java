@@ -1,8 +1,11 @@
 package com.mjrenew.mjrenew_backend.propietario.entity;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import com.mjrenew.mjrenew_backend.restaurador.entity.AvanceRestauracion;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.enums.TipoFotografia;
+import com.mjrenew.mjrenew_backend.transportista.entity.TrasladoAntiguedad;
 import jakarta.persistence.*;
 
 import java.time.OffsetDateTime;
@@ -25,8 +28,14 @@ public class FotografiaAntiguedad {
     @JoinColumn(name = "avance_id")
     private AvanceRestauracion avance;
 
+    // MJRENEW-ENTREGA-COMPRADOR: acredita exactamente qué traslado tiene cada foto.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "traslado_id")
+    private TrasladoAntiguedad traslado;
+
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_fotografia", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "tipo_fotografia", nullable = false, columnDefinition = "tipo_fotografia")
     private TipoFotografia tipoFotografia;
 
     @Column(name = "url_almacen_fotografia", nullable = false, length = 300)
@@ -57,6 +66,14 @@ public class FotografiaAntiguedad {
 
     public void setAvance(AvanceRestauracion avance) {
         this.avance = avance;
+    }
+
+    public TrasladoAntiguedad getTraslado() {
+        return traslado;
+    }
+
+    public void setTraslado(TrasladoAntiguedad traslado) {
+        this.traslado = traslado;
     }
 
     public TipoFotografia getTipoFotografia() {

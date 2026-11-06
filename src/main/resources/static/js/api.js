@@ -5,9 +5,13 @@
 
 const Api = {
     async _req(url, options = {}) {
+        // MJRENEW-FLUJO: si el body es FormData, el navegador pone su propio
+        // Content-Type (multipart/form-data; boundary=...); fijarlo a mano
+        // rompe el parseo del multipart en el servidor.
+        const headers = options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' };
         const res = await fetch(url, {
             credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             ...options,
         });
 
@@ -19,7 +23,10 @@ const Api = {
                 (body && Array.isArray(body.detalles) && body.detalles.length && body.detalles[0]) ||
                 (body && body.mensaje) ||
                 `Ocurrió un error inesperado (HTTP ${res.status}).`;
-            throw new Error(mensaje);
+            // MJRENEW-FLUJO: conservar el HTTP status para distinguir 404/403/409/500.
+            const error = new Error(mensaje);
+            error.status = res.status;
+            throw error;
         }
         return body;
     },
@@ -31,6 +38,12 @@ const Api = {
             body: data !== undefined ? JSON.stringify(data) : undefined,
         });
     },
+    postForm(url, formData) {
+        return this._req(url, {
+            method: 'POST',
+            body: formData,
+        });
+    },
 
     // ── PROPIETARIO ────────────────────────────────────────────
     misAntiguedades(page = 0, size = 50) {
@@ -39,8 +52,12 @@ const Api = {
     detalleAntiguedad(antiguedadId) {
         return this.get(`/api/propietario/obtenerDetalleAntiguedad/${antiguedadId}`);
     },
-    registrarAntiguedad(data) {
-        return this.post('/api/propietario/registrarAntiguedad', data);
+    // fotos: FileList/Array<File> de las fotos del estado inicial (mínimo 3, máximo 10).
+    registrarAntiguedad(data, fotos) {
+        const form = new FormData();
+        form.append('datos', new Blob([JSON.stringify(data)], { type: 'application/json' }));
+        (fotos || []).forEach(archivo => form.append('fotos', archivo));
+        return this.postForm('/api/propietario/registrarAntiguedad', form);
     },
     buscarRestauradores(page = 0, size = 50) {
         return this.get(`/api/propietario/buscarRestauradores?page=${page}&size=${size}`);
@@ -68,6 +85,13 @@ const Api = {
     solicitudesAsignadas(page = 0, size = 50) {
         return this.get(`/api/restaurador/obtenerSolicitudesAsignadas?page=${page}&size=${size}`);
     },
+    // MJRENEW-FLUJO: rutas del restaurador autenticado, no del propietario.
+    misAntiguedadesRestaurador(page = 0, size = 50) {
+        return this.get(`/api/restaurador/obtenerMisAntiguedades?page=${page}&size=${size}`);
+    },
+    detalleAntiguedadAsignada(antiguedadId) {
+        return this.get(`/api/restaurador/obtenerDetalleAntiguedadAsignada/${antiguedadId}`);
+    },
     confirmarEvaluacion(antiguedadId, dimensiones) {
         return this.post(`/api/restaurador/confirmarEvaluacionAntiguedad/${antiguedadId}`, dimensiones);
     },
@@ -80,8 +104,12 @@ const Api = {
     iniciarRestauracion(antiguedadId) {
         return this.post(`/api/restaurador/iniciarRestauracion/${antiguedadId}`);
     },
-    publicarAvanceRestauracion(antiguedadId, data) {
-        return this.post(`/api/restaurador/publicarAvanceRestauracion/${antiguedadId}`, data);
+    // foto: un único File con la evidencia del avance (obligatorio).
+    publicarAvanceRestauracion(antiguedadId, data, foto) {
+        const form = new FormData();
+        form.append('datos', new Blob([JSON.stringify(data)], { type: 'application/json' }));
+        if (foto) form.append('foto', foto);
+        return this.postForm(`/api/restaurador/publicarAvanceRestauracion/${antiguedadId}`, form);
     },
     marcarRestauracionLista(antiguedadId) {
         return this.post(`/api/restaurador/marcarRestauracionLista/${antiguedadId}`);
@@ -105,6 +133,69 @@ const Api = {
     },
     iniciarCompraPiezaCatalogo(catalogoId) {
         return this.post(`/api/catalogo/iniciarCompraPiezaCatalogo/${catalogoId}`);
+    },
+
+    // ── COMPRADOR: historial real y acuse de recepción ───────
+    obtenerMisCompras(page = 0, size = 10) {
+        return this.get(`/api/comprador/obtenerMisCompras?page=${page}&size=${size}`);
+    },
+    confirmarRecepcionCompra(catalogoId) {
+        return this.post(`/api/comprador/confirmarRecepcionCompra/${encodeURIComponent(catalogoId)}`);
+    },
+
+    // ── TRANSPORTISTA ───────────────────────────────────────────
+    // crearTraslado vive bajo /api/transportista (así está mapeado el
+    // endpoint), pero lo usa el administrador: es quien despacha/asigna
+    // el traslado, @PreAuthorize exige ROLE_ADMINISTRADOR.
+    crearTraslado(body) {
+        return this.post('/api/transportista/crearTraslado', body);
+    },
+    obtenerMisTraslados(page = 0, size = 50) {
+        return this.get(`/api/transportista/obtenerMisTraslados?page=${page}&size=${size}`);
+    },
+    obtenerDetalleTraslado(trasladoId) {
+        return this.get(`/api/transportista/obtenerDetalleTraslado/${trasladoId}`);
+    },
+    // fotos: mínimo 4 archivos de evidencia; el backend los exige y rechaza si faltan.
+    confirmarSalidaRecoleccion(trasladoId, fotos) {
+        const form = new FormData();
+        (fotos || []).forEach(archivo => form.append('fotos', archivo));
+        return this.postForm(`/api/transportista/confirmarSalidaRecoleccion/${trasladoId}`, form);
+    },
+    confirmarLlegadaTaller(trasladoId) {
+        return this.post(`/api/transportista/confirmarLlegadaTaller/${trasladoId}`, {});
+    },
+    confirmarSalidaEntregaPropietario(trasladoId) {
+        return this.post(`/api/transportista/confirmarSalidaEntregaPropietario/${trasladoId}`, {});
+    },
+    confirmarEntregaPropietario(trasladoId, fotos) {
+        const form = new FormData();
+        (fotos || []).forEach(archivo => form.append('fotos', archivo));
+        return this.postForm(`/api/transportista/confirmarEntregaPropietario/${trasladoId}`, form);
+    },
+    // foto: un único File de evidencia (opcional).
+    registrarIntentoFallido(trasladoId, motivoFallo, foto) {
+        const form = new FormData();
+        form.append('datos', new Blob([JSON.stringify({ motivoFallo })], { type: 'application/json' }));
+        if (foto) form.append('foto', foto);
+        return this.postForm(`/api/transportista/registrarIntentoFallido/${trasladoId}`, form);
+    },
+
+    // ── ADMINISTRADOR ───────────────────────────────────────────
+    obtenerRestauradoresPendientes(page = 0, size = 50) {
+        return this.get(`/api/administrador/obtenerRestauradoresPendientesAprobacion?page=${page}&size=${size}`);
+    },
+    aprobarRestaurador(restauradorId) {
+        return this.post(`/api/administrador/aprobarRestaurador/${restauradorId}`);
+    },
+    obtenerDisputasAbiertas(page = 0, size = 50) {
+        return this.get(`/api/administrador/obtenerDisputasAbiertas?page=${page}&size=${size}`);
+    },
+    resolverDisputa(disputaId, resolucionDisputa) {
+        return this.post(`/api/administrador/resolverDisputaAntiguedad/${disputaId}`, { resolucionDisputa });
+    },
+    obtenerUsuariosRegistrados(page = 0, size = 50) {
+        return this.get(`/api/administrador/obtenerUsuariosRegistrados?page=${page}&size=${size}`);
     },
 };
 
@@ -153,6 +244,23 @@ const ESTADO_ANTIGUEDAD_INFO = {
     DEVUELTA_DESDE_TALLER: { label: 'Devuelta desde el taller', badge: 'badge-blue' },
 };
 
+const TIPO_TRASLADO_LABELS = {
+    RECOLECCION: 'Recolección', ENTREGA_PROPIETARIO: 'Entrega al propietario', ENTREGA_COMPRADOR: 'Entrega al comprador',
+};
+const RESULTADO_TRASLADO_INFO = {
+    PENDIENTE: { label: 'Pendiente', badge: 'badge-orange' },
+    EXITOSO: { label: 'Completado', badge: 'badge-green' },
+    NADIE_EN_CASA: { label: 'Nadie en casa', badge: 'badge-red' },
+    CANCELADO: { label: 'Cancelado', badge: 'badge-red' },
+};
+const TIPO_USUARIO_LABELS = {
+    PROPIETARIO: 'Propietario', RESTAURADOR: 'Restaurador', TRANSPORTISTA: 'Transportista',
+    COMPRADOR: 'Comprador', ADMINISTRADOR: 'Administrador',
+};
+function tipoTrasladoLabel(tipo) { return TIPO_TRASLADO_LABELS[tipo] || tipo; }
+function resultadoTrasladoInfo(resultado) { return RESULTADO_TRASLADO_INFO[resultado] || { label: resultado, badge: 'badge-gray' }; }
+function tipoUsuarioLabel(tipo) { return TIPO_USUARIO_LABELS[tipo] || tipo; }
+
 // Placeholder consistente para piezas sin fotografía todavía: hoy no existe
 // endpoint para subir la foto de portada (ESTADO_INICIAL) de una antigüedad,
 // así que urlFotoPortada llega null salvo que se haya cargado por otra vía.
@@ -179,3 +287,9 @@ window.tipoMuebleLabel = tipoMuebleLabel;
 window.estiloMuebleLabel = estiloMuebleLabel;
 window.materialMuebleLabel = materialMuebleLabel;
 window.fotoConFallback = fotoConFallback;
+window.TIPO_TRASLADO_LABELS = TIPO_TRASLADO_LABELS;
+window.RESULTADO_TRASLADO_INFO = RESULTADO_TRASLADO_INFO;
+window.TIPO_USUARIO_LABELS = TIPO_USUARIO_LABELS;
+window.tipoTrasladoLabel = tipoTrasladoLabel;
+window.resultadoTrasladoInfo = resultadoTrasladoInfo;
+window.tipoUsuarioLabel = tipoUsuarioLabel;

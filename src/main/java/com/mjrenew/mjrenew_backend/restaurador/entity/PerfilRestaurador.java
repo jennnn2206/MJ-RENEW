@@ -1,5 +1,7 @@
 package com.mjrenew.mjrenew_backend.restaurador.entity;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import com.mjrenew.mjrenew_backend.nucleo.enums.DisponibilidadRestaurador;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
 import jakarta.persistence.*;
@@ -30,7 +32,8 @@ public class PerfilRestaurador {
     private String descripcionBioRestaurador;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "disponibilidad_restaurador", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "disponibilidad_restaurador", nullable = false, columnDefinition = "disponibilidad_restaurador")
     private DisponibilidadRestaurador disponibilidadRestaurador;
 
     @Column(name = "aprobado_por_admin_restaurador", nullable = false)

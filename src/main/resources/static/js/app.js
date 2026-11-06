@@ -26,13 +26,13 @@ function renderHeader(isRoot = false) {
 
   let userSection;
   if (user) {
-    const dashMap = { propietario:`${base}propietario`, restaurador:`${base}restaurador`, comprador:`${base}comprador` };
+    const dashMap = { propietario:`${base}propietario`, restaurador:`${base}restaurador`, comprador:`${base}comprador`, transportista:`${base}transportista`, administrador:`${base}administrador` };
     userSection = `
       <div class="user-pill" onclick="window.location.href='${dashMap[user.tipo]||base+'comprador'}'">
         <div class="user-avatar">${Utils.initials(user.name)}</div>
         <span class="user-pill-name">${user.name.split(' ')[0]}</span>
       </div>
-      <button class="btn nav-btn-login btn-sm" onclick="Auth.logout(); window.location.href='${home}'">Salir</button>
+      <button class="btn nav-btn-login btn-sm" onclick="Auth.logout().finally(() => window.location.href='${home}')">Salir</button>
     `;
   } else {
     userSection = `

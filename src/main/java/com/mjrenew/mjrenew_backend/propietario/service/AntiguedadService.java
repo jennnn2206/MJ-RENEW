@@ -5,12 +5,26 @@ import com.mjrenew.mjrenew_backend.catalogo.dto.UrlPagoStripeResponse;
 import com.mjrenew.mjrenew_backend.catalogo.entity.CatalogoAntiguedad;
 import com.mjrenew.mjrenew_backend.catalogo.mapper.CatalogoAntiguedadMapper;
 import com.mjrenew.mjrenew_backend.catalogo.repository.CatalogoAntiguedadRepository;
+import com.mjrenew.mjrenew_backend.nucleo.almacenamiento.AlmacenamientoService;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.repository.AntiguedadRepository;
 import com.mjrenew.mjrenew_backend.nucleo.enums.DisponibilidadRestaurador;
 import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoAntiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoCotizacion;
+import com.mjrenew.mjrenew_backend.nucleo.enums.ResultadoTraslado;
 import com.mjrenew.mjrenew_backend.nucleo.enums.TipoFotografia;
+import com.mjrenew.mjrenew_backend.propietario.dto.AvisoIntentoFallidoResponse;
+import com.mjrenew.mjrenew_backend.transportista.entity.TrasladoAntiguedad;
+import com.mjrenew.mjrenew_backend.transportista.repository.TrasladoAntiguedadRepository;
+// MJRENEW-STRIPE: tipos propios del flujo bancario; no cadenas mágicas.
+import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoTransaccion;
+import com.mjrenew.mjrenew_backend.nucleo.enums.FlujoTransaccion;
+import com.mjrenew.mjrenew_backend.nucleo.enums.TipoTransaccion;
+import com.mjrenew.mjrenew_backend.nucleo.exception.SolicitudInvalidaException;
+import com.mjrenew.mjrenew_backend.transaccion.dto.StripeCheckoutSession;
+import com.mjrenew.mjrenew_backend.transaccion.entity.TransaccionBancaria;
+import com.mjrenew.mjrenew_backend.transaccion.repository.TransaccionBancariaRepository;
+import com.mjrenew.mjrenew_backend.transaccion.service.StripeCheckoutService;
 import com.mjrenew.mjrenew_backend.nucleo.exception.RecursoNoEncontradoException;
 import com.mjrenew.mjrenew_backend.nucleo.exception.TransicionEstadoInvalidaException;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
@@ -21,6 +35,7 @@ import com.mjrenew.mjrenew_backend.propietario.dto.DimensionResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.PublicarEnCatalogoRequest;
 import com.mjrenew.mjrenew_backend.propietario.dto.RechazarCotizacionRequest;
 import com.mjrenew.mjrenew_backend.propietario.dto.SeleccionarRestauradorRequest;
+import com.mjrenew.mjrenew_backend.propietario.entity.Dimension;
 import com.mjrenew.mjrenew_backend.propietario.entity.FotografiaAntiguedad;
 import com.mjrenew.mjrenew_backend.propietario.mapper.AntiguedadMapper;
 import com.mjrenew.mjrenew_backend.propietario.repository.DimensionRepository;
@@ -38,8 +53,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -55,6 +72,11 @@ public class AntiguedadService {
     private final AvanceRestauracionRepository avanceRestauracionRepository;
     private final CatalogoAntiguedadRepository catalogoAntiguedadRepository;
     private final CatalogoAntiguedadMapper catalogoAntiguedadMapper;
+    // MJRENEW-STRIPE: integración de pago real de restauración.
+    private final TransaccionBancariaRepository transaccionRepository;
+    private final StripeCheckoutService stripeCheckoutService;
+    private final AlmacenamientoService almacenamientoService;
+    private final TrasladoAntiguedadRepository trasladoRepository;
 
     public AntiguedadService(
             AntiguedadRepository antiguedadRepository,
@@ -66,7 +88,11 @@ public class AntiguedadService {
             RestauradorMapper restauradorMapper,
             AvanceRestauracionRepository avanceRestauracionRepository,
             CatalogoAntiguedadRepository catalogoAntiguedadRepository,
-            CatalogoAntiguedadMapper catalogoAntiguedadMapper
+            CatalogoAntiguedadMapper catalogoAntiguedadMapper,
+            TransaccionBancariaRepository transaccionRepository,
+            StripeCheckoutService stripeCheckoutService,
+            AlmacenamientoService almacenamientoService,
+            TrasladoAntiguedadRepository trasladoRepository
     ) {
         this.antiguedadRepository = antiguedadRepository;
         this.fotografiaRepository = fotografiaRepository;
@@ -78,11 +104,16 @@ public class AntiguedadService {
         this.avanceRestauracionRepository = avanceRestauracionRepository;
         this.catalogoAntiguedadRepository = catalogoAntiguedadRepository;
         this.catalogoAntiguedadMapper = catalogoAntiguedadMapper;
+        this.transaccionRepository = transaccionRepository;
+        this.stripeCheckoutService = stripeCheckoutService;
+        this.almacenamientoService = almacenamientoService;
+        this.trasladoRepository = trasladoRepository;
     }
 
     @Transactional
     public AntiguedadDetalleResponse crear(
             AntiguedadCreateRequest request,
+            List<MultipartFile> fotos,
             Usuario propietario
     ) {
 
@@ -101,6 +132,64 @@ public class AntiguedadService {
 
         Antiguedad guardada =
                 antiguedadRepository.save(antiguedad);
+
+        /*
+         * Dimensiones: las aporta el propietario aquí, al registrar la
+         * pieza (no el restaurador durante la evaluación visual). Solo
+         * se crea el registro si vino al menos un valor.
+         */
+        if (request.altoCmAntiguedad() != null
+                || request.anchoCmAntiguedad() != null
+                || request.profundidadCmAntiguedad() != null
+                || request.pesoKgAntiguedad() != null) {
+
+            Dimension dimension =
+                    antiguedadMapper.toDimension(request);
+
+            dimension.setAntiguedad(guardada);
+
+            dimension.setRegistradasEnDimensiones(
+                    OffsetDateTime.now()
+            );
+
+            dimensionRepository.save(dimension);
+        }
+
+        /*
+         * Fotos del estado inicial: llegan como archivos (multipart), se
+         * suben a almacenamiento (MinIO) y se guarda la URL resultante.
+         * RF-008 exige un mínimo de 3; se limita a 10 para no saturar el
+         * bucket con una sola pieza.
+         */
+        if (fotos == null || fotos.size() < 3) {
+
+            throw new SolicitudInvalidaException(
+                    "Agrega al menos 3 fotografías de la antigüedad"
+            );
+        }
+
+        if (fotos.size() > 10) {
+
+            throw new SolicitudInvalidaException(
+                    "No se pueden subir más de 10 fotografías"
+            );
+        }
+
+        for (MultipartFile archivo : fotos) {
+
+            String url = almacenamientoService.subirArchivo(
+                    archivo,
+                    "fotos-iniciales"
+            );
+
+            FotografiaAntiguedad foto = new FotografiaAntiguedad();
+            foto.setAntiguedad(guardada);
+            foto.setTipoFotografia(TipoFotografia.ESTADO_INICIAL);
+            foto.setUrlAlmacenFotografia(url);
+            foto.setSubidaEnFotografia(OffsetDateTime.now());
+
+            fotografiaRepository.save(foto);
+        }
 
         return construirDetalle(guardada);
     }
@@ -215,47 +304,70 @@ public class AntiguedadService {
     }
 
     /*
-     * ============================================================
-     * ACEPTAR COTIZACIÓN
-     * ============================================================
-     *
-     * PRESUPUESTO_PRESENTADO
-     *      ↓
-     * PAGO_EN_ESCROW
-     *
-     * Mock: se omite la integración real con Stripe. Solo se cambia
-     * el estado de la cotización/antigüedad y se devuelve una URL
-     * de pago simulada.
+     * MJRENEW-STRIPE: aceptar la cotización SOLO prepara Checkout.
+     * PRESUPUESTO_PRESENTADO -> PAGO_EN_ESCROW ocurre únicamente en el webhook.
+     * La cotización establece un rango; para el prototipo se cobra su límite
+     * superior. Falta aprobar un precio cerrado y el desglose de logística,
+     * comisión y costos de Stripe antes de considerarlo listo para producción.
      */
-
     @Transactional
     public UrlPagoStripeResponse aceptarCotizacion(
             UUID antiguedadId,
             UUID propietarioId
     ) {
-
-        Antiguedad antiguedad =
-                buscarDelPropietarioOFallar(antiguedadId, propietarioId);
-
-        validarEstado(
-                antiguedad,
-                EstadoAntiguedad.PRESUPUESTO_PRESENTADO
-        );
-
+        Antiguedad antiguedad = antiguedadRepository.bloquearParaCrearPago(antiguedadId, propietarioId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("La antigüedad no pertenece al propietario"));
+        validarEstado(antiguedad, EstadoAntiguedad.PRESUPUESTO_PRESENTADO);
         Cotizacion cotizacion = buscarCotizacionOFallar(antiguedadId);
 
+        if (cotizacion.getEstadoCotizacion() == EstadoCotizacion.RECHAZADA) {
+            throw new SolicitudInvalidaException("La cotización ya fue rechazada");
+        }
+        if (antiguedad.getRestaurador() == null) {
+            throw new SolicitudInvalidaException("La antigüedad no tiene restaurador asignado");
+        }
+        if (cotizacion.getCostoMaximoMxnCotizacion() == null
+                || cotizacion.getCostoMaximoMxnCotizacion().signum() <= 0) {
+            throw new SolicitudInvalidaException("La cotización no contiene un monto de pago válido");
+        }
+
+        // MJRENEW-STRIPE: permite reabrir la misma sesión si ya hay una pendiente;
+        // si Stripe informa que expiró, deja constancia y genera otra sesión.
+        var anterior = transaccionRepository
+                .findFirstByAntiguedad_AntiguedadesIdAndTipoTransaccionAndEstadoTransaccionOrderByCreadaEnTransaccionDesc(
+                        antiguedadId, TipoTransaccion.PAGO_RESTAURACION, EstadoTransaccion.PENDIENTE);
+        if (anterior.isPresent()) {
+            TransaccionBancaria pendiente = anterior.get();
+            if (pendiente.getReferenciaStripeTransaccion() == null) {
+                throw new SolicitudInvalidaException("Existe un intento de pago todavía en preparación");
+            }
+            StripeCheckoutSession vigente = stripeCheckoutService
+                    .recuperarSesionAbierta(pendiente.getReferenciaStripeTransaccion());
+            if (vigente != null) {
+                return new UrlPagoStripeResponse(vigente.urlPagoStripe());
+            }
+            pendiente.setEstadoTransaccion(EstadoTransaccion.FALLIDA);
+            pendiente.setProcesadaEnTransaccion(OffsetDateTime.now());
+        }
+
+        TransaccionBancaria transaccion = new TransaccionBancaria();
+        transaccion.setTipoTransaccion(TipoTransaccion.PAGO_RESTAURACION);
+        transaccion.setFlujoMjrenew(FlujoTransaccion.INGRESO);
+        transaccion.setOriginator(antiguedad.getPropietario());
+        transaccion.setBeneficiario(antiguedad.getRestaurador());
+        transaccion.setAntiguedad(antiguedad);
+        transaccion.setMontoBrutoMxnTransaccion(cotizacion.getCostoMaximoMxnCotizacion());
+        transaccion.setEstadoTransaccion(EstadoTransaccion.PENDIENTE);
+        transaccion.setCreadaEnTransaccion(OffsetDateTime.now());
+        transaccionRepository.saveAndFlush(transaccion);
+
+        StripeCheckoutSession checkout = stripeCheckoutService.crearSesionPago(transaccion);
+        transaccion.setReferenciaStripeTransaccion(checkout.referenciaStripe());
         cotizacion.setEstadoCotizacion(EstadoCotizacion.ACEPTADA);
         cotizacion.setRespondidaEnCotizacion(OffsetDateTime.now());
 
-        antiguedad.setEstadoActualAntiguedad(
-                EstadoAntiguedad.PAGO_EN_ESCROW
-        );
-
-        // TODO: reemplazar por la integración real con Stripe Payment Links.
-        String idPagoMock = "mock_" + UUID.randomUUID();
-        String urlPago = "https://checkout.stripe.com/mock/" + idPagoMock;
-
-        return new UrlPagoStripeResponse(urlPago);
+        // No modificar estadoActualAntiguedad: Stripe aún no ha confirmado pago.
+        return new UrlPagoStripeResponse(checkout.urlPagoStripe());
     }
 
     /*
@@ -284,6 +396,12 @@ public class AntiguedadService {
         );
 
         Cotizacion cotizacion = buscarCotizacionOFallar(antiguedadId);
+        // MJRENEW-STRIPE: no cancelar una cotización con Checkout iniciado:
+        // Stripe podría confirmar el cargo mientras se procesa el rechazo.
+        if (cotizacion.getEstadoCotizacion() == EstadoCotizacion.ACEPTADA) {
+            throw new SolicitudInvalidaException(
+                    "La cotización ya fue aceptada. Espera la confirmación del pago");
+        }
 
         cotizacion.setEstadoCotizacion(EstadoCotizacion.RECHAZADA);
         cotizacion.setMotivoRechazoCotizacion(
@@ -388,9 +506,50 @@ public class AntiguedadService {
                 )
                 .orElse(null);
 
+        AvisoIntentoFallidoResponse avisoIntentoFallido = trasladoRepository
+                .findFirstByAntiguedad_AntiguedadesIdOrderByAgendadoEnTrasladoDesc(
+                        antiguedad.getAntiguedadesId()
+                )
+                .filter(traslado ->
+                        traslado.getResultadoTraslado() == ResultadoTraslado.NADIE_EN_CASA
+                )
+                .map(this::construirAvisoIntentoFallido)
+                .orElse(null);
+
         return antiguedadMapper.toResumen(
                 antiguedad,
-                urlFotoPortada
+                urlFotoPortada,
+                avisoIntentoFallido
+        );
+    }
+
+    /*
+     * El aviso se muestra mientras el último traslado de la pieza sea el
+     * intento fallido; desaparece en cuanto el administrador agenda otro.
+     */
+    private AvisoIntentoFallidoResponse construirAvisoIntentoFallido(
+            TrasladoAntiguedad traslado
+    ) {
+
+        String urlFotoEvidencia = traslado.getEjecutadoEnTraslado() == null
+                ? null
+                : fotografiaRepository
+                .findFirstByAntiguedad_AntiguedadesIdAndTipoFotografiaAndSubidaEnFotografiaGreaterThanEqualOrderBySubidaEnFotografiaAsc(
+                        traslado.getAntiguedad().getAntiguedadesId(),
+                        TipoFotografia.TRASLADO_INTENTO_FALLIDO,
+                        traslado.getEjecutadoEnTraslado()
+                )
+                .map(foto ->
+                        foto.getUrlAlmacenFotografia()
+                )
+                .orElse(null);
+
+        return new AvisoIntentoFallidoResponse(
+                traslado.getTipoTraslado(),
+                traslado.getNumeroIntentoTraslado(),
+                traslado.getMotivoFalloTraslado(),
+                traslado.getEjecutadoEnTraslado(),
+                urlFotoEvidencia
         );
     }
 
@@ -409,8 +568,21 @@ public class AntiguedadService {
 
         return antiguedadMapper.toDetalle(
                 antiguedad,
-                dimension
+                dimension,
+                obtenerFotosEstadoInicial(antiguedad)
         );
+    }
+
+    private List<String> obtenerFotosEstadoInicial(Antiguedad antiguedad) {
+
+        return fotografiaRepository
+                .findByAntiguedad_AntiguedadesIdAndTipoFotografiaOrderBySubidaEnFotografiaAsc(
+                        antiguedad.getAntiguedadesId(),
+                        TipoFotografia.ESTADO_INICIAL
+                )
+                .stream()
+                .map(FotografiaAntiguedad::getUrlAlmacenFotografia)
+                .toList();
     }
 
     private Antiguedad buscarOFallar(

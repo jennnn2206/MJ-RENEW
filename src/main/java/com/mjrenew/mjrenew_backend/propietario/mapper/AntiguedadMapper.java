@@ -4,10 +4,13 @@ import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadCreateRequest;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadDetalleResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadResumenResponse;
+import com.mjrenew.mjrenew_backend.propietario.dto.AvisoIntentoFallidoResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.DimensionResponse;
 import com.mjrenew.mjrenew_backend.propietario.entity.Dimension;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+
+import java.util.List;
 
 /**
  * Mapeo DTO <-> entidad generado por MapStruct. urlFotoPortada y dimension no
@@ -30,16 +33,39 @@ public interface AntiguedadMapper {
     @Mapping(target = "antiguedadId", source = "antiguedad.antiguedadesId")
     @Mapping(target = "nombreRestaurador", source = "antiguedad.restaurador.nombreCompletoUsuario")
     @Mapping(target = "urlFotoPortada", source = "urlFotoPortada")
-    AntiguedadResumenResponse toResumen(Antiguedad antiguedad, String urlFotoPortada);
+    @Mapping(target = "avisoIntentoFallido", source = "avisoIntentoFallido")
+    AntiguedadResumenResponse toResumen(Antiguedad antiguedad, String urlFotoPortada, AvisoIntentoFallidoResponse avisoIntentoFallido);
 
     @Mapping(target = "antiguedadId", source = "antiguedad.antiguedadesId")
     @Mapping(target = "nombreCompletoRestaurador", source = "antiguedad.restaurador.nombreCompletoUsuario")
     @Mapping(target = "dimension", source = "dimension")
-    AntiguedadDetalleResponse toDetalle(Antiguedad antiguedad, DimensionResponse dimension);
+    @Mapping(target = "fotosEstadoInicial", source = "fotosEstadoInicial")
+    AntiguedadDetalleResponse toDetalle(Antiguedad antiguedad, DimensionResponse dimension, List<String> fotosEstadoInicial);
 
     @Mapping(target = "altoCm", source = "altoCmAntiguedad")
     @Mapping(target = "anchoCm", source = "anchoCmAntiguedad")
     @Mapping(target = "profundidadCm", source = "profundidadCmAntiguedad")
     @Mapping(target = "pesoKg", source = "pesoKgAntiguedad")
     DimensionResponse toDimensionResponse(Dimension dimension);
+
+    /*
+     * ============================================================
+     * REGISTRO -> DIMENSIONES
+     * ============================================================
+     *
+     * A diferencia de la evaluación del restaurador (que ya no mide la
+     * pieza), las dimensiones ahora se capturan aquí, al momento en que
+     * el propietario registra su antigüedad. Los nombres de campo son
+     * idénticos entre AntiguedadCreateRequest y Dimension, así que
+     * MapStruct los mapea automáticamente sin @Mapping explícito.
+     *
+     * - dimensionesId -> generado por JPA
+     * - antiguedad -> antigüedad recién creada (se asigna en el service)
+     * - registradasEnDimensiones -> fecha del servidor
+     */
+
+    @Mapping(target = "dimensionesId", ignore = true)
+    @Mapping(target = "antiguedad", ignore = true)
+    @Mapping(target = "registradasEnDimensiones", ignore = true)
+    Dimension toDimension(AntiguedadCreateRequest request);
 }

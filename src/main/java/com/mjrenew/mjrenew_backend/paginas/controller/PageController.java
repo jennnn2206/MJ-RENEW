@@ -45,4 +45,14 @@ public class PageController {
     public String restaurador() {
         return "pages/restaurador";
     }
+
+    @GetMapping("/transportista")
+    public String transportista() {
+        return "pages/transportista";
+    }
+
+    @GetMapping("/administrador")
+    public String administrador() {
+        return "pages/administrador";
+    }
 }

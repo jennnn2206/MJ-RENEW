@@ -5,6 +5,7 @@ import com.mjrenew.mjrenew_backend.nucleo.enums.EstiloMueble;
 import com.mjrenew.mjrenew_backend.nucleo.enums.MaterialMueble;
 import com.mjrenew.mjrenew_backend.nucleo.enums.TipoMueble;
 
+import java.util.List;
 import java.util.UUID;
 
 public record AntiguedadDetalleResponse(
@@ -16,6 +17,7 @@ public record AntiguedadDetalleResponse(
         String procedenciaMueble,
         EstadoAntiguedad estadoActualAntiguedad,
         String nombreCompletoRestaurador,
-        DimensionResponse dimension
+        DimensionResponse dimension,
+        List<String> fotosEstadoInicial
 ) {
 }

@@ -28,5 +28,6 @@ public interface TrasladoMapper {
     @Mapping(target = "costoEstimado", source = "costoEstimadoMxnTraslado")
     @Mapping(target = "salidaConfirmadaEn", source = "salidaConfirmadaEnTraslado")
     @Mapping(target = "ejecutadoEn", source = "ejecutadoEnTraslado")
+    @Mapping(target = "motivoFallo", source = "motivoFalloTraslado")
     TrasladoAntiguedadDetalleResponse toDetalle(TrasladoAntiguedad traslado);
 }

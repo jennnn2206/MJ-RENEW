@@ -1,5 +1,7 @@
 package com.mjrenew.mjrenew_backend.transaccion.entity;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import com.mjrenew.mjrenew_backend.catalogo.entity.CatalogoAntiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoTransaccion;
@@ -22,11 +24,13 @@ public class TransaccionBancaria {
     private UUID transaccionId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_transaccion", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "tipo_transaccion", nullable = false, columnDefinition = "tipo_transaccion")
     private TipoTransaccion tipoTransaccion;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "flujo_mjrenew", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "flujo_mjrenew", nullable = false, columnDefinition = "flujo_transaccion")
     private FlujoTransaccion flujoMjrenew;
 
     @ManyToOne
@@ -52,8 +56,30 @@ public class TransaccionBancaria {
     @Column(name = "monto_bruto_mxn_transaccion", nullable = false, precision = 10, scale = 2)
     private BigDecimal montoBrutoMxnTransaccion;
 
+    @Column(name = "comision_mjrenew_mxn", precision = 10, scale = 2)
+    private BigDecimal comisionMjrenewMxn;
+
+    @Column(name = "monto_antes_cargo_stripe_mxn", precision = 10, scale = 2)
+    private BigDecimal montoAntesCargoStripeMxn;
+
+    @Column(name = "cargo_stripe_mxn", precision = 10, scale = 2)
+    private BigDecimal cargoStripeMxn;
+
+    @Column(name = "monto_neto_propietario_mxn", precision = 10, scale = 2)
+    private BigDecimal montoNetoPropietarioMxn;
+
+    @Column(name = "stripe_charge_id", length = 100)
+    private String stripeChargeId;
+
+    @Column(name = "stripe_payment_intent_id", length = 100)
+    private String stripePaymentIntentId;
+
+    @Column(name = "stripe_balance_transaction_id", length = 100)
+    private String stripeBalanceTransactionId;
+
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado_transaccion", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "estado_transaccion", nullable = false, columnDefinition = "estado_transaccion")
     private EstadoTransaccion estadoTransaccion;
 
     @Column(name = "referencia_stripe_transaccion", length = 100)
@@ -135,6 +161,62 @@ public class TransaccionBancaria {
 
     public void setMontoBrutoMxnTransaccion(BigDecimal montoBrutoMxnTransaccion) {
         this.montoBrutoMxnTransaccion = montoBrutoMxnTransaccion;
+    }
+
+    public BigDecimal getComisionMjrenewMxn() {
+        return comisionMjrenewMxn;
+    }
+
+    public void setComisionMjrenewMxn(BigDecimal comisionMjrenewMxn) {
+        this.comisionMjrenewMxn = comisionMjrenewMxn;
+    }
+
+    public BigDecimal getMontoAntesCargoStripeMxn() {
+        return montoAntesCargoStripeMxn;
+    }
+
+    public void setMontoAntesCargoStripeMxn(BigDecimal montoAntesCargoStripeMxn) {
+        this.montoAntesCargoStripeMxn = montoAntesCargoStripeMxn;
+    }
+
+    public BigDecimal getCargoStripeMxn() {
+        return cargoStripeMxn;
+    }
+
+    public void setCargoStripeMxn(BigDecimal cargoStripeMxn) {
+        this.cargoStripeMxn = cargoStripeMxn;
+    }
+
+    public BigDecimal getMontoNetoPropietarioMxn() {
+        return montoNetoPropietarioMxn;
+    }
+
+    public void setMontoNetoPropietarioMxn(BigDecimal montoNetoPropietarioMxn) {
+        this.montoNetoPropietarioMxn = montoNetoPropietarioMxn;
+    }
+
+    public String getStripeChargeId() {
+        return stripeChargeId;
+    }
+
+    public void setStripeChargeId(String stripeChargeId) {
+        this.stripeChargeId = stripeChargeId;
+    }
+
+    public String getStripePaymentIntentId() {
+        return stripePaymentIntentId;
+    }
+
+    public void setStripePaymentIntentId(String stripePaymentIntentId) {
+        this.stripePaymentIntentId = stripePaymentIntentId;
+    }
+
+    public String getStripeBalanceTransactionId() {
+        return stripeBalanceTransactionId;
+    }
+
+    public void setStripeBalanceTransactionId(String stripeBalanceTransactionId) {
+        this.stripeBalanceTransactionId = stripeBalanceTransactionId;
     }
 
     public EstadoTransaccion getEstadoTransaccion() {

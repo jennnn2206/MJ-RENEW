@@ -1,5 +1,6 @@
 package com.mjrenew.mjrenew_backend.restaurador.service;
 
+import com.mjrenew.mjrenew_backend.nucleo.almacenamiento.AlmacenamientoService;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.repository.AntiguedadRepository;
 import com.mjrenew.mjrenew_backend.nucleo.enums.DisponibilidadRestaurador;
@@ -11,7 +12,6 @@ import com.mjrenew.mjrenew_backend.nucleo.exception.TransicionEstadoInvalidaExce
 import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadDetalleResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.DimensionResponse;
-import com.mjrenew.mjrenew_backend.propietario.entity.Dimension;
 import com.mjrenew.mjrenew_backend.propietario.entity.FotografiaAntiguedad;
 import com.mjrenew.mjrenew_backend.propietario.mapper.AntiguedadMapper;
 import com.mjrenew.mjrenew_backend.propietario.repository.DimensionRepository;
@@ -33,6 +33,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoCotizacion;
 import com.mjrenew.mjrenew_backend.restaurador.dto.CotizacionResumenResponse;
 import com.mjrenew.mjrenew_backend.restaurador.dto.GenerarCotizacionRequest;
@@ -41,7 +42,6 @@ import com.mjrenew.mjrenew_backend.restaurador.entity.PerfilRestaurador;
 import com.mjrenew.mjrenew_backend.restaurador.repository.CotizacionRepository;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -56,6 +56,7 @@ public class RestauradorService {
     private final AntiguedadMapper antiguedadMapper;
     private final CotizacionRepository cotizacionRepository;
     private final AvanceRestauracionRepository avanceRestauracionRepository;
+    private final AlmacenamientoService almacenamientoService;
 
 
     public RestauradorService(
@@ -66,7 +67,8 @@ public class RestauradorService {
             DimensionRepository dimensionRepository,
             AntiguedadMapper antiguedadMapper,
             CotizacionRepository cotizacionRepository,
-            AvanceRestauracionRepository avanceRestauracionRepository
+            AvanceRestauracionRepository avanceRestauracionRepository,
+            AlmacenamientoService almacenamientoService
     ) {
         this.antiguedadRepository = antiguedadRepository;
         this.fotografiaAntiguedadRepository = fotografiaAntiguedadRepository;
@@ -76,6 +78,7 @@ public class RestauradorService {
         this.antiguedadMapper = antiguedadMapper;
         this.cotizacionRepository = cotizacionRepository;
         this.avanceRestauracionRepository = avanceRestauracionRepository;
+        this.almacenamientoService = almacenamientoService;
     }
 
 
@@ -92,14 +95,27 @@ public class RestauradorService {
     ) {
 
         return antiguedadRepository
-                .findByRestaurador_UsuariosIdAndEstadoActualAntiguedad(
+                .findByRestaurador_UsuariosIdAndEstadoActualAntiguedadIn(
                         restauradorId,
-                        EstadoAntiguedad.EN_EVALUACION,
+                        List.of(EstadoAntiguedad.EN_EVALUACION, EstadoAntiguedad.CALCULANDO_PRESUPUESTO),
                         pageable
                 )
                 .map(this::convertirAResumen);
     }
 
+
+    // MJRENEW-FLUJO: extensiones GET propias del restaurador, jamás reutilizar
+    // /api/propietario/obtenerDetalleAntiguedad (requiere rol y propietario distintos).
+    @Transactional(readOnly = true)
+    public Page<AntiguedadResumenResponse> obtenerMisAntiguedades(UUID restauradorId, Pageable pageable) {
+        return antiguedadRepository.findByRestaurador_UsuariosId(restauradorId, pageable)
+                .map(this::convertirAResumen);
+    }
+
+    @Transactional(readOnly = true)
+    public AntiguedadDetalleResponse obtenerDetalleAsignado(UUID antiguedadId, UUID restauradorId) {
+        return construirDetalle(buscarAsignadaOFallar(antiguedadId, restauradorId));
+    }
 
     /*
      * ============================================================
@@ -181,8 +197,11 @@ public class RestauradorService {
      *      ↓
      * CALCULANDO_PRESUPUESTO
      *
-     * Durante esta operación se registran también las dimensiones
-     * tomadas por el restaurador.
+     * Ya no registra dimensiones aquí: el restaurador no tiene la pieza
+     * en su poder durante la evaluación (es visual, a partir de las fotos
+     * del estado inicial), así que no puede medirla. Las dimensiones las
+     * aporta el propietario al registrar la pieza — si las dio, ya están
+     * guardadas de antes y se reflejan en construirDetalle() más abajo.
      */
 
     @Transactional
@@ -202,38 +221,12 @@ public class RestauradorService {
                 antiguedad,
                 EstadoAntiguedad.EN_EVALUACION
         );
-
-
-        /*
-         * Se evita crear dos registros de dimensiones
-         * para la misma antigüedad.
-         */
-        if (dimensionRepository
-                .findByAntiguedad_AntiguedadesId(antiguedadId)
-                .isPresent()) {
-
-            throw new TransicionEstadoInvalidaException(
-                    "La antigüedad ya tiene dimensiones registradas"
-            );
+        // MJRENEW-FLUJO: sin evidencia fotográfica no procede la evaluación (RF-010).
+        if (fotografiaAntiguedadRepository
+                .findByAntiguedad_AntiguedadesIdAndTipoFotografiaOrderBySubidaEnFotografiaAsc(
+                        antiguedadId, TipoFotografia.ESTADO_INICIAL).size() < 3) {
+            throw new SolicitudInvalidaException("La antigüedad requiere al menos 3 fotografías iniciales para evaluar");
         }
-
-
-        /*
-         * MapStruct crea la entidad Dimension a partir
-         * del DTO recibido.
-         */
-        Dimension dimension =
-                restauradorMapper.toDimension(request);
-
-        dimension.setAntiguedad(antiguedad);
-
-        dimension.setRegistradasEnDimensiones(
-                OffsetDateTime.now()
-        );
-
-        Dimension dimensionGuardada =
-                dimensionRepository.save(dimension);
-
 
         /*
          * Transición del autómata.
@@ -242,17 +235,7 @@ public class RestauradorService {
                 EstadoAntiguedad.CALCULANDO_PRESUPUESTO
         );
 
-
-        DimensionResponse dimensionResponse =
-                antiguedadMapper.toDimensionResponse(
-                        dimensionGuardada
-                );
-
-
-        return antiguedadMapper.toDetalle(
-                antiguedad,
-                dimensionResponse
-        );
+        return construirDetalle(antiguedad);
     }
 
     /*
@@ -409,7 +392,8 @@ public class RestauradorService {
     public AvanceRestauracionResumenResponse publicarAvanceRestauracion(
             UUID antiguedadId,
             UUID restauradorId,
-            PublicarAvanceRequest request
+            PublicarAvanceRequest request,
+            MultipartFile foto
     ) {
 
         Antiguedad antiguedad =
@@ -420,10 +404,10 @@ public class RestauradorService {
 
         validarEstadoEnRestauracion(antiguedad);
 
-        if (request.fotos() == null || request.fotos().isEmpty()) {
+        if (foto == null || foto.isEmpty()) {
 
             throw new SolicitudInvalidaException(
-                    "Se requiere al menos una fotografía del avance"
+                    "Se requiere una fotografía del avance"
             );
         }
 
@@ -436,20 +420,16 @@ public class RestauradorService {
         AvanceRestauracion avanceGuardado =
                 avanceRestauracionRepository.save(avance);
 
-        List<String> fotosGuardadas = new ArrayList<>();
+        String url = almacenamientoService.subirArchivo(foto, "avances");
 
-        for (String url : request.fotos()) {
+        FotografiaAntiguedad fotografia = new FotografiaAntiguedad();
+        fotografia.setAntiguedad(antiguedad);
+        fotografia.setAvance(avanceGuardado);
+        fotografia.setTipoFotografia(TipoFotografia.AVANCE);
+        fotografia.setUrlAlmacenFotografia(url);
+        fotografia.setSubidaEnFotografia(OffsetDateTime.now());
 
-            FotografiaAntiguedad foto = new FotografiaAntiguedad();
-            foto.setAntiguedad(antiguedad);
-            foto.setAvance(avanceGuardado);
-            foto.setTipoFotografia(TipoFotografia.AVANCE);
-            foto.setUrlAlmacenFotografia(url);
-            foto.setSubidaEnFotografia(OffsetDateTime.now());
-
-            fotografiaAntiguedadRepository.save(foto);
-            fotosGuardadas.add(url);
-        }
+        fotografiaAntiguedadRepository.save(fotografia);
 
         antiguedad.setEstadoActualAntiguedad(
                 EstadoAntiguedad.AVANCE_PUBLICADO
@@ -457,7 +437,7 @@ public class RestauradorService {
 
         return restauradorMapper.toAvanceResumen(
                 avanceGuardado,
-                fotosGuardadas
+                List.of(url)
         );
     }
 
@@ -751,10 +731,21 @@ public class RestauradorService {
                         )
                         .orElse(null);
 
+        List<String> fotosEstadoInicial =
+                fotografiaAntiguedadRepository
+                        .findByAntiguedad_AntiguedadesIdAndTipoFotografiaOrderBySubidaEnFotografiaAsc(
+                                antiguedad.getAntiguedadesId(),
+                                TipoFotografia.ESTADO_INICIAL
+                        )
+                        .stream()
+                        .map(FotografiaAntiguedad::getUrlAlmacenFotografia)
+                        .toList();
+
 
         return antiguedadMapper.toDetalle(
                 antiguedad,
-                dimensionResponse
+                dimensionResponse,
+                fotosEstadoInicial
         );
     }
 }
