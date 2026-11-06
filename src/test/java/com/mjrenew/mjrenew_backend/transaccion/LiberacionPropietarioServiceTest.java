@@ -9,6 +9,7 @@ import com.mjrenew.mjrenew_backend.nucleo.exception.SolicitudInvalidaException;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
 import com.mjrenew.mjrenew_backend.transaccion.entity.TransaccionBancaria;
 import com.mjrenew.mjrenew_backend.transaccion.repository.TransaccionBancariaRepository;
+import com.mjrenew.mjrenew_backend.transaccion.service.ComisionVentaCatalogoService;
 import com.mjrenew.mjrenew_backend.transaccion.service.LiberacionPropietarioService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +38,8 @@ class LiberacionPropietarioServiceTest {
 
     @BeforeEach
     void preparar() {
-        servicio = new LiberacionPropietarioService(transacciones);
+        servicio = new LiberacionPropietarioService(
+                transacciones, new ComisionVentaCatalogoService());
 
         comprador = usuario();
         propietario = usuario();
@@ -79,6 +81,8 @@ class LiberacionPropietarioServiceTest {
         assertEquals(propietario, liberacion.getBeneficiario());
         assertEquals(catalogo, liberacion.getCatalogoAntiguedad());
         assertEquals(new BigDecimal("6500.00"), liberacion.getMontoBrutoMxnTransaccion());
+        assertEquals(new BigDecimal("455.00"), liberacion.getComisionMjrenewMxn());
+        assertEquals(new BigDecimal("6045.00"), liberacion.getMontoAntesCargoStripeMxn());
         assertNotNull(liberacion.getCreadaEnTransaccion());
         assertNull(liberacion.getReferenciaStripeTransaccion());
         assertNull(liberacion.getProcesadaEnTransaccion());
@@ -90,11 +94,15 @@ class LiberacionPropietarioServiceTest {
         TransaccionBancaria existente = new TransaccionBancaria();
         existente.setTipoTransaccion(TipoTransaccion.LIBERACION_PROPIETARIO);
         existente.setEstadoTransaccion(EstadoTransaccion.PENDIENTE);
+        existente.setComisionMjrenewMxn(new BigDecimal("455.00"));
+        existente.setMontoAntesCargoStripeMxn(new BigDecimal("6045.00"));
         when(transacciones.findByTransaccionPadre_TransaccionIdAndTipoTransaccion(
                 pagoVenta.getTransaccionId(), TipoTransaccion.LIBERACION_PROPIETARIO))
                 .thenReturn(Optional.of(existente));
 
         assertSame(existente, servicio.registrarPendiente(pagoVenta));
+        assertEquals(new BigDecimal("455.00"), existente.getComisionMjrenewMxn());
+        assertEquals(new BigDecimal("6045.00"), existente.getMontoAntesCargoStripeMxn());
         verify(transacciones, never()).save(any(TransaccionBancaria.class));
     }
 

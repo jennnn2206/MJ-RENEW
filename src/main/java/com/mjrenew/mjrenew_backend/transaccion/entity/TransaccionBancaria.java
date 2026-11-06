@@ -56,6 +56,12 @@ public class TransaccionBancaria {
     @Column(name = "monto_bruto_mxn_transaccion", nullable = false, precision = 10, scale = 2)
     private BigDecimal montoBrutoMxnTransaccion;
 
+    @Column(name = "comision_mjrenew_mxn", precision = 10, scale = 2)
+    private BigDecimal comisionMjrenewMxn;
+
+    @Column(name = "monto_antes_cargo_stripe_mxn", precision = 10, scale = 2)
+    private BigDecimal montoAntesCargoStripeMxn;
+
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "estado_transaccion", nullable = false, columnDefinition = "estado_transaccion")
@@ -140,6 +146,22 @@ public class TransaccionBancaria {
 
     public void setMontoBrutoMxnTransaccion(BigDecimal montoBrutoMxnTransaccion) {
         this.montoBrutoMxnTransaccion = montoBrutoMxnTransaccion;
+    }
+
+    public BigDecimal getComisionMjrenewMxn() {
+        return comisionMjrenewMxn;
+    }
+
+    public void setComisionMjrenewMxn(BigDecimal comisionMjrenewMxn) {
+        this.comisionMjrenewMxn = comisionMjrenewMxn;
+    }
+
+    public BigDecimal getMontoAntesCargoStripeMxn() {
+        return montoAntesCargoStripeMxn;
+    }
+
+    public void setMontoAntesCargoStripeMxn(BigDecimal montoAntesCargoStripeMxn) {
+        this.montoAntesCargoStripeMxn = montoAntesCargoStripeMxn;
     }
 
     public EstadoTransaccion getEstadoTransaccion() {

@@ -7,6 +7,7 @@ import com.mjrenew.mjrenew_backend.nucleo.enums.FlujoTransaccion;
 import com.mjrenew.mjrenew_backend.nucleo.enums.TipoTransaccion;
 import com.mjrenew.mjrenew_backend.nucleo.exception.SolicitudInvalidaException;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
+import com.mjrenew.mjrenew_backend.transaccion.dto.DesgloseComisionVenta;
 import com.mjrenew.mjrenew_backend.transaccion.entity.TransaccionBancaria;
 import com.mjrenew.mjrenew_backend.transaccion.repository.TransaccionBancariaRepository;
 import org.slf4j.Logger;
@@ -27,9 +28,12 @@ public class LiberacionPropietarioService {
     private static final Logger log = LoggerFactory.getLogger(LiberacionPropietarioService.class);
 
     private final TransaccionBancariaRepository transacciones;
+    private final ComisionVentaCatalogoService comisionVentaCatalogoService;
 
-    public LiberacionPropietarioService(TransaccionBancariaRepository transacciones) {
+    public LiberacionPropietarioService(TransaccionBancariaRepository transacciones,
+                                        ComisionVentaCatalogoService comisionVentaCatalogoService) {
         this.transacciones = transacciones;
+        this.comisionVentaCatalogoService = comisionVentaCatalogoService;
     }
 
     /**
@@ -61,6 +65,10 @@ public class LiberacionPropietarioService {
         liberacion.setCatalogoAntiguedad(catalogo);
         liberacion.setTransaccionPadre(pagoVenta);
         liberacion.setMontoBrutoMxnTransaccion(pagoVenta.getMontoBrutoMxnTransaccion());
+        DesgloseComisionVenta desglose = comisionVentaCatalogoService.calcular(
+                pagoVenta.getMontoBrutoMxnTransaccion());
+        liberacion.setComisionMjrenewMxn(desglose.comisionMjrenewMxn());
+        liberacion.setMontoAntesCargoStripeMxn(desglose.montoRestanteAntesCargoStripeMxn());
         liberacion.setEstadoTransaccion(EstadoTransaccion.PENDIENTE);
         liberacion.setCreadaEnTransaccion(OffsetDateTime.now());
 
