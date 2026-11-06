@@ -22,9 +22,9 @@ La migración `database/migraciones/2026-11-06__desglose_comision_catalogo.sql` 
 
 Este primer cambio no ejecutaría transferencias, no cambiaría el estado de la antigüedad ni modificaría las rutas de la API.
 
-## Paso financiero posterior
+## Conciliación posterior del cargo de Stripe
 
-Antes de transferir fondos, obtener el cargo **real** correspondiente al pago desde Stripe y conciliarlo con la transacción interna. El importe neto del propietario será el bruto menos la comisión de MJ Renew y ese cargo real, siempre que el resultado sea válido. Para esa etapa harán falta persistencia del cargo, de la referencia externa de la transferencia y de su resultado, además de reintentos idempotentes. Requiere un diseño y pruebas separados.
+La consulta del cargo real y su registro se implementaron en el cambio siguiente, descrito en [CARGO_REAL_STRIPE.md](CARGO_REAL_STRIPE.md). La transferencia al propietario sigue pendiente de diseño e implementación; el importe neto registrado es una fotografía del cargo al momento de conciliarlo, no una autorización para transferir.
 
 ## Aplicación en PostgreSQL
 
