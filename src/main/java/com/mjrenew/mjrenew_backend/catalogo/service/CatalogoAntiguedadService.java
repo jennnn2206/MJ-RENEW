@@ -147,6 +147,15 @@ public class CatalogoAntiguedadService {
             );
         }
 
+        // Las publicaciones ficticias son visibles en la demo, pero no deben
+        // iniciar un cobro aunque se configure una clave de Stripe real.
+        if (antiguedad.getProcedenciaMueble() != null
+                && antiguedad.getProcedenciaMueble().startsWith("DEMO:")) {
+            throw new SolicitudInvalidaException(
+                    "Esta pieza es de demostración y no está disponible para compra"
+            );
+        }
+
 
         // 3. Evitar que el propietario compre su propia antigüedad
         if (antiguedad

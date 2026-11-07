@@ -16,6 +16,9 @@ import java.util.UUID;
 public interface AntiguedadRepository
         extends JpaRepository<Antiguedad, UUID> {
 
+    Optional<Antiguedad> findByPropietario_UsuariosIdAndProcedenciaMueble(
+            UUID propietarioId, String procedenciaMueble);
+
     Page<Antiguedad> findByPropietario_UsuariosId(
             UUID propietarioId,
             Pageable pageable
