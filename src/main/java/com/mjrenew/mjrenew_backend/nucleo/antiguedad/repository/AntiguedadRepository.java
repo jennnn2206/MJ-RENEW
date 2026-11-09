@@ -54,6 +54,6 @@ public interface AntiguedadRepository
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from Antiguedad a where a.antiguedadesId = :antiguedadId and a.propietario.usuariosId = :propietarioId")
-    Optional<Antiguedad> bloquearParaCrearPago(@Param("antiguedadId") UUID antiguedadId,
+    Optional<Antiguedad> bloquearDelPropietario(@Param("antiguedadId") UUID antiguedadId,
                                                @Param("propietarioId") UUID propietarioId);
 }

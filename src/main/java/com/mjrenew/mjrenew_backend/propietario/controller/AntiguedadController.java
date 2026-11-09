@@ -209,6 +209,38 @@ public class AntiguedadController {
         );
     }
 
+    @PostMapping("/abrirDecisionEnTaller/{antiguedadId}")
+    @PreAuthorize("hasRole('PROPIETARIO')")
+    public ResponseEntity<AntiguedadDetalleResponse> abrirDecisionEnTaller(
+            @PathVariable UUID antiguedadId, @AuthenticationPrincipal UsuarioPrincipal principal) {
+        return ResponseEntity.ok(antiguedadService.abrirDecisionEnTaller(
+                antiguedadId, principal.getUsuario().getUsuariosId()));
+    }
+
+    @PostMapping("/solicitarDevolucionTaller/{antiguedadId}")
+    @PreAuthorize("hasRole('PROPIETARIO')")
+    public ResponseEntity<AntiguedadDetalleResponse> solicitarDevolucionTaller(
+            @PathVariable UUID antiguedadId, @AuthenticationPrincipal UsuarioPrincipal principal) {
+        return ResponseEntity.ok(antiguedadService.solicitarDevolucionTaller(
+                antiguedadId, principal.getUsuario().getUsuariosId()));
+    }
+
+    @PostMapping("/confirmarRecogidaPersonal/{antiguedadId}")
+    @PreAuthorize("hasRole('PROPIETARIO')")
+    public ResponseEntity<AntiguedadDetalleResponse> confirmarRecogidaPersonal(
+            @PathVariable UUID antiguedadId, @AuthenticationPrincipal UsuarioPrincipal principal) {
+        return ResponseEntity.ok(antiguedadService.confirmarRecogidaPersonal(
+                antiguedadId, principal.getUsuario().getUsuariosId()));
+    }
+
+    @PostMapping("/conservarRestauracion/{antiguedadId}")
+    @PreAuthorize("hasRole('PROPIETARIO')")
+    public ResponseEntity<AntiguedadDetalleResponse> conservarRestauracion(
+            @PathVariable UUID antiguedadId, @AuthenticationPrincipal UsuarioPrincipal principal) {
+        return ResponseEntity.ok(antiguedadService.conservarRestauracion(
+                antiguedadId, principal.getUsuario().getUsuariosId()));
+    }
+
     @PostMapping("/publicarEnCatalogo/{antiguedadId}")
     @PreAuthorize("hasRole('PROPIETARIO')")
     public ResponseEntity<CatalogoAntiguedadResumenResponse>

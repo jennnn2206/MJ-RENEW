@@ -71,7 +71,7 @@ class TrasladoIntentoFallidoTest {
     }
 
     @Test
-    void entregaFallidaRegresaPiezaARestauracionListaYGuardaNota() {
+    void entregaFallidaRegresaPiezaASolicitudDevolucionYGuardaNota() {
         TrasladoAntiguedad t = traslado(TipoTraslado.ENTREGA_PROPIETARIO, EstadoAntiguedad.EN_DEVOLUCION_PROPIETARIO);
         when(trasladoRepo.save(t)).thenReturn(t);
 
@@ -80,7 +80,7 @@ class TrasladoIntentoFallidoTest {
         assertEquals(ResultadoTraslado.NADIE_EN_CASA, t.getResultadoTraslado());
         assertEquals("No había nadie en casa", t.getMotivoFalloTraslado());
         assertNotNull(t.getEjecutadoEnTraslado());
-        assertEquals(EstadoAntiguedad.RESTAURACION_LISTA, t.getAntiguedad().getEstadoActualAntiguedad());
+        assertEquals(EstadoAntiguedad.SOLICITUD_DEVOLUCION_TALLER, t.getAntiguedad().getEstadoActualAntiguedad());
         verifyNoInteractions(almacenamiento);
     }
 
@@ -141,7 +141,7 @@ class TrasladoIntentoFallidoTest {
     void reagendarTrasIntentoFallidoNumeraElSiguienteIntento() {
         Antiguedad antiguedad = new Antiguedad();
         antiguedad.setAntiguedadesId(UUID.randomUUID());
-        antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.RESTAURACION_LISTA);
+        antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.SOLICITUD_DEVOLUCION_TALLER);
         Usuario transportista = new Usuario();
         transportista.setUsuariosId(transportistaId);
         transportista.setTipoUsuario(TipoUsuario.TRANSPORTISTA);
@@ -165,5 +165,25 @@ class TrasladoIntentoFallidoTest {
         verify(trasladoRepo).save(captor.capture());
         assertEquals((short) 2, captor.getValue().getNumeroIntentoTraslado());
         assertEquals(EstadoAntiguedad.HORARIO_ENTREGA_AGENDADO, antiguedad.getEstadoActualAntiguedad());
+    }
+
+    @Test
+    void noAgendaEntregaAntesDeQuePropietarioSoliciteDevolucion() {
+        Antiguedad antiguedad = new Antiguedad();
+        antiguedad.setAntiguedadesId(UUID.randomUUID());
+        antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.RESTAURACION_LISTA);
+        Usuario transportista = new Usuario();
+        transportista.setUsuariosId(transportistaId);
+        transportista.setTipoUsuario(TipoUsuario.TRANSPORTISTA);
+        transportista.setActivoUsuario(true);
+        CrearTrasladoRequest request = new CrearTrasladoRequest(antiguedad.getAntiguedadesId(), transportistaId,
+                TipoTraslado.ENTREGA_PROPIETARIO, "Taller", "Casa", LocalDate.now(),
+                LocalTime.of(10, 0), LocalTime.of(12, 0), null);
+        when(antiguedadRepo.findById(antiguedad.getAntiguedadesId())).thenReturn(Optional.of(antiguedad));
+        when(usuarioRepo.findById(transportistaId)).thenReturn(Optional.of(transportista));
+
+        assertThrows(TransicionEstadoInvalidaException.class, () -> servicio.crearTraslado(request));
+        verify(trasladoRepo, never()).save(any());
+        assertEquals(EstadoAntiguedad.RESTAURACION_LISTA, antiguedad.getEstadoActualAntiguedad());
     }
 }
