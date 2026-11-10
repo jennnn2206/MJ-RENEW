@@ -61,6 +61,7 @@ const ComprasComprador = (() => {
         imagen.loading = 'lazy';
         imagen.src = fotoConFallback(compra.urlFotoPortada);
         imagen.addEventListener('error', () => { imagen.onerror = null; imagen.src = PIEZA_IMG_PLACEHOLDER; }, { once: true });
+        Lightbox.attach(imagen);
         tarjeta.appendChild(imagen);
 
         const contenido = elemento('div', 'compra-tarjeta-cuerpo');
