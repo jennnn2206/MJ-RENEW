@@ -24,6 +24,7 @@ import java.time.OffsetDateTime;
 @Profile("demo")
 public class DatosDemoInitializer implements ApplicationRunner {
     private static final String DEMO_PASSWORD = "Test1234";
+    private static final String ADMIN_PASSWORD = "Admin1234";
     private final UsuarioRepository usuarioRepository;
     private final PerfilRestauradorRepository perfilRepository;
     private final PasswordEncoder encoder;
@@ -43,7 +44,7 @@ public class DatosDemoInitializer implements ApplicationRunner {
         Usuario restaurador = crearOActualizarDemo("restaurador1@test.mx", "Restaurador Demo", TipoUsuario.RESTAURADOR);
         crearOActualizarDemo("comprador1@test.mx", "Comprador Demo", TipoUsuario.COMPRADOR);
         crearOActualizarDemo("transportista1@test.mx", "Transportista Demo", TipoUsuario.TRANSPORTISTA);
-        crearOActualizarDemo("admin@mjrenew.mx", "Administrador Demo", TipoUsuario.ADMINISTRADOR);
+        crearOActualizarDemo("admin@mjrenew.mx", "Administrador Demo", TipoUsuario.ADMINISTRADOR, ADMIN_PASSWORD);
 
         PerfilRestaurador perfil = perfilRepository.findByRestaurador_UsuariosId(restaurador.getUsuariosId())
                 .orElseGet(PerfilRestaurador::new);
@@ -62,6 +63,10 @@ public class DatosDemoInitializer implements ApplicationRunner {
     }
 
     private Usuario crearOActualizarDemo(String correo, String nombre, TipoUsuario rol) {
+        return crearOActualizarDemo(correo, nombre, rol, DEMO_PASSWORD);
+    }
+
+    private Usuario crearOActualizarDemo(String correo, String nombre, TipoUsuario rol, String contrasena) {
         Usuario usuario = usuarioRepository.findByCorreoElectronicoUsuario(correo).orElseGet(Usuario::new);
         if (usuario.getUsuariosId() != null && usuario.getTipoUsuario() != rol) {
             throw new IllegalStateException("Cuenta demo '" + correo + "' registrada con un rol diferente: "
@@ -76,7 +81,7 @@ public class DatosDemoInitializer implements ApplicationRunner {
         // En el perfil demo identificamos claramente los tres usuarios, sin tocar terceros.
         usuario.setNombreCompletoUsuario(nombre);
         // Solo estas direcciones explícitas se restablecen, y SOLO con perfil demo activo.
-        usuario.setContrasenaHashUsuario(encoder.encode(DEMO_PASSWORD));
+        usuario.setContrasenaHashUsuario(encoder.encode(contrasena));
         usuario.setCorreoVerificadoUsuario(true);
         usuario.setActivoUsuario(true);
         return usuarioRepository.save(usuario);
