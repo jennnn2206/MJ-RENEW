@@ -100,6 +100,7 @@
 <script th:src="@{/js/utilidades.js}"></script>
 <script th:src="@{/js/notificaciones.js}"></script>
 <script th:src="@{/js/modal.js}"></script>
+<script th:src="@{/js/lightbox.js}"></script>
 <script th:src="@{/js/app.js}"></script>
 <script>
   const user = Auth.requireAuth('/login', 'restaurador');
@@ -146,7 +147,7 @@
       <div class="request-card" style="margin-bottom:16px">
         <div class="request-card-header">
           <div style="display:flex;gap:14px;align-items:flex-start;flex:1">
-            <img src="${fotoConFallback(r.urlFotoPortada)}" alt="${tipoMuebleLabel(r.tipoMueble)}" style="width:80px;height:60px;object-fit:cover;border-radius:6px;flex-shrink:0">
+            <img data-lightbox src="${fotoConFallback(r.urlFotoPortada)}" alt="${tipoMuebleLabel(r.tipoMueble)}" style="width:80px;height:60px;object-fit:cover;border-radius:6px;flex-shrink:0">
             <div>
               <span class="eyebrow">Nueva solicitud</span>
               <h4 style="font-family:'Playfair Display',serif">${tipoMuebleLabel(r.tipoMueble)}</h4>
@@ -208,7 +209,7 @@
           <p><strong>Procedencia:</strong> ${a.procedenciaMueble || 'Sin información'}</p>
         </div>
         <div>
-          ${fotos.length ? `<div class="modal-gallery">${fotos.map(url => `<img src="${url}" alt="Evidencia inicial">`).join('')}</div>`
+          ${fotos.length ? `<div class="modal-gallery">${fotos.map(url => `<img data-lightbox src="${url}" alt="Evidencia inicial">`).join('')}</div>`
                 : '<p style="color:var(--error)">Sin suficientes fotografías para evaluar (mínimo 3). Contacta al propietario antes de confirmar.</p>'}
         </div>
       </div>`;

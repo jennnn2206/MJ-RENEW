@@ -240,6 +240,7 @@
 <script th:src="@{/js/utilidades.js}"></script>
 <script th:src="@{/js/notificaciones.js}"></script>
 <script th:src="@{/js/modal.js}"></script>
+<script th:src="@{/js/lightbox.js}"></script>
 <script th:src="@{/js/app.js}"></script>
 <script>
   const user = Auth.requireAuth('/login', 'propietario');
@@ -319,7 +320,7 @@
       <div style="background:var(--white);border-radius:var(--radius);border:1px solid var(--bg3);overflow:hidden;margin-bottom:20px">
         ${avisoIntentoFallidoHtml(p.avisoIntentoFallido)}
         <div style="display:grid;grid-template-columns:160px 1fr;gap:0">
-          <img src="${img}" alt="${nombre}" style="width:160px;height:140px;object-fit:cover">
+          <img data-lightbox src="${img}" alt="${nombre}" style="width:160px;height:140px;object-fit:cover">
           <div style="padding:20px">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
               <div>
@@ -375,7 +376,7 @@
       const info = estadoAntiguedadInfo(p.estadoActualAntiguedad);
       return `
       <div class="restoration-card">
-        <img src="${fotoConFallback(p.urlFotoPortada)}" class="restoration-card-img" alt="${tipoMuebleLabel(p.tipoMueble)}">
+        <img data-lightbox src="${fotoConFallback(p.urlFotoPortada)}" class="restoration-card-img" alt="${tipoMuebleLabel(p.tipoMueble)}">
         <div class="restoration-card-body">
           <div class="restoration-card-tag">${info.label}</div>
           <h4>${tipoMuebleLabel(p.tipoMueble)}</h4>
@@ -496,7 +497,7 @@
           <div>
             ${fotos.length ? `
               <div class="modal-gallery" style="margin-bottom:16px">
-                ${fotos.map(f => `<img src="${f}" alt="Foto de la pieza">`).join('')}
+                ${fotos.map(f => `<img data-lightbox src="${f}" alt="Foto de la pieza">`).join('')}
               </div>
             ` : `<p style="color:var(--ink2);margin-bottom:16px">Todavía no registraste fotos de esta pieza.</p>`}
           </div>
@@ -633,7 +634,7 @@
         <div class="card-elevated" style="padding:20px">
           <p style="font-size:1rem;color:var(--ink2);margin-bottom:8px">${new Date(a.publicadoEn).toLocaleDateString('es-MX', { day:'numeric', month:'long', year:'numeric' })}</p>
           <p style="margin-bottom:10px">${a.descripcionAvance}</p>
-          ${(a.fotos||[]).length ? `<div class="modal-gallery">${a.fotos.map(f => `<img src="${f}" alt="Foto del avance">`).join('')}</div>` : ''}
+          ${(a.fotos||[]).length ? `<div class="modal-gallery">${a.fotos.map(f => `<img data-lightbox src="${f}" alt="Foto del avance">`).join('')}</div>` : ''}
         </div>
       `).join('');
     } catch (err) {
