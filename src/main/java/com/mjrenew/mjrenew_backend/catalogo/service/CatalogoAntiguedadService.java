@@ -315,14 +315,18 @@ public class CatalogoAntiguedadService {
     private CatalogoAntiguedad buscarOFallar(
             UUID catalogoId
     ) {
-
-        return catalogoRepository
+        CatalogoAntiguedad catalogo = catalogoRepository
                 .findById(catalogoId)
                 .orElseThrow(() ->
                         new RecursoNoEncontradoException(
-                                "No existe una pieza en catálogo con id "
+                                "No existe una antigüedad en catálogo con id "
                                         + catalogoId
                         )
                 );
+        if (!Boolean.TRUE.equals(catalogo.getActivaCatalogo())) {
+            throw new RecursoNoEncontradoException(
+                    "No existe una antigüedad disponible en catálogo con id " + catalogoId);
+        }
+        return catalogo;
     }
 }
