@@ -1,6 +1,7 @@
 package com.mjrenew.mjrenew_backend.nucleo.exception;
 
 import com.mjrenew.mjrenew_backend.transaccion.service.StripeTransaccionAunNoVisibleException;
+import com.mjrenew.mjrenew_backend.catalogo.service.CheckoutPendienteException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -101,6 +102,12 @@ public class GlobalExceptionHandler {
         log.warn("Solicitud inválida: {}", ex.getMessage());
 
         return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(CheckoutPendienteException.class)
+    public ResponseEntity<ErrorResponse> manejarCheckoutPendiente(CheckoutPendienteException ex) {
+        log.warn("Checkout sin respuesta definitiva: {}", ex.getMessage());
+        return construirRespuesta(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
     }
 }
 

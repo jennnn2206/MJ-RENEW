@@ -243,7 +243,7 @@ public class StripeCheckoutService {
              * de Stripe al cliente.
              */
             throw new SolicitudInvalidaException(
-                    "No fue posible generar la sesión de pago con Stripe"
+                    "No fue posible generar la sesión de pago con Stripe", ex
             );
         }
     }

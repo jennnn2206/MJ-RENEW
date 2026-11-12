@@ -7,52 +7,53 @@ import com.mjrenew.mjrenew_backend.catalogo.entity.CatalogoAntiguedad;
 import com.mjrenew.mjrenew_backend.catalogo.mapper.CatalogoAntiguedadMapper;
 import com.mjrenew.mjrenew_backend.catalogo.repository.CatalogoAntiguedadRepository;
 import com.mjrenew.mjrenew_backend.nucleo.antiguedad.entity.Antiguedad;
-import com.mjrenew.mjrenew_backend.nucleo.enums.*;
+import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoAntiguedad;
+import com.mjrenew.mjrenew_backend.nucleo.enums.TipoFotografia;
 import com.mjrenew.mjrenew_backend.nucleo.exception.RecursoNoEncontradoException;
 import com.mjrenew.mjrenew_backend.nucleo.exception.SolicitudInvalidaException;
-import com.mjrenew.mjrenew_backend.nucleo.exception.TransicionEstadoInvalidaException;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
 import com.mjrenew.mjrenew_backend.propietario.dto.DimensionResponse;
 import com.mjrenew.mjrenew_backend.propietario.repository.DimensionRepository;
 import com.mjrenew.mjrenew_backend.propietario.repository.FotografiaAntiguedadRepository;
 import com.mjrenew.mjrenew_backend.transaccion.dto.StripeCheckoutSession;
-import com.mjrenew.mjrenew_backend.transaccion.entity.TransaccionBancaria;
-import com.mjrenew.mjrenew_backend.transaccion.repository.TransaccionBancariaRepository;
 import com.mjrenew.mjrenew_backend.transaccion.service.StripeCheckoutService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Service
 public class CatalogoAntiguedadService {
+    private static final Logger log = LoggerFactory.getLogger(CatalogoAntiguedadService.class);
 
     private final CatalogoAntiguedadRepository catalogoRepository;
     private final FotografiaAntiguedadRepository fotografiaRepository;
     private final DimensionRepository dimensionRepository;
-    private final TransaccionBancariaRepository transaccionRepository;
     private final CatalogoAntiguedadMapper catalogoMapper;
     private final StripeCheckoutService stripeCheckoutService;
+    private final CatalogoCompraReservaService compraReservaService;
 
 
     public CatalogoAntiguedadService(
             CatalogoAntiguedadRepository catalogoRepository,
             FotografiaAntiguedadRepository fotografiaRepository,
             DimensionRepository dimensionRepository,
-            TransaccionBancariaRepository transaccionRepository,
             CatalogoAntiguedadMapper catalogoMapper,
-            StripeCheckoutService stripeCheckoutService
+            StripeCheckoutService stripeCheckoutService,
+            CatalogoCompraReservaService compraReservaService
     ) {
 
         this.catalogoRepository = catalogoRepository;
         this.fotografiaRepository = fotografiaRepository;
         this.dimensionRepository = dimensionRepository;
-        this.transaccionRepository = transaccionRepository;
         this.catalogoMapper = catalogoMapper;
         this.stripeCheckoutService = stripeCheckoutService;
+        this.compraReservaService = compraReservaService;
     }
 
 
@@ -74,11 +75,11 @@ public class CatalogoAntiguedadService {
 
 
     public CatalogoAntiguedadDetalleResponse obtenerDetalle(
-            UUID catalogoId
+            UUID catalogoId, UUID compradorActualId
     ) {
 
         CatalogoAntiguedad catalogo =
-                buscarOFallar(catalogoId);
+                buscarOFallar(catalogoId, compradorActualId);
 
         String urlFotoPortada =
                 obtenerUrlFotoPortada(
@@ -110,189 +111,41 @@ public class CatalogoAntiguedadService {
     }
 
 
-    @Transactional
-    public UrlPagoStripeResponse iniciarCompra(
-            UUID catalogoId,
-            Usuario comprador
-    ) {
-
-        // MJRENEW-STRIPE: bloquea la fila durante la reserva; evita Checkout
-        // duplicado si dos compradores presionan Comprar al mismo tiempo.
-        CatalogoAntiguedad catalogo = catalogoRepository.buscarParaCompra(catalogoId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "No existe una pieza en catálogo con id " + catalogoId));
-
-        Antiguedad antiguedad =
-                catalogo.getAntiguedad();
-
-
-        // 1. Validar que la publicación siga disponible
-        if (!Boolean.TRUE.equals(
-                catalogo.getActivaCatalogo()
-        )) {
-
-            throw new SolicitudInvalidaException(
-                    "Esta pieza ya no está disponible en el catálogo"
-            );
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public UrlPagoStripeResponse iniciarCompra(UUID catalogoId, Usuario comprador) {
+        // La reserva y el registro del pago se confirman antes de llamar a Stripe.
+        var reserva = compraReservaService.reservar(catalogoId, comprador);
+        StripeCheckoutSession checkout;
+        try {
+            if (reserva.referenciaStripe() != null) {
+                checkout = stripeCheckoutService.recuperarSesionAbierta(reserva.referenciaStripe());
+                if (checkout == null) {
+                    throw new SolicitudInvalidaException("La sesión de pago venció; espera la liberación de la reserva");
+                }
+                return new UrlPagoStripeResponse(checkout.urlPagoStripe());
+            } else {
+                // Reintentos del mismo comprador usan el mismo ID e idempotency key.
+                checkout = stripeCheckoutService.crearSesionPago(reserva.pago());
+            }
+        } catch (SolicitudInvalidaException ex) {
+            // Un fallo de red no demuestra que Stripe haya omitido crear la sesión.
+            log.warn("Checkout sin respuesta definitiva para catalogoId={} transaccionId={}",
+                    catalogoId, reserva.pago().getTransaccionId(), ex);
+            throw new CheckoutPendienteException(
+                    "No se pudo confirmar el enlace de pago; la reserva permanece protegida. Intenta de nuevo", ex);
         }
 
-
-        // 2. Validar el estado actual de la antigüedad
-        if (antiguedad.getEstadoActualAntiguedad()
-                != EstadoAntiguedad.EN_CATALOGO) {
-
-            throw new TransicionEstadoInvalidaException(
-                    "La antigüedad debe estar en EN_CATALOGO para iniciar una compra, y está en "
-                            + antiguedad.getEstadoActualAntiguedad()
-            );
+        // Segunda transacción corta: el webhook puede reintentar hasta que esta referencia sea visible.
+        try {
+            compraReservaService.vincularCheckout(
+                    reserva.pago().getTransaccionId(), catalogoId, comprador.getUsuariosId(), checkout);
+        } catch (RuntimeException ex) {
+            log.error("Checkout creado sin vínculo local para catalogoId={} transaccionId={} stripeSessionId={}",
+                    catalogoId, reserva.pago().getTransaccionId(), checkout.referenciaStripe(), ex);
+            throw new CheckoutPendienteException(
+                    "El enlace de pago está pendiente de conciliación. Intenta de nuevo", ex);
         }
-
-
-        // 3. Evitar que el propietario compre su propia antigüedad
-        if (antiguedad
-                .getPropietario()
-                .getUsuariosId()
-                .equals(
-                        comprador.getUsuariosId()
-                )) {
-
-            throw new SolicitudInvalidaException(
-                    "No puedes comprar tu propia pieza"
-            );
-        }
-
-
-        /*
-         * 4. Crear primero la transacción interna
-         * de MJ Renew.
-         */
-        TransaccionBancaria transaccion =
-                new TransaccionBancaria();
-
-        transaccion.setTipoTransaccion(
-                TipoTransaccion.PAGO_VENTA
-        );
-
-        transaccion.setFlujoMjrenew(
-                FlujoTransaccion.INGRESO
-        );
-
-        transaccion.setOriginator(
-                comprador
-        );
-
-        transaccion.setBeneficiario(
-                antiguedad.getPropietario()
-        );
-
-        transaccion.setAntiguedad(
-                antiguedad
-        );
-
-        transaccion.setCatalogoAntiguedad(
-                catalogo
-        );
-
-        transaccion.setMontoBrutoMxnTransaccion(
-                catalogo.getPrecioMxnCatalogo()
-        );
-
-        transaccion.setEstadoTransaccion(
-                EstadoTransaccion.PENDIENTE
-        );
-
-        transaccion.setCreadaEnTransaccion(
-                OffsetDateTime.now()
-        );
-
-
-        /*
-         * Se guarda antes de crear la sesión de Stripe.
-         */
-        transaccionRepository.save(
-                transaccion
-        );
-
-
-        /*
-         * 5. Solicitar una sesión de pago.
-         *
-         * StripeCheckoutService crea el Checkout real.
-         * La confirmación se recibe únicamente por webhook.
-         */
-        StripeCheckoutSession checkout =
-                stripeCheckoutService
-                        .crearSesionPago(
-                                transaccion
-                        );
-
-
-        /*
-         * 6. Relacionar nuestra transacción
-         * con la referencia generada por Stripe.
-         */
-        transaccion.setReferenciaStripeTransaccion(
-                checkout.referenciaStripe()
-        );
-
-        transaccionRepository.save(
-                transaccion
-        );
-
-
-        /*
-         * 7. Asociar el comprador y la información
-         * temporal del Checkout al catálogo.
-         */
-        catalogo.setComprador(
-                comprador
-        );
-
-        catalogo.setIdLinkStripeCatalogo(
-                checkout.referenciaStripe()
-        );
-
-        catalogo.setUrlLinkPagoCatalogo(
-                checkout.urlPagoStripe()
-        );
-
-
-        /*
-         * Mientras existe un proceso de pago,
-         * la pieza deja de aparecer disponible
-         * para otros compradores.
-         */
-        catalogo.setActivaCatalogo(
-                false
-        );
-
-        catalogoRepository.save(
-                catalogo
-        );
-
-
-        /*
-         * 8. Transición oficial:
-         *
-         * EN_CATALOGO
-         *      ↓
-         * LINK_PAGO_ENVIADO
-         *
-         * NO cambiamos aquí a VENTA_COMPLETADA.
-         * Esa transición corresponde al webhook.
-         */
-        antiguedad.setEstadoActualAntiguedad(
-                EstadoAntiguedad.LINK_PAGO_ENVIADO
-        );
-
-
-        /*
-         * 9. El frontend solamente recibe
-         * la URL donde debe realizar el pago.
-         */
-        return new UrlPagoStripeResponse(
-                checkout.urlPagoStripe()
-        );
+        return new UrlPagoStripeResponse(checkout.urlPagoStripe());
     }
 
 
@@ -313,7 +166,7 @@ public class CatalogoAntiguedadService {
 
 
     private CatalogoAntiguedad buscarOFallar(
-            UUID catalogoId
+            UUID catalogoId, UUID compradorActualId
     ) {
         CatalogoAntiguedad catalogo = catalogoRepository
                 .findById(catalogoId)
@@ -323,7 +176,12 @@ public class CatalogoAntiguedadService {
                                         + catalogoId
                         )
                 );
-        if (!Boolean.TRUE.equals(catalogo.getActivaCatalogo())) {
+        boolean reservaPropia = compradorActualId != null
+                && catalogo.getComprador() != null
+                && compradorActualId.equals(catalogo.getComprador().getUsuariosId())
+                && catalogo.getAntiguedad().getEstadoActualAntiguedad() == EstadoAntiguedad.LINK_PAGO_ENVIADO
+                && catalogo.getCompletadaEnCatalogo() == null;
+        if (!Boolean.TRUE.equals(catalogo.getActivaCatalogo()) && !reservaPropia) {
             throw new RecursoNoEncontradoException(
                     "No existe una antigüedad disponible en catálogo con id " + catalogoId);
         }

@@ -25,6 +25,10 @@ public interface TransaccionBancariaRepository extends JpaRepository<Transaccion
     findFirstByAntiguedad_AntiguedadesIdAndTipoTransaccionAndEstadoTransaccionOrderByCreadaEnTransaccionDesc(
             UUID antiguedadId, TipoTransaccion tipoTransaccion, EstadoTransaccion estadoTransaccion);
 
+    Optional<TransaccionBancaria>
+    findFirstByCatalogoAntiguedad_CatalogoAntiguedadIdAndTipoTransaccionAndEstadoTransaccionOrderByCreadaEnTransaccionDesc(
+            UUID catalogoId, TipoTransaccion tipoTransaccion, EstadoTransaccion estadoTransaccion);
+
     /** Busca una operación derivada de una transacción de pago, por tipo de liberación. */
     Optional<TransaccionBancaria>
     findByTransaccionPadre_TransaccionIdAndTipoTransaccion(

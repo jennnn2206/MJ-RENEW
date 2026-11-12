@@ -12,6 +12,7 @@ import com.mjrenew.mjrenew_backend.transaccion.repository.TransaccionBancariaRep
 import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
 import com.mjrenew.mjrenew_backend.transaccion.service.LiberacionPropietarioService;
 import com.mjrenew.mjrenew_backend.transaccion.service.StripePagoEstadoService;
+import com.mjrenew.mjrenew_backend.transaccion.service.StripeTransaccionAunNoVisibleException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -92,6 +93,13 @@ class StripePagoEstadoServiceTest {
         StripeCheckoutEstado falso = sesion("PAGO_RESTAURACION", UUID.randomUUID().toString(), 650000L, "mxn", "complete", "paid");
         assertThrows(SolicitudInvalidaException.class, () -> servicio.confirmar(falso));
         verifyNoInteractions(antiguedades);
+    }
+
+    @Test
+    void webhookTempranoSeReintentaHastaQueLaReferenciaSeaVisible() {
+        assertThrows(StripeTransaccionAunNoVisibleException.class,
+                () -> servicio.confirmar(correcta()));
+        verifyNoInteractions(antiguedades, catalogos, liberacionPropietarioService);
     }
 
     @Test

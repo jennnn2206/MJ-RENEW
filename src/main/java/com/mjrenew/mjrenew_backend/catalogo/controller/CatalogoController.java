@@ -30,8 +30,10 @@ public class CatalogoController {
     }
 
     @GetMapping("/obtenerDetallePiezaCatalogo/{catalogoId}")
-    public ResponseEntity<CatalogoAntiguedadDetalleResponse> obtenerDetallePiezaCatalogo(@PathVariable UUID catalogoId) {
-        return ResponseEntity.ok(catalogoService.obtenerDetalle(catalogoId));
+    public ResponseEntity<CatalogoAntiguedadDetalleResponse> obtenerDetallePiezaCatalogo(
+            @PathVariable UUID catalogoId, @AuthenticationPrincipal UsuarioPrincipal principal) {
+        UUID compradorActualId = principal == null ? null : principal.getUsuario().getUsuariosId();
+        return ResponseEntity.ok(catalogoService.obtenerDetalle(catalogoId, compradorActualId));
     }
 
     @PostMapping("/iniciarCompraPiezaCatalogo/{catalogoId}")

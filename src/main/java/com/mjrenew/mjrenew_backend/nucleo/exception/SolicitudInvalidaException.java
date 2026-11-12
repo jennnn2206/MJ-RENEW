@@ -9,6 +9,10 @@ public class SolicitudInvalidaException extends RuntimeException {
     public SolicitudInvalidaException(String mensaje) {
         super(mensaje);
     }
+
+    public SolicitudInvalidaException(String mensaje, Throwable causa) {
+        super(mensaje, causa);
+    }
 }
 
 // Especificación de excepciones.
