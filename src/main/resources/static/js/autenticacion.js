@@ -1,11 +1,18 @@
 // MJRENEW-FLUJO: Spring Security es la fuente de verdad. localStorage solo acelera la UI.
 // Nunca usar el nombre/correo guardados en otro navegador para decidir a qué usuario pertenece una antigüedad.
 const Auth = {
+    async csrfHeaders() {
+        const res = await fetch('/api/auth/csrf', { credentials: 'same-origin', cache: 'no-store' });
+        if (!res.ok) throw new Error('No se pudo preparar la solicitud segura.');
+        const { headerName, token } = await res.json();
+        return { [headerName]: token };
+    },
+
     async login(email, password) {
         try {
             const res = await fetch('/api/auth/iniciarSesion', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...await this.csrfHeaders() },
                 credentials: 'same-origin',
                 body: JSON.stringify({ correoElectronico: email, contrasena: password }),
             });
@@ -21,7 +28,7 @@ const Auth = {
         try {
             const res = await fetch('/api/auth/registrarUsuario', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...await this.csrfHeaders() },
                 credentials: 'same-origin',
                 body: JSON.stringify({ nombreCompleto: name, correoElectronico: email, contrasena: password, tipoUsuario: tipo.toUpperCase() }),
             });
@@ -36,7 +43,9 @@ const Auth = {
     async logout() {
         // MJRENEW-FLUJO: esperar la invalidación de JSESSIONID antes de redirigir.
         try {
-            await fetch('/api/auth/cerrarSesion', { method: 'POST', credentials: 'same-origin' });
+            await fetch('/api/auth/cerrarSesion', {
+                method: 'POST', credentials: 'same-origin', headers: await this.csrfHeaders(),
+            });
         } finally {
             localStorage.removeItem('mjrenew_user');
         }

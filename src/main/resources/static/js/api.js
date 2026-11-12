@@ -9,10 +9,12 @@ const Api = {
         // Content-Type (multipart/form-data; boundary=...); fijarlo a mano
         // rompe el parseo del multipart en el servidor.
         const headers = options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' };
+        const csrfHeaders = options.method && !['GET', 'HEAD', 'OPTIONS'].includes(options.method.toUpperCase())
+            ? await Auth.csrfHeaders() : {};
         const res = await fetch(url, {
-            credentials: 'include',
-            headers,
             ...options,
+            credentials: 'same-origin',
+            headers: { ...headers, ...options.headers, ...csrfHeaders },
         });
 
         let body = null;

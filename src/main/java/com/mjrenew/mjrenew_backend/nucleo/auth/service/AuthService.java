@@ -6,6 +6,8 @@ import com.mjrenew.mjrenew_backend.nucleo.usuario.dto.UsuarioResponse;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
 import com.mjrenew.mjrenew_backend.nucleo.exception.CorreoYaRegistradoException;
 import com.mjrenew.mjrenew_backend.nucleo.exception.CredencialesInvalidasException;
+import com.mjrenew.mjrenew_backend.nucleo.exception.SolicitudInvalidaException;
+import com.mjrenew.mjrenew_backend.nucleo.enums.TipoUsuario;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.mapper.UsuarioMapper;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.repository.UsuarioRepository;
 import com.mjrenew.mjrenew_backend.nucleo.security.UsuarioPrincipal;
@@ -47,6 +49,12 @@ public class AuthService {
 
     @Transactional
     public UsuarioResponse registrar(UsuarioRegistroRequest request) {
+        if (request.tipoUsuario() != TipoUsuario.PROPIETARIO
+                && request.tipoUsuario() != TipoUsuario.RESTAURADOR
+                && request.tipoUsuario() != TipoUsuario.COMPRADOR) {
+            throw new SolicitudInvalidaException("El tipo de usuario no está disponible para registro público");
+        }
+
         if (usuarioRepository.existsByCorreoElectronicoUsuario(request.correoElectronico())) {
             throw new CorreoYaRegistradoException("Ya existe una cuenta registrada con ese correo");
         }

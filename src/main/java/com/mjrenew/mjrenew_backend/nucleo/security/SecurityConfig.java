@@ -15,12 +15,10 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.web.context.SecurityContextRepository;
 
 /**
- * Las 10 rutas de PageController (vistas Thymeleaf del mockup) y los recursos
- * estáticos quedan explícitamente públicos para no romper el frontend existente,
- * que todavía no consume esta API. Solo /api/** requiere autenticación (salvo
- * registro/login, que son el punto de entrada). La protección real de los
- * paneles de transportista/administrador ocurre en sus llamadas a /api/**
- * (@PreAuthorize) y en el guard de rol del lado del cliente (Auth.requireAuth).
+ * Las vistas y recursos estáticos son públicos. La API exige autenticación,
+ * salvo las rutas de entrada y el catálogo público. Los endpoints de cada rol
+ * aplican además @PreAuthorize. Las escrituras desde el navegador usan un token
+ * CSRF de la sesión; el webhook de Stripe se valida con su propia firma.
  */
 @Configuration
 @EnableWebSecurity
@@ -35,7 +33,7 @@ public class SecurityConfig {
     };
 
     private static final String[] RUTAS_PUBLICAS_API = {
-            "/api/auth/registrarUsuario", "/api/auth/iniciarSesion",
+            "/api/auth/csrf", "/api/auth/registrarUsuario", "/api/auth/iniciarSesion",
             "/api/catalogo/explorarCatalogo", "/api/catalogo/obtenerDetallePiezaCatalogo/**",
             "/webhook/stripe"
     };
@@ -66,7 +64,6 @@ public class SecurityConfig {
         http
                 .csrf(csrf ->
                         csrf.ignoringRequestMatchers(
-                                "/api/**",
                                 "/webhook/stripe"
                         )
                 )

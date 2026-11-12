@@ -10,9 +10,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -24,6 +28,14 @@ public class AuthController {
     public AuthController(AuthService authService, UsuarioMapper usuarioMapper) {
         this.authService = authService;
         this.usuarioMapper = usuarioMapper;
+    }
+
+    @GetMapping("/csrf")
+    public ResponseEntity<Map<String, String>> obtenerCsrf(HttpServletRequest httpRequest) {
+        CsrfToken token = (CsrfToken) httpRequest.getAttribute(CsrfToken.class.getName());
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(Map.of("headerName", token.getHeaderName(), "token", token.getToken()));
     }
 
     @PostMapping("/registrarUsuario")
