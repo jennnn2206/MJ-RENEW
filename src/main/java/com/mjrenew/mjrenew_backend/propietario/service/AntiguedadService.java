@@ -315,7 +315,7 @@ public class AntiguedadService {
             UUID antiguedadId,
             UUID propietarioId
     ) {
-        Antiguedad antiguedad = antiguedadRepository.bloquearParaCrearPago(antiguedadId, propietarioId)
+        Antiguedad antiguedad = antiguedadRepository.bloquearDelPropietario(antiguedadId, propietarioId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("La antigüedad no pertenece al propietario"));
         validarEstado(antiguedad, EstadoAntiguedad.PRESUPUESTO_PRESENTADO);
         Cotizacion cotizacion = buscarCotizacionOFallar(antiguedadId);
@@ -441,13 +441,44 @@ public class AntiguedadService {
 
     /*
      * ============================================================
-     * PUBLICAR EN CATÁLOGO
+     * DECISIÓN EN TALLER Y DESTINO DE LA PIEZA
      * ============================================================
      *
-     * ENTREGADO_AL_PROPIETARIO
-     *      ↓
-     * EN_CATALOGO
+     * La decisión pertenece al propietario. El administrador solo agenda
+     * una entrega después de que este solicite la devolución.
      */
+
+    @Transactional
+    public AntiguedadDetalleResponse abrirDecisionEnTaller(UUID antiguedadId, UUID propietarioId) {
+        Antiguedad antiguedad = bloquearDelPropietarioOFallar(antiguedadId, propietarioId);
+        validarEstado(antiguedad, EstadoAntiguedad.RESTAURACION_LISTA);
+        antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.DECISION_EN_TALLER);
+        return construirDetalle(antiguedad);
+    }
+
+    @Transactional
+    public AntiguedadDetalleResponse solicitarDevolucionTaller(UUID antiguedadId, UUID propietarioId) {
+        Antiguedad antiguedad = bloquearDelPropietarioOFallar(antiguedadId, propietarioId);
+        validarEstado(antiguedad, EstadoAntiguedad.DECISION_EN_TALLER);
+        antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.SOLICITUD_DEVOLUCION_TALLER);
+        return construirDetalle(antiguedad);
+    }
+
+    @Transactional
+    public AntiguedadDetalleResponse confirmarRecogidaPersonal(UUID antiguedadId, UUID propietarioId) {
+        Antiguedad antiguedad = bloquearDelPropietarioOFallar(antiguedadId, propietarioId);
+        validarEstado(antiguedad, EstadoAntiguedad.DECISION_EN_TALLER);
+        antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.DEVUELTA_DESDE_TALLER);
+        return construirDetalle(antiguedad);
+    }
+
+    @Transactional
+    public AntiguedadDetalleResponse conservarRestauracion(UUID antiguedadId, UUID propietarioId) {
+        Antiguedad antiguedad = bloquearDelPropietarioOFallar(antiguedadId, propietarioId);
+        validarEstado(antiguedad, EstadoAntiguedad.ENTREGADO_AL_PROPIETARIO);
+        antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.RESTAURACION_COMPLETADA);
+        return construirDetalle(antiguedad);
+    }
 
     @Transactional
     public CatalogoAntiguedadResumenResponse publicarEnCatalogo(
@@ -456,13 +487,13 @@ public class AntiguedadService {
             PublicarEnCatalogoRequest request
     ) {
 
-        Antiguedad antiguedad =
-                buscarDelPropietarioOFallar(antiguedadId, propietarioId);
-
-        validarEstado(
-                antiguedad,
-                EstadoAntiguedad.ENTREGADO_AL_PROPIETARIO
-        );
+        Antiguedad antiguedad = bloquearDelPropietarioOFallar(antiguedadId, propietarioId);
+        EstadoAntiguedad estado = antiguedad.getEstadoActualAntiguedad();
+        if (estado != EstadoAntiguedad.DECISION_EN_TALLER
+                && estado != EstadoAntiguedad.ENTREGADO_AL_PROPIETARIO) {
+            throw new TransicionEstadoInvalidaException(
+                    "Solo se puede publicar desde la decisión en taller o después de la entrega al propietario");
+        }
 
         if (catalogoAntiguedadRepository
                 .existsByAntiguedad_AntiguedadesId(antiguedadId)) {
@@ -475,6 +506,14 @@ public class AntiguedadService {
         CatalogoAntiguedad catalogo = new CatalogoAntiguedad();
         catalogo.setAntiguedad(antiguedad);
         catalogo.setPrecioMxnCatalogo(request.precioMxnCatalogo());
+        if (estado == EstadoAntiguedad.DECISION_EN_TALLER) {
+            String direccionTaller = request.direccionRecogidaTaller();
+            if (direccionTaller == null || direccionTaller.isBlank()) {
+                throw new SolicitudInvalidaException(
+                        "Indica la dirección de recogida del taller para vender desde allí");
+            }
+            catalogo.setDireccionRecogidaTallerCatalogo(direccionTaller.trim());
+        }
         catalogo.setPublicadaEnCatalogo(OffsetDateTime.now());
         catalogo.setExpiraEnCatalogo(OffsetDateTime.now().plusDays(90));
         catalogo.setActivaCatalogo(true);
@@ -614,6 +653,12 @@ public class AntiguedadService {
                                 "No existe la antigüedad solicitada para el propietario autenticado"
                         )
                 );
+    }
+
+    private Antiguedad bloquearDelPropietarioOFallar(UUID antiguedadId, UUID propietarioId) {
+        return antiguedadRepository.bloquearDelPropietario(antiguedadId, propietarioId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No existe la antigüedad solicitada para el propietario autenticado"));
     }
 
     private Cotizacion buscarCotizacionOFallar(UUID antiguedadId) {

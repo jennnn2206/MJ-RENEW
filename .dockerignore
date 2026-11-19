@@ -1,0 +1,9 @@
+.git
+.gradle
+.idea
+build
+**/build
+application-local.properties
+**/application-local.properties
+**/.env
+**/.env.*

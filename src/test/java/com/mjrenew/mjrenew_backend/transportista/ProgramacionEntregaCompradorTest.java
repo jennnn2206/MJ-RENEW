@@ -125,6 +125,22 @@ class ProgramacionEntregaCompradorTest {
     }
 
     @Test
+    void ventaDesdeTallerUsaDireccionDeRecogidaDelCatalogo() {
+        CatalogoAntiguedad catalogo = ventaPagada();
+        catalogo.setDireccionRecogidaTallerCatalogo("Taller Centro 123, Mérida");
+        when(traslados.save(any(TrasladoAntiguedad.class))).thenAnswer(inv -> inv.getArgument(0));
+        ProgramarEntregaCompraRequest ventana = ventanaFutura();
+
+        servicio.solicitarEntregaComprador(catalogoId, compradorId,
+                ventana.fechaAcordadaTraslado(), ventana.horaInicioAcordadaTraslado(),
+                ventana.horaFinAcordadaTraslado());
+
+        verify(traslados).save(argThat(t ->
+                "Taller Centro 123, Mérida".equals(t.getDireccionOrigenTraslado())
+                        && t.getDireccionDestinoTraslado().contains("Comprador")));
+    }
+
+    @Test
     void noPermiteProgramarCompraDeOtroComprador() {
         ventaPagada();
         ProgramarEntregaCompraRequest ventana = ventanaFutura();

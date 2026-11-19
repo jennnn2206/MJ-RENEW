@@ -42,6 +42,13 @@ public class CatalogoCompraReservaService {
                         "No existe una antigüedad en catálogo con id " + catalogoId));
         Antiguedad antiguedad = catalogo.getAntiguedad();
 
+        // Las piezas ficticias de la demo nunca deben crear una reserva ni un cobro.
+        if (antiguedad.getProcedenciaMueble() != null
+                && antiguedad.getProcedenciaMueble().startsWith("DEMO:")) {
+            throw new SolicitudInvalidaException(
+                    "Esta pieza es de demostración y no está disponible para compra");
+        }
+
         if (!Boolean.TRUE.equals(catalogo.getActivaCatalogo())) {
             if (catalogo.getComprador() == null
                     || !Objects.equals(catalogo.getComprador().getUsuariosId(), comprador.getUsuariosId())

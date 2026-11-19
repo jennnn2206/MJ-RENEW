@@ -84,7 +84,7 @@ public class TrasladoAntiguedadService {
      * coordina y asigna el transportista es un administrador.
      *
      * RECOLECCION:         PAGO_EN_ESCROW      -> HORARIO_RECOLECCION_AGENDADO
-     * ENTREGA_PROPIETARIO: RESTAURACION_LISTA  -> HORARIO_ENTREGA_AGENDADO
+     * ENTREGA_PROPIETARIO: SOLICITUD_DEVOLUCION_TALLER -> HORARIO_ENTREGA_AGENDADO
      *
      * ENTREGA_COMPRADOR: VENTA_COMPLETADA -> VENTA_COMPLETADA.
      * La venta conserva su estado terminal; el seguimiento se guarda en traslado.
@@ -177,11 +177,14 @@ public class TrasladoAntiguedadService {
         }
 
         Usuario propietario = antiguedad.getPropietario();
-        String direccionOrigen = propietario == null ? null : propietario.getDireccionTextoUsuario();
+        String direccionOrigen = catalogo.getDireccionRecogidaTallerCatalogo();
+        if (direccionOrigen == null || direccionOrigen.isBlank()) {
+            direccionOrigen = propietario == null ? null : propietario.getDireccionTextoUsuario();
+        }
         String direccionDestino = catalogo.getComprador().getDireccionTextoUsuario();
         if (direccionOrigen == null || direccionOrigen.isBlank()) {
             throw new SolicitudInvalidaException(
-                    "El propietario debe registrar su domicilio antes de coordinar la entrega");
+                    "Registra la dirección de recogida antes de coordinar la entrega");
         }
         if (direccionDestino == null || direccionDestino.isBlank()) {
             throw new SolicitudInvalidaException(
@@ -276,9 +279,9 @@ public class TrasladoAntiguedadService {
             }
 
             case ENTREGA_PROPIETARIO -> {
-                if (actual != EstadoAntiguedad.RESTAURACION_LISTA) {
+                if (actual != EstadoAntiguedad.SOLICITUD_DEVOLUCION_TALLER) {
                     throw new TransicionEstadoInvalidaException(
-                            "La antigüedad debe estar en RESTAURACION_LISTA para agendar la entrega al propietario, y está en " + actual);
+                            "La antigüedad debe tener una solicitud de devolución para agendar la entrega al propietario, y está en " + actual);
                 }
                 yield EstadoAntiguedad.HORARIO_ENTREGA_AGENDADO;
             }
@@ -414,7 +417,7 @@ public class TrasladoAntiguedadService {
      * ve el aviso en su lista de piezas (AntiguedadService.construirResumen).
      *
      * RECOLECCION:         HORARIO_RECOLECCION_AGENDADO -> PAGO_EN_ESCROW
-     * ENTREGA_PROPIETARIO: EN_DEVOLUCION_PROPIETARIO    -> RESTAURACION_LISTA
+     * ENTREGA_PROPIETARIO: EN_DEVOLUCION_PROPIETARIO -> SOLICITUD_DEVOLUCION_TALLER
      */
     @Transactional
     public TrasladoAntiguedadResumenResponse registrarIntentoFallido(UUID trasladoId, UUID transportistaId,
@@ -434,7 +437,7 @@ public class TrasladoAntiguedadService {
             }
             case ENTREGA_PROPIETARIO -> {
                 validarEstadoOrigen(traslado.getAntiguedad(), EstadoAntiguedad.EN_DEVOLUCION_PROPIETARIO);
-                yield EstadoAntiguedad.RESTAURACION_LISTA;
+                yield EstadoAntiguedad.SOLICITUD_DEVOLUCION_TALLER;
             }
             case ENTREGA_COMPRADOR -> {
                 validarVentaPagada(traslado.getAntiguedad());

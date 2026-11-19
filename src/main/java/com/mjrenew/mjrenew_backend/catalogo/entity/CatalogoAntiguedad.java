@@ -52,6 +52,9 @@ public class CatalogoAntiguedad {
     @Column(name = "completada_en_catalogo")
     private OffsetDateTime completadaEnCatalogo;
 
+    @Column(name = "direccion_recogida_taller_catalogo", length = 300)
+    private String direccionRecogidaTallerCatalogo;
+
     // MJRENEW-ENTREGA-COMPRADOR: acuse del comprador; NO implica liberar dinero.
     @Column(name = "recepcion_confirmada_en_catalogo")
     private OffsetDateTime recepcionConfirmadaEnCatalogo;
@@ -150,6 +153,14 @@ public class CatalogoAntiguedad {
 
     public void setCompletadaEnCatalogo(OffsetDateTime completadaEnCatalogo) {
         this.completadaEnCatalogo = completadaEnCatalogo;
+    }
+
+    public String getDireccionRecogidaTallerCatalogo() {
+        return direccionRecogidaTallerCatalogo;
+    }
+
+    public void setDireccionRecogidaTallerCatalogo(String direccionRecogidaTallerCatalogo) {
+        this.direccionRecogidaTallerCatalogo = direccionRecogidaTallerCatalogo;
     }
 
     public OffsetDateTime getRecepcionConfirmadaEnCatalogo() {

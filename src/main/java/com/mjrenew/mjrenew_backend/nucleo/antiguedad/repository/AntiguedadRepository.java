@@ -16,6 +16,9 @@ import java.util.UUID;
 public interface AntiguedadRepository
         extends JpaRepository<Antiguedad, UUID> {
 
+    Optional<Antiguedad> findByPropietario_UsuariosIdAndProcedenciaMueble(
+            UUID propietarioId, String procedenciaMueble);
+
     Page<Antiguedad> findByPropietario_UsuariosId(
             UUID propietarioId,
             Pageable pageable
@@ -51,6 +54,6 @@ public interface AntiguedadRepository
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from Antiguedad a where a.antiguedadesId = :antiguedadId and a.propietario.usuariosId = :propietarioId")
-    Optional<Antiguedad> bloquearParaCrearPago(@Param("antiguedadId") UUID antiguedadId,
+    Optional<Antiguedad> bloquearDelPropietario(@Param("antiguedadId") UUID antiguedadId,
                                                @Param("propietarioId") UUID propietarioId);
 }
