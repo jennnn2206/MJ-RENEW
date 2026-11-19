@@ -5,6 +5,7 @@ build/
 ### Credenciales locales (nunca se suben) ###
 application-local.properties
 src/main/resources/application-local.properties
+/database/bootstrap/schema.sql
 /docs/Guia-Instrucciones/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
