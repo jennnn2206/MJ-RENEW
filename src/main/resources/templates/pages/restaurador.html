@@ -38,6 +38,11 @@
 
     <!-- INICIO -->
     <div id="section-inicio" class="dash-section">
+      <details class="card" data-cobros="restaurador" ontoggle="if (this.open) cargarCobros(this)">
+        <summary>Mis cobros</summary>
+        <button class="btn btn-ghost btn-sm" onclick="configurarCobros(this)">Configurar cuenta de cobros en Stripe</button>
+        <div data-movimientos aria-live="polite"></div>
+      </details>
       <div style="margin-bottom:28px">
         <h2 id="welcome-title" style="font-size:1.8rem"></h2>
         <p style="color:var(--ink2)">Tienes <strong id="req-count">0</strong> solicitud(es) nueva(s) esperando tu respuesta.</p>
@@ -476,5 +481,6 @@
   cargarSolicitudes();
   cargarGestionAsignada();
 </script>
+<script th:src="@{/js/cobros.js}"></script>
 </body>
 </html>

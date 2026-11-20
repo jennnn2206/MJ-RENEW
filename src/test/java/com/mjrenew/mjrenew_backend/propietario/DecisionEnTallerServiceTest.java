@@ -30,6 +30,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class DecisionEnTallerServiceTest {
+    @Mock com.mjrenew.mjrenew_backend.transaccion.service.LiberacionRestauradorService liberaciones;
     @Mock AntiguedadRepository antiguedades;
     @Mock DimensionRepository dimensiones;
     @Mock FotografiaAntiguedadRepository fotografias;
@@ -77,6 +78,7 @@ class DecisionEnTallerServiceTest {
         service.confirmarRecogidaPersonal(piezaId, propietarioId);
 
         assertEquals(EstadoAntiguedad.DEVUELTA_DESDE_TALLER, pieza.getEstadoActualAntiguedad());
+        verify(liberaciones).registrarRecepcion(pieza);
         verifyNoInteractions(catalogos);
     }
 
@@ -86,6 +88,7 @@ class DecisionEnTallerServiceTest {
 
         service.conservarRestauracion(piezaId, propietarioId);
 
+        verify(liberaciones).registrarRecepcion(pieza);
         assertEquals(EstadoAntiguedad.RESTAURACION_COMPLETADA, pieza.getEstadoActualAntiguedad());
     }
 
@@ -98,6 +101,7 @@ class DecisionEnTallerServiceTest {
                 new PublicarEnCatalogoRequest(BigDecimal.valueOf(38000), "  Taller Centro 123  "));
 
         assertEquals(EstadoAntiguedad.EN_CATALOGO, pieza.getEstadoActualAntiguedad());
+        verifyNoInteractions(liberaciones);
         verify(catalogos).save(argThat(c -> c.getAntiguedad() == pieza
                 && Boolean.TRUE.equals(c.getActivaCatalogo())
                 && c.getPrecioMxnCatalogo().compareTo(BigDecimal.valueOf(38000)) == 0
@@ -105,8 +109,8 @@ class DecisionEnTallerServiceTest {
     }
 
     @Test
-    void conservaPublicacionTrasEntregaEnDomicilio() {
-        Antiguedad pieza = piezaEn(EstadoAntiguedad.ENTREGADO_AL_PROPIETARIO);
+    void conservaPublicacionTrasConfirmarRecepcion() {
+        Antiguedad pieza = piezaEn(EstadoAntiguedad.RESTAURACION_COMPLETADA);
         when(catalogos.save(any(CatalogoAntiguedad.class))).thenAnswer(inv -> inv.getArgument(0));
 
         service.publicarEnCatalogo(piezaId, propietarioId,
@@ -124,6 +128,15 @@ class DecisionEnTallerServiceTest {
                         new PublicarEnCatalogoRequest(BigDecimal.TEN, " ")));
         assertEquals(EstadoAntiguedad.DECISION_EN_TALLER, pieza.getEstadoActualAntiguedad());
         verify(catalogos, never()).save(any());
+    }
+
+    @Test
+    void entregaDelTransportistaNoAutorizaPublicarNiLiberar() {
+        piezaEn(EstadoAntiguedad.ENTREGADO_AL_PROPIETARIO);
+        assertThrows(TransicionEstadoInvalidaException.class,
+                () -> service.publicarEnCatalogo(piezaId, propietarioId,
+                        new PublicarEnCatalogoRequest(BigDecimal.TEN, null)));
+        verifyNoInteractions(liberaciones, catalogos);
     }
 
     @Test

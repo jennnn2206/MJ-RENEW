@@ -79,8 +79,8 @@ const Api = {
     obtenerAvances(antiguedadId, page = 0, size = 20) {
         return this.get(`/api/propietario/obtenerAvancesRestauracion/${antiguedadId}?page=${page}&size=${size}`);
     },
-    publicarEnCatalogo(antiguedadId, precioMxnCatalogo) {
-        return this.post(`/api/propietario/publicarEnCatalogo/${antiguedadId}`, { precioMxnCatalogo });
+    publicarEnCatalogo(antiguedadId, precioMxnCatalogo, direccionRecogidaTaller = null) {
+        return this.post(`/api/propietario/publicarEnCatalogo/${antiguedadId}`, { precioMxnCatalogo, direccionRecogidaTaller });
     },
 
     // ── RESTAURADOR ────────────────────────────────────────────

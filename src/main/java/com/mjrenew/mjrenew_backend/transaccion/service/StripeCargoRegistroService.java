@@ -33,13 +33,15 @@ public class StripeCargoRegistroService {
                 .orElseThrow(() -> new SolicitudInvalidaException("La liberación no existe"));
         TransaccionBancaria pago = liberacion.getTransaccionPadre();
         StripeCheckoutEstado sesion = cargo == null ? null : cargo.sesion();
-        if (liberacion.getTipoTransaccion() != TipoTransaccion.LIBERACION_PROPIETARIO
+        boolean restauracion = liberacion.getTipoTransaccion() == TipoTransaccion.LIBERACION_RESTAURADOR;
+        var tipoPago = restauracion ? TipoTransaccion.PAGO_RESTAURACION : TipoTransaccion.PAGO_VENTA;
+        if ((!restauracion && liberacion.getTipoTransaccion() != TipoTransaccion.LIBERACION_PROPIETARIO)
                 || liberacion.getEstadoTransaccion() != EstadoTransaccion.PENDIENTE
-                || pago == null || pago.getTipoTransaccion() != TipoTransaccion.PAGO_VENTA
+                || pago == null || pago.getTipoTransaccion() != tipoPago
                 || pago.getEstadoTransaccion() != EstadoTransaccion.EXITOSA
                 || sesion == null || !Objects.equals(sesion.sesionId(), pago.getReferenciaStripeTransaccion())
                 || !Objects.equals(sesion.transaccionId(), pago.getTransaccionId().toString())
-                || !TipoTransaccion.PAGO_VENTA.name().equals(sesion.tipoOperacion())
+                || !tipoPago.name().equals(sesion.tipoOperacion())
                 || !"complete".equals(sesion.estadoSesion()) || !"paid".equals(sesion.estadoPago())
                 || !"payment".equals(sesion.modalidad())
                 || !"mxn".equalsIgnoreCase(sesion.moneda())
@@ -69,7 +71,7 @@ public class StripeCargoRegistroService {
         }
         if (liberacion.getCargoStripeMxn() != null) {
             if (liberacion.getCargoStripeMxn().compareTo(cargoMxn) != 0
-                    || !Objects.equals(liberacion.getMontoNetoPropietarioMxn(), neto)
+                    || !Objects.equals(restauracion ? liberacion.getMontoNetoRestauradorMxn() : liberacion.getMontoNetoPropietarioMxn(), neto)
                     || !Objects.equals(liberacion.getStripePaymentIntentId(), cargo.paymentIntentId())
                     || !Objects.equals(liberacion.getStripeChargeId(), cargo.chargeId())
                     || !Objects.equals(liberacion.getStripeBalanceTransactionId(), cargo.balanceTransactionId())) {
@@ -78,7 +80,8 @@ public class StripeCargoRegistroService {
             return;
         }
         liberacion.setCargoStripeMxn(cargoMxn);
-        liberacion.setMontoNetoPropietarioMxn(neto);
+        if (restauracion) liberacion.setMontoNetoRestauradorMxn(neto);
+        else liberacion.setMontoNetoPropietarioMxn(neto);
         liberacion.setStripePaymentIntentId(cargo.paymentIntentId());
         liberacion.setStripeChargeId(cargo.chargeId());
         liberacion.setStripeBalanceTransactionId(cargo.balanceTransactionId());

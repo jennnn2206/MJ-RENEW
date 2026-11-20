@@ -23,6 +23,7 @@ import com.mjrenew.mjrenew_backend.nucleo.enums.TipoTransaccion;
 import com.mjrenew.mjrenew_backend.nucleo.exception.SolicitudInvalidaException;
 import com.mjrenew.mjrenew_backend.transaccion.dto.StripeCheckoutSession;
 import com.mjrenew.mjrenew_backend.transaccion.entity.TransaccionBancaria;
+import com.mjrenew.mjrenew_backend.transaccion.service.LiberacionRestauradorService;
 import com.mjrenew.mjrenew_backend.transaccion.repository.TransaccionBancariaRepository;
 import com.mjrenew.mjrenew_backend.transaccion.service.StripeCheckoutService;
 import com.mjrenew.mjrenew_backend.nucleo.exception.RecursoNoEncontradoException;
@@ -74,6 +75,7 @@ public class AntiguedadService {
     private final CatalogoAntiguedadMapper catalogoAntiguedadMapper;
     // MJRENEW-STRIPE: integración de pago real de restauración.
     private final TransaccionBancariaRepository transaccionRepository;
+    private final LiberacionRestauradorService liberaciones;
     private final StripeCheckoutService stripeCheckoutService;
     private final AlmacenamientoService almacenamientoService;
     private final TrasladoAntiguedadRepository trasladoRepository;
@@ -90,6 +92,7 @@ public class AntiguedadService {
             CatalogoAntiguedadRepository catalogoAntiguedadRepository,
             CatalogoAntiguedadMapper catalogoAntiguedadMapper,
             TransaccionBancariaRepository transaccionRepository,
+            LiberacionRestauradorService liberaciones,
             StripeCheckoutService stripeCheckoutService,
             AlmacenamientoService almacenamientoService,
             TrasladoAntiguedadRepository trasladoRepository
@@ -105,6 +108,7 @@ public class AntiguedadService {
         this.catalogoAntiguedadRepository = catalogoAntiguedadRepository;
         this.catalogoAntiguedadMapper = catalogoAntiguedadMapper;
         this.transaccionRepository = transaccionRepository;
+        this.liberaciones = liberaciones;
         this.stripeCheckoutService = stripeCheckoutService;
         this.almacenamientoService = almacenamientoService;
         this.trasladoRepository = trasladoRepository;
@@ -468,6 +472,7 @@ public class AntiguedadService {
     public AntiguedadDetalleResponse confirmarRecogidaPersonal(UUID antiguedadId, UUID propietarioId) {
         Antiguedad antiguedad = bloquearDelPropietarioOFallar(antiguedadId, propietarioId);
         validarEstado(antiguedad, EstadoAntiguedad.DECISION_EN_TALLER);
+        liberaciones.registrarRecepcion(antiguedad);
         antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.DEVUELTA_DESDE_TALLER);
         return construirDetalle(antiguedad);
     }
@@ -476,6 +481,7 @@ public class AntiguedadService {
     public AntiguedadDetalleResponse conservarRestauracion(UUID antiguedadId, UUID propietarioId) {
         Antiguedad antiguedad = bloquearDelPropietarioOFallar(antiguedadId, propietarioId);
         validarEstado(antiguedad, EstadoAntiguedad.ENTREGADO_AL_PROPIETARIO);
+        liberaciones.registrarRecepcion(antiguedad);
         antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.RESTAURACION_COMPLETADA);
         return construirDetalle(antiguedad);
     }
@@ -490,9 +496,9 @@ public class AntiguedadService {
         Antiguedad antiguedad = bloquearDelPropietarioOFallar(antiguedadId, propietarioId);
         EstadoAntiguedad estado = antiguedad.getEstadoActualAntiguedad();
         if (estado != EstadoAntiguedad.DECISION_EN_TALLER
-                && estado != EstadoAntiguedad.ENTREGADO_AL_PROPIETARIO) {
+                && estado != EstadoAntiguedad.RESTAURACION_COMPLETADA) {
             throw new TransicionEstadoInvalidaException(
-                    "Solo se puede publicar desde la decisión en taller o después de la entrega al propietario");
+                    "Solo se puede publicar desde la decisión en taller o después de confirmar la recepción");
         }
 
         if (catalogoAntiguedadRepository

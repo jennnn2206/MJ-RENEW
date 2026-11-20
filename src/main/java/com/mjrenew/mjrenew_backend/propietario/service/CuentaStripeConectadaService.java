@@ -31,15 +31,15 @@ public class CuentaStripeConectadaService {
 
     /** Crea la cuenta una sola vez y genera un enlace nuevo para continuar el onboarding. */
     public StripeOnboardingResponse iniciarOnboarding(Usuario propietario) {
-        validarPropietario(propietario);
+        validarBeneficiario(propietario);
         CuentaStripeConectada cuenta = obtenerOCrearCuenta(propietario);
-        String url = stripeConnect.crearEnlaceOnboarding(cuenta.getStripeAccountId());
+        String url = stripeConnect.crearEnlaceOnboarding(cuenta.getStripeAccountId(), propietario.getTipoUsuario());
         return new StripeOnboardingResponse(url);
     }
 
     /** Devuelve un estado actualizado consultando Stripe, no datos controlados por el frontend. */
     public CuentaStripeEstadoResponse obtenerEstado(Usuario propietario) {
-        validarPropietario(propietario);
+        validarBeneficiario(propietario);
 
         Optional<CuentaStripeConectada> encontrada =
                 cuentas.findByUsuario_UsuariosId(propietario.getUsuariosId());
@@ -123,12 +123,12 @@ public class CuentaStripeConectadaService {
         );
     }
 
-    private void validarPropietario(Usuario usuario) {
+    private void validarBeneficiario(Usuario usuario) {
         if (usuario == null || usuario.getUsuariosId() == null) {
             throw new SolicitudInvalidaException("No se pudo identificar al usuario autenticado");
         }
-        if (usuario.getTipoUsuario() != TipoUsuario.PROPIETARIO) {
-            throw new SolicitudInvalidaException("Solo un propietario puede configurar una cuenta de cobros");
+        if (usuario.getTipoUsuario() != TipoUsuario.PROPIETARIO && usuario.getTipoUsuario() != TipoUsuario.RESTAURADOR) {
+            throw new SolicitudInvalidaException("Solo un propietario o restaurador puede configurar una cuenta de cobros");
         }
         if (!Boolean.TRUE.equals(usuario.getActivoUsuario())) {
             throw new SolicitudInvalidaException("La cuenta de usuario no está activa");

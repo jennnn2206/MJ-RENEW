@@ -1,5 +1,6 @@
 package com.mjrenew.mjrenew_backend.transaccion.entity;
 
+import org.springframework.data.domain.AbstractAggregateRoot;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import com.mjrenew.mjrenew_backend.catalogo.entity.CatalogoAntiguedad;
@@ -16,7 +17,13 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "transacciones_bancarias")
-public class TransaccionBancaria {
+public class TransaccionBancaria extends AbstractAggregateRoot<TransaccionBancaria> {
+
+    public record PagoPorLiberar(UUID pagoId, TipoTransaccion tipo) {}
+
+    public void avisarLiberacionPendiente() {
+        registerEvent(new PagoPorLiberar(transaccionPadre.getTransaccionId(), tipoTransaccion));
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -90,6 +97,24 @@ public class TransaccionBancaria {
 
     @Column(name = "procesada_en_transaccion")
     private OffsetDateTime procesadaEnTransaccion;
+
+    @Column(name = "monto_neto_restaurador_mxn", precision = 10, scale = 2)
+    private BigDecimal montoNetoRestauradorMxn;
+
+    @Column(name = "destino_transferencia")
+    private String destinoTransferencia;
+
+    @Column(name = "primer_intento_transferencia")
+    private OffsetDateTime primerIntentoTransferencia;
+
+    public BigDecimal getMontoNetoRestauradorMxn() { return montoNetoRestauradorMxn; }
+    public void setMontoNetoRestauradorMxn(BigDecimal neto) { montoNetoRestauradorMxn = neto; }
+    public String getDestinoTransferencia() { return destinoTransferencia; }
+    public OffsetDateTime getPrimerIntentoTransferencia() { return primerIntentoTransferencia; }
+    public void iniciarTransferencia(String destino) {
+        destinoTransferencia = destino;
+        primerIntentoTransferencia = OffsetDateTime.now();
+    }
 
     public UUID getTransaccionId() {
         return transaccionId;

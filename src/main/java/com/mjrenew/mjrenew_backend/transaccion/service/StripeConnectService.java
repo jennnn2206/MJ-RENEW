@@ -1,6 +1,7 @@
 
 package com.mjrenew.mjrenew_backend.transaccion.service;
 
+import com.mjrenew.mjrenew_backend.nucleo.enums.TipoUsuario;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
 import com.mjrenew.mjrenew_backend.transaccion.dto.StripeCuentaConectadaEstado;
 import com.stripe.exception.StripeException;
@@ -25,16 +26,25 @@ public class StripeConnectService {
     private final String urlRefreshOnboarding;
     private final String urlRetornoOnboarding;
 
+    private final String urlRefreshRestaurador;
+    private final String urlRetornoRestaurador;
+
     public StripeConnectService(
             @Value("${stripe.secret-key}") String stripeSecretKey,
             @Value("${stripe.connect.country:MX}") String paisCuenta,
-            @Value("${stripe.connect.refresh-url:http://localhost:8080/propietario?stripeOnboarding=refresh}")
+            @Value("${stripe.connect.refresh-url:${app.base-url:http://localhost:8080}/propietario?stripeOnboarding=refresh}")
             String urlRefreshOnboarding,
-            @Value("${stripe.connect.return-url:http://localhost:8080/propietario?stripeOnboarding=return}")
-            String urlRetornoOnboarding
+            @Value("${stripe.connect.return-url:${app.base-url:http://localhost:8080}/propietario?stripeOnboarding=return}")
+            String urlRetornoOnboarding,
+            @Value("${stripe.connect.restaurador.refresh-url:${app.base-url:http://localhost:8080}/restaurador?stripeOnboarding=refresh}")
+            String urlRefreshRestaurador,
+            @Value("${stripe.connect.restaurador.return-url:${app.base-url:http://localhost:8080}/restaurador?stripeOnboarding=return}")
+            String urlRetornoRestaurador
     ) {
         this.stripeSecretKey = stripeSecretKey;
         this.paisCuenta = paisCuenta;
+        this.urlRefreshRestaurador = urlRefreshRestaurador;
+        this.urlRetornoRestaurador = urlRetornoRestaurador;
         this.urlRefreshOnboarding = urlRefreshOnboarding;
         this.urlRetornoOnboarding = urlRetornoOnboarding;
     }
@@ -98,13 +108,15 @@ public class StripeConnectService {
     /**
      * Genera un enlace temporal para completar el onboarding.
      */
-    public String crearEnlaceOnboarding(String stripeAccountId) {
+    public String crearEnlaceOnboarding(String stripeAccountId, TipoUsuario rol) {
 
         AccountLinkCreateParams params = AccountLinkCreateParams.builder()
                 .setAccount(stripeAccountId)
                 .setType(AccountLinkCreateParams.Type.ACCOUNT_ONBOARDING)
-                .setRefreshUrl(urlRefreshOnboarding)
-                .setReturnUrl(urlRetornoOnboarding)
+                .setRefreshUrl(rol == TipoUsuario.RESTAURADOR
+                        ? urlRefreshRestaurador : urlRefreshOnboarding)
+                .setReturnUrl(rol == TipoUsuario.RESTAURADOR
+                        ? urlRetornoRestaurador : urlRetornoOnboarding)
                 .build();
 
         try {

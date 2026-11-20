@@ -13,9 +13,13 @@ Después de que el restaurador marca la pieza como `RESTAURACION_LISTA`, el prop
 El administrador solo puede crear un traslado `ENTREGA_PROPIETARIO` después de la
 solicitud. Si la entrega falla porque no hay nadie en casa, la pieza vuelve a
 `SOLICITUD_DEVOLUCION_TALLER` y se puede reagendar. Tras una entrega exitosa,
-el propietario puede publicar desde su domicilio con el endpoint existente, sin
-`direccionRecogidaTaller`, o terminar en `RESTAURACION_COMPLETADA` mediante
-`POST /api/propietario/conservarRestauracion/{antiguedadId}`.
+el propietario confirma la recepción mediante
+`POST /api/propietario/conservarRestauracion/{antiguedadId}`. La confirmación pasa a
+`RESTAURACION_COMPLETADA` y autoriza la liberación al restaurador. Desde ese estado
+puede publicar desde su domicilio sin `direccionRecogidaTaller`. Confirmar la recogida
+personal también autoriza la liberación. El equipo decidió que vender directamente
+desde el taller mantiene el pago de restauración en depósito hasta definir su liberación.
+El pago de la venta al propietario sigue las reglas de RF-023.
 
 La dirección del taller queda guardada en `catalogo_antiguedad` y se usa como
 origen al programar la entrega al comprador. Para publicaciones desde el domicilio

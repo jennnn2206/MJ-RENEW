@@ -1,5 +1,9 @@
 package com.mjrenew.mjrenew_backend.propietario.controller;
 
+import java.util.List;
+import com.mjrenew.mjrenew_backend.nucleo.enums.TipoTransaccion;
+import com.mjrenew.mjrenew_backend.transaccion.dto.DesgloseLiberacion;
+import com.mjrenew.mjrenew_backend.transaccion.repository.TransaccionBancariaRepository;
 import com.mjrenew.mjrenew_backend.nucleo.security.UsuarioPrincipal;
 import com.mjrenew.mjrenew_backend.propietario.dto.CuentaStripeEstadoResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.StripeOnboardingResponse;
@@ -16,10 +20,21 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/propietario")
 public class CuentaStripeController {
 
+    private final TransaccionBancariaRepository pagos;
     private final CuentaStripeConectadaService cuentaStripeService;
 
-    public CuentaStripeController(CuentaStripeConectadaService cuentaStripeService) {
+    public CuentaStripeController(CuentaStripeConectadaService cuentaStripeService,
+            TransaccionBancariaRepository pagos) {
+        this.pagos = pagos;
         this.cuentaStripeService = cuentaStripeService;
+    }
+
+    @GetMapping("/obtenerMisCobros")
+    @PreAuthorize("hasRole('PROPIETARIO')")
+    public List<DesgloseLiberacion> obtenerMisCobros(
+            @AuthenticationPrincipal UsuarioPrincipal principal) {
+        return pagos.obtenerCobros(principal.getUsuario().getUsuariosId(),
+                TipoTransaccion.LIBERACION_PROPIETARIO);
     }
 
     /** Devuelve una URL temporal hospedada por Stripe para completar el onboarding. */

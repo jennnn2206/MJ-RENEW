@@ -15,3 +15,11 @@ La migración `database/migraciones/2026-11-06__cargo_real_stripe_catalogo.sql` 
 ## Límite del cambio
 
 No se crea una transferencia ni se marca `LIBERACION_PROPIETARIO` como exitosa. El importe neto refleja la comisión del cargo consultado; reembolsos, disputas o ajustes posteriores pueden cambiar la situación de fondos. Antes de transferir, se debe definir con el equipo la política de fondos y volver a verificar el estado del cargo, además de persistir referencia, resultado e idempotencia de la transferencia. La suite valida cálculo, vínculo con el pago e idempotencia con datos simulados; falta una prueba integrada con Stripe en modo de pruebas.
+
+## Actualización del 20 de noviembre de 2026
+
+RF-023 autoriza la transferencia al vendedor al confirmarse el pago del catálogo. RF-013 y RF-019 autorizan el pago al restaurador con la confirmación del propietario. El equipo confirmó el 7 % para restauración en esta fecha. Ambos descuentan el cargo real conciliado. El acuse logístico del comprador sigue siendo independiente.
+
+Antes de iniciar una instancia con esta versión, aplicar `database/migraciones/2026-11-20__transferencias_connect.sql` en su base. La migración solo agrega columnas. Para ensayar en Stripe test mode, configurar la clave de prueba, el webhook, `app.base-url` y una cuenta Connect con transferencias habilitadas para cada beneficiario. Activar `STRIPE_TRANSFERS_ENABLED=true` habilita el envío y la conciliación de **todas las liberaciones pendientes** en esa base. La configuración predeterminada mantiene el envío apagado. La tarea de transferencias consulta directamente el cargo real y funciona independientemente de la tarea opcional de conciliación de comisiones.
+
+Una respuesta perdida se busca por grupo de transferencia y se contrasta con el importe, cargo y destino guardados. Después de 23 horas desde el primer intento, si Stripe no muestra una transferencia, se requiere revisión manual antes de otro envío. Una disputa abierta congela nuevos envíos. Una reversión posterior de una transferencia completada requiere conciliación independiente.

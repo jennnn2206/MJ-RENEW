@@ -9,5 +9,7 @@ import java.util.UUID;
 
 public interface DisputaAntiguedadRepository extends JpaRepository<DisputaAntiguedad, UUID> {
 
+    boolean existsByAntiguedad_AntiguedadesIdAndResueltaEnDisputaIsNull(UUID antiguedadId);
+
     Page<DisputaAntiguedad> findByResueltaEnDisputaIsNull(Pageable pageable);
 }

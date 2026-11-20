@@ -20,8 +20,7 @@ import java.util.Objects;
 
 /**
  * Prepara el registro de liberación al propietario para una venta del catálogo.
- * No ejecuta una transferencia real: esta última requiere la cuenta conectada del
- * propietario y la integración de Stripe Connect, todavía no configuradas.
+ * El evento de la liberación inicia su procesamiento después del commit.
  */
 @Service
 public class LiberacionPropietarioService {
@@ -72,6 +71,7 @@ public class LiberacionPropietarioService {
         liberacion.setEstadoTransaccion(EstadoTransaccion.PENDIENTE);
         liberacion.setCreadaEnTransaccion(OffsetDateTime.now());
 
+        liberacion.avisarLiberacionPendiente();
         TransaccionBancaria guardada = transacciones.save(liberacion);
         log.info("Liberación al propietario registrada como pendiente para pagoVentaId={}",
                 pagoVenta.getTransaccionId());

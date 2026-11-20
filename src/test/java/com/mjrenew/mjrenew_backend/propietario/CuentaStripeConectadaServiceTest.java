@@ -52,7 +52,7 @@ class CuentaStripeConectadaServiceTest {
         when(cuentas.findByUsuario_UsuariosId(propietario.getUsuariosId()))
                 .thenReturn(Optional.empty());
         when(stripeConnect.crearCuentaConectada(propietario)).thenReturn("acct_test_123");
-        when(stripeConnect.crearEnlaceOnboarding("acct_test_123"))
+        when(stripeConnect.crearEnlaceOnboarding("acct_test_123", TipoUsuario.PROPIETARIO))
                 .thenReturn("https://connect.stripe.test/onboarding");
         when(cuentas.saveAndFlush(any(CuentaStripeConectada.class)))
                 .thenAnswer(invocacion -> invocacion.getArgument(0));
@@ -72,7 +72,7 @@ class CuentaStripeConectadaServiceTest {
         CuentaStripeConectada existente = cuentaExistente();
         when(cuentas.findByUsuario_UsuariosId(propietario.getUsuariosId()))
                 .thenReturn(Optional.of(existente));
-        when(stripeConnect.crearEnlaceOnboarding("acct_test_existente"))
+        when(stripeConnect.crearEnlaceOnboarding("acct_test_existente", TipoUsuario.PROPIETARIO))
                 .thenReturn("https://connect.stripe.test/nuevo-enlace");
 
         StripeOnboardingResponse respuesta = servicio.iniciarOnboarding(propietario);
