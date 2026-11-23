@@ -614,7 +614,10 @@ public class AntiguedadService {
         return antiguedadMapper.toDetalle(
                 antiguedad,
                 dimension,
-                obtenerFotosEstadoInicial(antiguedad)
+                obtenerFotosEstadoInicial(antiguedad),
+                fotografiaRepository.findByAntiguedad_AntiguedadesIdAndTipoFotografiaOrderBySubidaEnFotografiaAsc(
+                        antiguedad.getAntiguedadesId(), TipoFotografia.ESTADO_FINAL)
+                        .stream().map(FotografiaAntiguedad::getUrlAlmacenFotografia).toList()
         );
     }
 

@@ -40,7 +40,9 @@ public interface AntiguedadMapper {
     @Mapping(target = "nombreCompletoRestaurador", source = "antiguedad.restaurador.nombreCompletoUsuario")
     @Mapping(target = "dimension", source = "dimension")
     @Mapping(target = "fotosEstadoInicial", source = "fotosEstadoInicial")
-    AntiguedadDetalleResponse toDetalle(Antiguedad antiguedad, DimensionResponse dimension, List<String> fotosEstadoInicial);
+    @Mapping(target = "fotosEstadoFinal", source = "fotosEstadoFinal")
+    AntiguedadDetalleResponse toDetalle(Antiguedad antiguedad, DimensionResponse dimension,
+                                      List<String> fotosEstadoInicial, List<String> fotosEstadoFinal);
 
     @Mapping(target = "altoCm", source = "altoCmAntiguedad")
     @Mapping(target = "anchoCm", source = "anchoCmAntiguedad")

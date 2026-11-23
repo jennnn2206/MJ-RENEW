@@ -349,10 +349,12 @@
     let acciones = '';
     if (a.estadoActualAntiguedad === 'RECIBIDO_EN_TALLER') {
       acciones = `<button class="btn btn-primary btn-sm" onclick="accionIniciarRestauracion()">Iniciar restauración</button>`;
+    } else if (a.estadoActualAntiguedad === 'RESTAURACION_LISTA' && (a.fotosEstadoFinal || []).length < 4) {
+      acciones = `<button class="btn btn-primary btn-sm" onclick="abrirCierreRestauracion()">Completar fotografías finales</button>`;
     } else if (a.estadoActualAntiguedad === 'EN_RESTAURACION' || a.estadoActualAntiguedad === 'AVANCE_PUBLICADO') {
       acciones = `
         <button class="btn btn-primary btn-sm" onclick="Modal.open('modal-progress')">Publicar avance</button>
-        <button class="btn btn-sm btn-success" onclick="accionMarcarLista()">Marcar restauración lista</button>
+        <button class="btn btn-sm btn-success" onclick="abrirCierreRestauracion()">Marcar restauración lista</button>
       `;
     } else {
       acciones = `<p style="color:var(--ink2);font-size:1rem">No hay acciones de restauración disponibles para el estado actual.</p>`;
@@ -370,6 +372,7 @@
         <div style="display:flex;gap:8px;flex-wrap:wrap">${acciones}</div>
       </div>
     `;
+    Utils.mostrarFotosFinales(document.getElementById('gestion-content'), a.fotosEstadoFinal);
   }
 
   async function accionIniciarRestauracion() {
@@ -384,6 +387,7 @@
 
   const TIPOS_FOTO_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp'];
   const TAMANO_MAX_FOTO_BYTES = 5 * 1024 * 1024;
+  const TAMANO_MAX_FOTO_FINAL_BYTES = 10 * 1024 * 1024;
 
   async function saveProgress() {
     const desc = document.getElementById('p-desc').value;
@@ -404,13 +408,42 @@
     }
   }
 
+  let antiguedadParaCierre = null;
+
+  function abrirCierreRestauracion() {
+    antiguedadParaCierre = antiguedadGestion.antiguedadId;
+    document.getElementById('cierre-fotos').value = '';
+    document.getElementById('cierre-error').classList.remove('visible');
+    Modal.open('modal-cierre-restauracion');
+  }
+
   async function accionMarcarLista() {
+    const fotos = Array.from(document.getElementById('cierre-fotos').files);
+    const errEl = document.getElementById('cierre-error');
+    const btn = document.getElementById('cierre-submit');
+    errEl.classList.remove('visible');
+    if (fotos.length < 4 || fotos.some(f => !TIPOS_FOTO_PERMITIDOS.includes(f.type) || f.size === 0 || f.size > TAMANO_MAX_FOTO_FINAL_BYTES)) {
+      errEl.textContent = 'Selecciona al menos 4 imágenes JPG, PNG o WEBP válidas, de hasta 10 MB cada una.';
+      errEl.classList.add('visible');
+      return;
+    }
+    if (fotos.reduce((total, foto) => total + foto.size, 0) >= 50 * 1024 * 1024) {
+      errEl.textContent = 'El envío completo debe pesar menos de 50 MB.';
+      errEl.classList.add('visible');
+      return;
+    }
+    btn.disabled = true;
     try {
-      await Api.marcarRestauracionLista(antiguedadGestion.antiguedadId);
-      Toast.show('Restauración marcada como lista', 'success');
-      buscarAntiguedadGestion();
+      await Api.marcarRestauracionLista(antiguedadParaCierre, fotos);
+      Modal.close('modal-cierre-restauracion');
+      Toast.show('Restauración terminada. Las fotografías finales ya están disponibles para el propietario.', 'success');
+      await buscarAntiguedadGestion();
+      await cargarGestionAsignada();
     } catch (err) {
-      Toast.show(err.message, 'error');
+      errEl.textContent = err.message;
+      errEl.classList.add('visible');
+    } finally {
+      btn.disabled = false;
     }
   }
 

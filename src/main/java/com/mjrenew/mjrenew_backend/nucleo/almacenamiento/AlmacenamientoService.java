@@ -15,6 +15,7 @@ import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutBucketPolicyRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 
 import java.io.IOException;
 import java.net.URI;
@@ -92,6 +93,16 @@ public class AlmacenamientoService {
         }
 
         return endpoint + "/" + bucket + "/" + nombreArchivo;
+    }
+
+    /** Compensa subidas nuevas cuyo registro de negocio no llegó a guardarse. */
+    public void eliminarArchivo(String url) {
+        String prefijo = endpoint + "/" + bucket + "/";
+        if (url == null || !url.startsWith(prefijo) || url.length() == prefijo.length()) {
+            throw new IllegalArgumentException("El archivo no pertenece al almacenamiento configurado");
+        }
+        s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucket)
+                .key(url.substring(prefijo.length())).build());
     }
 
     private String limpiarNombre(String nombreOriginal) {

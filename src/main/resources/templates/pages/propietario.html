@@ -285,6 +285,7 @@
       const page = await Api.misAntiguedades();
       misPiezas = page.content || [];
       errorCargaMisPiezas = null;
+      avisarRestauracionesTerminadas();
     } catch (err) {
       errorCargaMisPiezas = err.message;
       Toast.show('No se pudieron cargar tus piezas: ' + err.message, 'error');
@@ -301,6 +302,18 @@
     document.getElementById('stat-total').textContent = total;
     document.getElementById('stat-proceso').textContent = enProceso;
     document.getElementById('stat-listas').textContent = listas;
+  }
+
+  function avisarRestauracionesTerminadas() {
+    const usuarioId = Auth.getCurrentUser()?.id;
+    if (!usuarioId) return;
+    misPiezas.filter(p => p.estadoActualAntiguedad === 'RESTAURACION_LISTA').forEach(p => {
+      const clave = `mjrenew-restauracion-lista-${usuarioId}-${p.antiguedadId}`;
+      if (!localStorage.getItem(clave)) {
+        Toast.show('Tu antigüedad está restaurada. Revisa las fotografías finales y solicita la entrega desde Mis piezas.', 'success', 8000);
+        localStorage.setItem(clave, '1');
+      }
+    });
   }
 
   function pieceCardHtml(p) {
@@ -530,6 +543,7 @@
           </div>
         </div>
       `;
+      Utils.mostrarFotosFinales(cont, a.fotosEstadoFinal);
     } catch (err) {
       cont.innerHTML = `<p style="color:var(--error)">${err.message}</p>`;
     }
@@ -711,6 +725,9 @@
   }
 
   cargarMisPiezas();
+  setInterval(() => {
+    if (!document.hidden) cargarMisPiezas();
+  }, 60000);
   // MJRENEW-STRIPE: la redirección de Stripe NO confirma el pago.
   const resultadoPago = new URLSearchParams(window.location.search).get('pago');
   if (resultadoPago === 'exitoso') {

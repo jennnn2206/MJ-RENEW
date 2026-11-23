@@ -12,6 +12,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 
 import java.util.List;
 
@@ -23,6 +25,18 @@ import java.util.List;
 public class GlobalExceptionHandler {
     // MJRENEW-FLUJO: registrar la causa raíz del 500 en la consola sin exponerla al frontend.
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> manejarArchivosDemasiadoGrandes(MaxUploadSizeExceededException ex) {
+        return construirRespuesta(HttpStatus.PAYLOAD_TOO_LARGE,
+                "Cada fotografía puede pesar hasta 10 MB y el envío completo hasta 50 MB");
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> manejarFormatoNoCompatible(HttpMediaTypeNotSupportedException ex) {
+        return construirRespuesta(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                "El formato del envío no es compatible con esta operación");
+    }
 
     @ExceptionHandler(RecursoNoEncontradoException.class)
     public ResponseEntity<ErrorResponse> manejarRecursoNoEncontrado(RecursoNoEncontradoException ex) {

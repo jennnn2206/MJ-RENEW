@@ -477,6 +477,12 @@ public class RestauradorService {
             UUID antiguedadId,
             UUID restauradorId
     ) {
+        return guardarCierreRestauracion(antiguedadId, restauradorId, List.of());
+    }
+
+    @Transactional
+    public AntiguedadDetalleResponse guardarCierreRestauracion(
+            UUID antiguedadId, UUID restauradorId, List<String> fotosSubidas) {
 
         Antiguedad antiguedad =
                 bloquearAsignadaOFallar(
@@ -484,11 +490,31 @@ public class RestauradorService {
                         restauradorId
                 );
 
-        validarEstadoEnRestauracion(antiguedad);
+        List<FotografiaAntiguedad> existentes = fotografiaAntiguedadRepository
+                .findByAntiguedad_AntiguedadesIdAndTipoFotografiaOrderBySubidaEnFotografiaAsc(
+                        antiguedadId, TipoFotografia.ESTADO_FINAL);
+        boolean yaLista = antiguedad.getEstadoActualAntiguedad() == EstadoAntiguedad.RESTAURACION_LISTA;
+        if (yaLista && existentes.size() >= 4) {
+            return construirDetalle(antiguedad);
+        }
+        if (!yaLista) validarEstadoEnRestauracion(antiguedad);
+        if (existentes.size() + fotosSubidas.size() < 4) {
+            throw new SolicitudInvalidaException("Se requieren al menos 4 fotografías del estado final");
+        }
+        OffsetDateTime ahora = OffsetDateTime.now();
+        List<FotografiaAntiguedad> nuevas = fotosSubidas.stream().map(url -> {
+            FotografiaAntiguedad foto = new FotografiaAntiguedad();
+            foto.setAntiguedad(antiguedad);
+            foto.setTipoFotografia(TipoFotografia.ESTADO_FINAL);
+            foto.setUrlAlmacenFotografia(url);
+            foto.setSubidaEnFotografia(ahora);
+            return foto;
+        }).toList();
+        fotografiaAntiguedadRepository.saveAll(nuevas);
 
-        antiguedad.setRestauracionFinAntiguedad(
-                OffsetDateTime.now()
-        );
+        if (antiguedad.getRestauracionFinAntiguedad() == null) {
+            antiguedad.setRestauracionFinAntiguedad(ahora);
+        }
 
         antiguedad.setEstadoActualAntiguedad(
                 EstadoAntiguedad.RESTAURACION_LISTA
@@ -771,7 +797,11 @@ public class RestauradorService {
         return antiguedadMapper.toDetalle(
                 antiguedad,
                 dimensionResponse,
-                fotosEstadoInicial
+                fotosEstadoInicial,
+                fotografiaAntiguedadRepository
+                        .findByAntiguedad_AntiguedadesIdAndTipoFotografiaOrderBySubidaEnFotografiaAsc(
+                                antiguedad.getAntiguedadesId(), TipoFotografia.ESTADO_FINAL)
+                        .stream().map(FotografiaAntiguedad::getUrlAlmacenFotografia).toList()
         );
     }
 }

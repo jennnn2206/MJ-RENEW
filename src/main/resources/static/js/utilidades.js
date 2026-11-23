@@ -25,4 +25,24 @@ const Utils = {
     getPath(isRoot = false) {
         return '/';
     },
+
+    mostrarFotosFinales(contenedor, fotos) {
+        if (!fotos?.length) return;
+        const seccion = document.createElement('section');
+        const titulo = document.createElement('h4');
+        titulo.textContent = 'Estado final de la restauración';
+        seccion.append(titulo);
+        const galeria = document.createElement('div');
+        galeria.className = 'modal-gallery';
+        fotos.forEach(url => {
+            const imagen = document.createElement('img');
+            imagen.src = url;
+            imagen.alt = 'Fotografía de la antigüedad restaurada';
+            imagen.dataset.lightbox = '';
+            imagen.loading = 'lazy';
+            galeria.append(imagen);
+        });
+        seccion.append(galeria);
+        contenedor.append(seccion);
+    },
 };

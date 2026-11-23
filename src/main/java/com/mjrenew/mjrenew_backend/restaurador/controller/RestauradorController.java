@@ -11,6 +11,8 @@ import com.mjrenew.mjrenew_backend.restaurador.dto.PerfilRestauradorCompletoResp
 import com.mjrenew.mjrenew_backend.restaurador.dto.PublicarAvanceRequest;
 import com.mjrenew.mjrenew_backend.restaurador.dto.RechazarEvaluacionRequest;
 import com.mjrenew.mjrenew_backend.restaurador.service.RestauradorService;
+import com.mjrenew.mjrenew_backend.restaurador.service.CierreRestauracionService;
+import com.mjrenew.mjrenew_backend.restaurador.dto.CerrarRestauracionRequest;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -37,12 +40,15 @@ import java.util.UUID;
 public class RestauradorController {
 
     private final RestauradorService restauradorService;
+    private final CierreRestauracionService cierreRestauracionService;
 
 
     public RestauradorController(
-            RestauradorService restauradorService
+            RestauradorService restauradorService,
+            CierreRestauracionService cierreRestauracionService
     ) {
         this.restauradorService = restauradorService;
+        this.cierreRestauracionService = cierreRestauracionService;
     }
 
 
@@ -347,7 +353,7 @@ public class RestauradorController {
      * POST /api/restaurador/marcarRestauracionLista/{antiguedadId}
      */
 
-    @PostMapping("/marcarRestauracionLista/{antiguedadId}")
+    @PostMapping(value = "/marcarRestauracionLista/{antiguedadId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('RESTAURADOR')")
     public ResponseEntity<AntiguedadDetalleResponse>
     marcarRestauracionLista(
@@ -355,14 +361,17 @@ public class RestauradorController {
             @PathVariable
             UUID antiguedadId,
 
+            @Valid @ModelAttribute CerrarRestauracionRequest request,
+
             @AuthenticationPrincipal
             UsuarioPrincipal principal
     ) {
 
         return ResponseEntity.ok(
-                restauradorService.marcarRestauracionLista(
+                cierreRestauracionService.cerrar(
                         antiguedadId,
-                        principal.getUsuario().getUsuariosId()
+                        principal.getUsuario().getUsuariosId(),
+                        request.fotos()
                 )
         );
     }

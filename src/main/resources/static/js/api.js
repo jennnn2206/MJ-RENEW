@@ -113,8 +113,10 @@ const Api = {
         if (foto) form.append('foto', foto);
         return this.postForm(`/api/restaurador/publicarAvanceRestauracion/${antiguedadId}`, form);
     },
-    marcarRestauracionLista(antiguedadId) {
-        return this.post(`/api/restaurador/marcarRestauracionLista/${antiguedadId}`);
+    marcarRestauracionLista(antiguedadId, fotos) {
+        const form = new FormData();
+        Array.from(fotos || []).forEach(foto => form.append('fotos', foto));
+        return this.postForm(`/api/restaurador/marcarRestauracionLista/${antiguedadId}`, form);
     },
     obtenerPerfilRestaurador() {
         return this.get('/api/restaurador/obtenerPerfilRestaurador');

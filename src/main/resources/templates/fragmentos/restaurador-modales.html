@@ -69,6 +69,25 @@
             </div>
         </div>
     </div>
+    <div class="modal-overlay" id="modal-cierre-restauracion">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Terminar restauración</h3>
+                <button class="modal-close" onclick="Modal.close('modal-cierre-restauracion')">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="cierre-fotos">Fotografías del estado final</label>
+                <input type="file" id="cierre-fotos" class="form-control" multiple
+                       accept="image/jpeg,image/png,image/webp" aria-describedby="cierre-ayuda">
+                <p id="cierre-ayuda" class="form-hint">Selecciona al menos 4 fotografías JPG, PNG o WEBP, de hasta 10 MB cada una. Máximo 50 MB por envío.</p>
+            </div>
+            <div id="cierre-error" class="form-error" role="alert"></div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="cierre-submit" onclick="accionMarcarLista()">Guardar fotos y terminar</button>
+                <button class="btn btn-ghost" onclick="Modal.close('modal-cierre-restauracion')">Cancelar</button>
+            </div>
+        </div>
+    </div>
 </th:block>
 </body>
 </html>

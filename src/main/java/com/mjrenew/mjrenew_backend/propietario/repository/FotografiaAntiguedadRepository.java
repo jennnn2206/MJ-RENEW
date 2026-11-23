@@ -14,6 +14,8 @@ import java.util.UUID;
 
 public interface FotografiaAntiguedadRepository extends JpaRepository<FotografiaAntiguedad, UUID> {
 
+    boolean existsByUrlAlmacenFotografia(String urlAlmacenFotografia);
+
     // Conteo agrupado de evidencias para habilitar correctamente el botón del comprador.
     interface EvidenciasTraslado {
         UUID getTrasladoId();

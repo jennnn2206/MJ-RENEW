@@ -18,6 +18,7 @@ public record AntiguedadDetalleResponse(
         EstadoAntiguedad estadoActualAntiguedad,
         String nombreCompletoRestaurador,
         DimensionResponse dimension,
-        List<String> fotosEstadoInicial
+        List<String> fotosEstadoInicial,
+        List<String> fotosEstadoFinal
 ) {
 }
