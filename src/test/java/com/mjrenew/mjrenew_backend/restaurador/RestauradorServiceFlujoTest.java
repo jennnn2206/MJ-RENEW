@@ -6,6 +6,10 @@ import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoAntiguedad;
 import com.mjrenew.mjrenew_backend.nucleo.enums.TipoFotografia;
 import com.mjrenew.mjrenew_backend.nucleo.exception.RecursoNoEncontradoException;
 import com.mjrenew.mjrenew_backend.nucleo.exception.SolicitudInvalidaException;
+import com.mjrenew.mjrenew_backend.nucleo.exception.TransicionEstadoInvalidaException;
+import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
+import com.mjrenew.mjrenew_backend.nucleo.usuario.repository.UsuarioRepository;
+import com.mjrenew.mjrenew_backend.restaurador.dto.PublicarAvanceRequest;
 import com.mjrenew.mjrenew_backend.propietario.entity.FotografiaAntiguedad;
 import com.mjrenew.mjrenew_backend.propietario.mapper.AntiguedadMapper;
 import com.mjrenew.mjrenew_backend.propietario.repository.DimensionRepository;
@@ -44,7 +48,101 @@ class RestauradorServiceFlujoTest {
     @Mock AntiguedadMapper antiguedadMapper;
     @Mock CotizacionRepository cotizacionRepo;
     @Mock AvanceRestauracionRepository avanceRepo;
+    @Mock UsuarioRepository usuarioRepository;
     @InjectMocks RestauradorService servicio;
+
+    @Test
+    void iniciaConUnLugarDisponibleYBloqueaAntesDeContar() {
+        UUID restaurador = UUID.randomUUID();
+        Antiguedad antiguedad = recibidaEnTaller(restaurador);
+        when(antiguedadRepository.countByRestaurador_UsuariosIdAndEstadoActualAntiguedadIn(
+                eq(restaurador), anyCollection())).thenReturn(1L);
+
+        servicio.iniciarRestauracion(antiguedad.getAntiguedadesId(), restaurador);
+
+        assertEquals(EstadoAntiguedad.EN_RESTAURACION, antiguedad.getEstadoActualAntiguedad());
+        assertNotNull(antiguedad.getRestauracionInicioAntiguedad());
+        var orden = inOrder(usuarioRepository, antiguedadRepository);
+        orden.verify(usuarioRepository).bloquearPorId(restaurador);
+        orden.verify(antiguedadRepository).bloquearDelRestaurador(antiguedad.getAntiguedadesId(), restaurador);
+        orden.verify(antiguedadRepository).countByRestaurador_UsuariosIdAndEstadoActualAntiguedadIn(
+                restaurador, List.of(EstadoAntiguedad.EN_RESTAURACION, EstadoAntiguedad.AVANCE_PUBLICADO));
+    }
+
+    @Test
+    void rechazaLaTerceraSinModificarEstadoNiFecha() {
+        UUID restaurador = UUID.randomUUID();
+        Antiguedad antiguedad = recibidaEnTaller(restaurador);
+        when(antiguedadRepository.countByRestaurador_UsuariosIdAndEstadoActualAntiguedadIn(
+                eq(restaurador), anyCollection())).thenReturn(2L);
+
+        assertThrows(TransicionEstadoInvalidaException.class,
+                () -> servicio.iniciarRestauracion(antiguedad.getAntiguedadesId(), restaurador));
+
+        assertEquals(EstadoAntiguedad.RECIBIDO_EN_TALLER, antiguedad.getEstadoActualAntiguedad());
+        assertNull(antiguedad.getRestauracionInicioAntiguedad());
+        verifyNoInteractions(dimensionRepo, fotoRepo);
+    }
+
+    @Test
+    void rechazaDatosAnterioresQueYaSuperanElLimite() {
+        UUID restaurador = UUID.randomUUID();
+        Antiguedad antiguedad = recibidaEnTaller(restaurador);
+        when(antiguedadRepository.countByRestaurador_UsuariosIdAndEstadoActualAntiguedadIn(
+                eq(restaurador), anyCollection())).thenReturn(3L);
+
+        assertThrows(TransicionEstadoInvalidaException.class,
+                () -> servicio.iniciarRestauracion(antiguedad.getAntiguedadesId(), restaurador));
+        assertNull(antiguedad.getRestauracionInicioAntiguedad());
+    }
+
+    @Test
+    void noReiniciaUnaRestauracionEnCurso() {
+        UUID restaurador = UUID.randomUUID();
+        Antiguedad antiguedad = recibidaEnTaller(restaurador);
+        antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.EN_RESTAURACION);
+
+        assertThrows(TransicionEstadoInvalidaException.class,
+                () -> servicio.iniciarRestauracion(antiguedad.getAntiguedadesId(), restaurador));
+        verify(antiguedadRepository, never())
+                .countByRestaurador_UsuariosIdAndEstadoActualAntiguedadIn(any(), anyCollection());
+    }
+
+    @Test
+    void noIniciaUnaAntiguedadAjena() {
+        UUID restaurador = UUID.randomUUID();
+        when(usuarioRepository.bloquearPorId(restaurador)).thenReturn(Optional.of(new Usuario()));
+        assertThrows(RecursoNoEncontradoException.class,
+                () -> servicio.iniciarRestauracion(UUID.randomUUID(), restaurador));
+        verify(antiguedadRepository, never())
+                .countByRestaurador_UsuariosIdAndEstadoActualAntiguedadIn(any(), anyCollection());
+    }
+
+    @Test
+    void unAvanceTardioNoReabreUnaRestauracionTerminada() {
+        UUID restaurador = UUID.randomUUID();
+        UUID antiguedadId = UUID.randomUUID();
+        Antiguedad antiguedad = new Antiguedad();
+        antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.RESTAURACION_LISTA);
+        when(antiguedadRepository.bloquearDelRestaurador(antiguedadId, restaurador))
+                .thenReturn(Optional.of(antiguedad));
+
+        assertThrows(TransicionEstadoInvalidaException.class,
+                () -> servicio.publicarAvanceRestauracion(antiguedadId, restaurador,
+                        new PublicarAvanceRequest("Avance tardío"), null));
+        assertEquals(EstadoAntiguedad.RESTAURACION_LISTA, antiguedad.getEstadoActualAntiguedad());
+        verifyNoInteractions(avanceRepo, fotoRepo);
+    }
+
+    private Antiguedad recibidaEnTaller(UUID restaurador) {
+        Antiguedad antiguedad = new Antiguedad();
+        antiguedad.setAntiguedadesId(UUID.randomUUID());
+        antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.RECIBIDO_EN_TALLER);
+        when(usuarioRepository.bloquearPorId(restaurador)).thenReturn(Optional.of(new Usuario()));
+        when(antiguedadRepository.bloquearDelRestaurador(antiguedad.getAntiguedadesId(), restaurador))
+                .thenReturn(Optional.of(antiguedad));
+        return antiguedad;
+    }
 
     @Test
     void solicitudesIncluyenEvaluacionYPresupuestoPendiente() {

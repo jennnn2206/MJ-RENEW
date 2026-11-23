@@ -10,6 +10,7 @@ import com.mjrenew.mjrenew_backend.nucleo.exception.RecursoNoEncontradoException
 import com.mjrenew.mjrenew_backend.nucleo.exception.SolicitudInvalidaException;
 import com.mjrenew.mjrenew_backend.nucleo.exception.TransicionEstadoInvalidaException;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
+import com.mjrenew.mjrenew_backend.nucleo.usuario.repository.UsuarioRepository;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadDetalleResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.DimensionResponse;
 import com.mjrenew.mjrenew_backend.propietario.entity.FotografiaAntiguedad;
@@ -48,6 +49,10 @@ import java.util.UUID;
 @Service
 public class RestauradorService {
 
+    private static final int MAX_RESTAURACIONES_SIMULTANEAS = 2;
+    private static final List<EstadoAntiguedad> ESTADOS_RESTAURACION_ACTIVA = List.of(
+            EstadoAntiguedad.EN_RESTAURACION, EstadoAntiguedad.AVANCE_PUBLICADO);
+
     private final AntiguedadRepository antiguedadRepository;
     private final FotografiaAntiguedadRepository fotografiaAntiguedadRepository;
     private final RestauradorMapper restauradorMapper;
@@ -57,6 +62,7 @@ public class RestauradorService {
     private final CotizacionRepository cotizacionRepository;
     private final AvanceRestauracionRepository avanceRestauracionRepository;
     private final AlmacenamientoService almacenamientoService;
+    private final UsuarioRepository usuarioRepository;
 
 
     public RestauradorService(
@@ -68,7 +74,8 @@ public class RestauradorService {
             AntiguedadMapper antiguedadMapper,
             CotizacionRepository cotizacionRepository,
             AvanceRestauracionRepository avanceRestauracionRepository,
-            AlmacenamientoService almacenamientoService
+            AlmacenamientoService almacenamientoService,
+            UsuarioRepository usuarioRepository
     ) {
         this.antiguedadRepository = antiguedadRepository;
         this.fotografiaAntiguedadRepository = fotografiaAntiguedadRepository;
@@ -79,6 +86,7 @@ public class RestauradorService {
         this.cotizacionRepository = cotizacionRepository;
         this.avanceRestauracionRepository = avanceRestauracionRepository;
         this.almacenamientoService = almacenamientoService;
+        this.usuarioRepository = usuarioRepository;
     }
 
 
@@ -355,8 +363,13 @@ public class RestauradorService {
             UUID restauradorId
     ) {
 
+        // RF-016: todos los inicios del mismo restaurador comparten este bloqueo.
+        // Se adquiere antes de contar, incluso cuando se inician antigüedades distintas.
+        usuarioRepository.bloquearPorId(restauradorId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("El restaurador no existe"));
+
         Antiguedad antiguedad =
-                buscarAsignadaOFallar(
+                bloquearAsignadaOFallar(
                         antiguedadId,
                         restauradorId
                 );
@@ -365,6 +378,13 @@ public class RestauradorService {
                 antiguedad,
                 EstadoAntiguedad.RECIBIDO_EN_TALLER
         );
+
+        long activas = antiguedadRepository.countByRestaurador_UsuariosIdAndEstadoActualAntiguedadIn(
+                restauradorId, ESTADOS_RESTAURACION_ACTIVA);
+        if (activas >= MAX_RESTAURACIONES_SIMULTANEAS) {
+            throw new TransicionEstadoInvalidaException(
+                    "Ya tienes 2 restauraciones en curso. Termina una antes de iniciar otra");
+        }
 
         antiguedad.setRestauracionInicioAntiguedad(
                 OffsetDateTime.now()
@@ -397,7 +417,7 @@ public class RestauradorService {
     ) {
 
         Antiguedad antiguedad =
-                buscarAsignadaOFallar(
+                bloquearAsignadaOFallar(
                         antiguedadId,
                         restauradorId
                 );
@@ -459,7 +479,7 @@ public class RestauradorService {
     ) {
 
         Antiguedad antiguedad =
-                buscarAsignadaOFallar(
+                bloquearAsignadaOFallar(
                         antiguedadId,
                         restauradorId
                 );
@@ -642,6 +662,12 @@ public class RestauradorService {
      * También se exige que la antigüedad pertenezca al
      * restaurador autenticado.
      */
+
+    private Antiguedad bloquearAsignadaOFallar(UUID antiguedadId, UUID restauradorId) {
+        return antiguedadRepository.bloquearDelRestaurador(antiguedadId, restauradorId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "La antigüedad solicitada no está asignada al restaurador autenticado"));
+    }
 
     private Antiguedad buscarAsignadaOFallar(
             UUID antiguedadId,

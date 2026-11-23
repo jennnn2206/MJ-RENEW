@@ -44,6 +44,14 @@ public interface AntiguedadRepository
 
     Page<Antiguedad> findByRestaurador_UsuariosId(UUID restauradorId, Pageable pageable);
 
+    long countByRestaurador_UsuariosIdAndEstadoActualAntiguedadIn(
+            UUID restauradorId, java.util.Collection<EstadoAntiguedad> estados);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select a from Antiguedad a where a.antiguedadesId = :antiguedadId and a.restaurador.usuariosId = :restauradorId")
+    Optional<Antiguedad> bloquearDelRestaurador(@Param("antiguedadId") UUID antiguedadId,
+                                               @Param("restauradorId") UUID restauradorId);
+
     Optional<Antiguedad> findByAntiguedadesIdAndRestaurador_UsuariosId(
             UUID antiguedadId,
             UUID restauradorId
