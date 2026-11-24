@@ -7,6 +7,7 @@ import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadCreateRequest;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadDetalleResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadResumenResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.PublicarEnCatalogoRequest;
+import com.mjrenew.mjrenew_backend.propietario.dto.SolicitarEntregaPropietarioRequest;
 import com.mjrenew.mjrenew_backend.propietario.dto.RechazarCotizacionRequest;
 import com.mjrenew.mjrenew_backend.propietario.dto.SeleccionarRestauradorRequest;
 import com.mjrenew.mjrenew_backend.propietario.service.AntiguedadService;
@@ -220,9 +221,10 @@ public class AntiguedadController {
     @PostMapping("/solicitarDevolucionTaller/{antiguedadId}")
     @PreAuthorize("hasRole('PROPIETARIO')")
     public ResponseEntity<AntiguedadDetalleResponse> solicitarDevolucionTaller(
-            @PathVariable UUID antiguedadId, @AuthenticationPrincipal UsuarioPrincipal principal) {
+            @PathVariable UUID antiguedadId, @Valid @RequestBody SolicitarEntregaPropietarioRequest request,
+            @AuthenticationPrincipal UsuarioPrincipal principal) {
         return ResponseEntity.ok(antiguedadService.solicitarDevolucionTaller(
-                antiguedadId, principal.getUsuario().getUsuariosId()));
+                antiguedadId, principal.getUsuario().getUsuariosId(), request));
     }
 
     @PostMapping("/confirmarRecogidaPersonal/{antiguedadId}")

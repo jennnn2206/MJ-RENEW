@@ -236,6 +236,26 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-solicitud-entrega">
+  <div class="modal-box modal-sm">
+    <div class="modal-header">
+      <h3>Entrega a domicilio</h3>
+      <button class="modal-close" onclick="Modal.close('modal-solicitud-entrega')">×</button>
+    </div>
+    <p>Elige cuándo puedes recibir tu antigüedad. Podrás ajustar el horario mientras esté pendiente de asignación.</p>
+    <label for="se-domicilio">Domicilio de entrega</label>
+    <textarea class="form-control" id="se-domicilio" maxlength="300" required></textarea>
+    <label for="se-fecha">Fecha de entrega</label>
+    <input type="date" class="form-control" id="se-fecha" required>
+    <label for="se-inicio">Disponible desde</label>
+    <input type="time" class="form-control" id="se-inicio" required>
+    <label for="se-fin">Disponible hasta</label>
+    <input type="time" class="form-control" id="se-fin" required>
+    <div id="se-error" class="form-error" role="alert"></div>
+    <button class="btn btn-primary" id="se-submit" onclick="solicitarEntregaActual()">Confirmar horario</button>
+  </div>
+</div>
+
 <script th:src="@{/js/data/afd-estados.js}"></script>
 <script th:src="@{/js/data/catalogo.js}"></script>
 <script th:src="@{/js/data/restauradores.js}"></script>
@@ -335,9 +355,12 @@
       acciones += `<button class="btn btn-primary btn-sm" onclick="decisionTaller('abrirDecisionEnTaller','${p.antiguedadId}')">Elegir destino de mi pieza</button>`;
     }
     if (p.estadoActualAntiguedad === 'DECISION_EN_TALLER') {
-      acciones += `<button class="btn btn-primary btn-sm" onclick="decisionTaller('solicitarDevolucionTaller','${p.antiguedadId}')">Solicitar entrega a domicilio</button>
+      acciones += `<button class="btn btn-primary btn-sm" onclick="abrirSolicitudEntrega('${p.antiguedadId}')">Solicitar entrega a domicilio</button>
         <button class="btn btn-ghost btn-sm" onclick="confirmarRecepcionRestaurada('${p.antiguedadId}', true)">Ya recogí mi pieza</button>
         <button class="btn btn-ghost btn-sm" onclick="abrirPublicarCatalogo('${p.antiguedadId}', true)">Vender desde el taller</button>`;
+    }
+    if (p.estadoActualAntiguedad === 'SOLICITUD_DEVOLUCION_TALLER') {
+      acciones += `<button class="btn btn-primary btn-sm" onclick="abrirSolicitudEntrega('${p.antiguedadId}')">Elegir o consultar horario de entrega</button>`;
     }
     if (p.estadoActualAntiguedad === 'ENTREGADO_AL_PROPIETARIO') {
       acciones += `<button class="btn btn-primary btn-sm" onclick="confirmarRecepcionRestaurada('${p.antiguedadId}')">Confirmar que recibí mi pieza</button>`;
@@ -544,6 +567,12 @@
         </div>
       `;
       Utils.mostrarFotosFinales(cont, a.fotosEstadoFinal);
+      const entrega = a.entregaPropietario;
+      if (entrega) {
+        const horario = document.createElement('p');
+        horario.textContent = `Entrega solicitada para ${entrega.fecha}, de ${entrega.horaInicio} a ${entrega.horaFin}. ${entrega.transportistaAsignado ? 'Transportista asignado.' : 'Pendiente de asignación.'} Resultado: ${entrega.resultado}.`;
+        cont.append(horario);
+      }
     } catch (err) {
       cont.innerHTML = `<p style="color:var(--error)">${err.message}</p>`;
     }
@@ -674,6 +703,59 @@
   }
 
   // ── PUBLICAR EN CATÁLOGO ──────────────────────────────────────────
+  let antiguedadParaEntrega = null;
+  async function abrirSolicitudEntrega(id) {
+    antiguedadParaEntrega = id;
+    const errEl = document.getElementById('se-error');
+    errEl.classList.remove('visible');
+    ['se-fecha', 'se-inicio', 'se-fin'].forEach(campo => document.getElementById(campo).value = '');
+    Modal.open('modal-solicitud-entrega');
+    document.getElementById('se-submit').disabled = true;
+    try {
+      const [detalle, domicilio] = await Promise.all([Api.detalleAntiguedad(id), Api.obtenerMiDomicilio()]);
+      if (antiguedadParaEntrega !== id) return;
+      document.getElementById('se-domicilio').value = domicilio.direccionTextoUsuario || '';
+      const entrega = detalle.entregaPropietario;
+      if (entrega?.resultado === 'PENDIENTE') {
+        document.getElementById('se-fecha').value = entrega.fecha;
+        document.getElementById('se-inicio').value = entrega.horaInicio;
+        document.getElementById('se-fin').value = entrega.horaFin;
+      }
+      document.getElementById('se-submit').disabled = false;
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.classList.add('visible');
+    }
+  }
+
+  async function solicitarEntregaActual() {
+    const antiguedadId = antiguedadParaEntrega;
+    const btn = document.getElementById('se-submit');
+    const errEl = document.getElementById('se-error');
+    const fechaAcordadaTraslado = document.getElementById('se-fecha').value;
+    const direccion = document.getElementById('se-domicilio').value.trim();
+    const horaInicioAcordadaTraslado = document.getElementById('se-inicio').value;
+    const horaFinAcordadaTraslado = document.getElementById('se-fin').value;
+    if (!direccion || !fechaAcordadaTraslado || !horaInicioAcordadaTraslado || !horaFinAcordadaTraslado
+        || horaInicioAcordadaTraslado >= horaFinAcordadaTraslado) {
+      errEl.textContent = 'Completa tu domicilio, la fecha y un horario con la hora final posterior a la inicial.';
+      errEl.classList.add('visible');
+      return;
+    }
+    btn.disabled = true;
+    try {
+      await Api.actualizarMiDomicilio(direccion);
+      await Api.solicitarEntregaPropietario(antiguedadId,
+        {fechaAcordadaTraslado, horaInicioAcordadaTraslado, horaFinAcordadaTraslado});
+      Modal.close('modal-solicitud-entrega');
+      Toast.show('Horario de entrega registrado. Se asignará un transportista a tu solicitud.', 'success');
+      await cargarMisPiezas();
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.classList.add('visible');
+    } finally { btn.disabled = false; }
+  }
+
   async function decisionTaller(accion, id) {
     try {
       await Api.post('/api/propietario/' + accion + '/' + id);

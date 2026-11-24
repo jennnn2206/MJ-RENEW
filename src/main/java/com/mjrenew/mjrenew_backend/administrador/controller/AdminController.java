@@ -71,6 +71,19 @@ public class AdminController {
                 trasladoId, request.transportistaId()));
     }
 
+    @GetMapping("/obtenerEntregasPropietarioPendientesAsignacion")
+    public ResponseEntity<Page<TrasladoAntiguedadDetalleResponse>> obtenerEntregasPropietarioPendientesAsignacion(Pageable pageable) {
+        Pageable pagina = PageRequest.of(Math.max(0, pageable.getPageNumber()),
+                Math.max(1, Math.min(pageable.getPageSize(), 50)), Sort.by("agendadoEnTraslado"));
+        return ResponseEntity.ok(trasladoService.obtenerEntregasPropietarioPendientesAsignacion(pagina));
+    }
+
+    @PostMapping("/asignarTransportistaEntregaPropietario/{trasladoId}")
+    public ResponseEntity<TrasladoAntiguedadDetalleResponse> asignarTransportistaEntregaPropietario(
+            @PathVariable UUID trasladoId, @Valid @RequestBody AsignarTransportistaEntregaRequest request) {
+        return ResponseEntity.ok(trasladoService.asignarTransportistaEntregaPropietario(trasladoId, request.transportistaId()));
+    }
+
     @GetMapping("/obtenerRestauradoresPendientesAprobacion")
     public ResponseEntity<Page<PerfilRestauradorPublicoResponse>> obtenerRestauradoresPendientesAprobacion(Pageable pageable) {
         return ResponseEntity.ok(administradorService.obtenerRestauradoresPendientesAprobacion(pageable));

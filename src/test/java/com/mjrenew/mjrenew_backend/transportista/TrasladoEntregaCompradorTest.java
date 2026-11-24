@@ -83,7 +83,7 @@ class TrasladoEntregaCompradorTest {
         CrearTrasladoRequest r = new CrearTrasladoRequest(a.getAntiguedadesId(), transportistaId,
                 TipoTraslado.ENTREGA_COMPRADOR, "Casa del propietario", "Casa del comprador",
                 LocalDate.now().plusDays(1), LocalTime.of(10, 0), LocalTime.of(12, 0), null);
-        when(antiguedades.findById(a.getAntiguedadesId())).thenReturn(Optional.of(a));
+        when(antiguedades.bloquearParaConfirmarPago(a.getAntiguedadesId())).thenReturn(Optional.of(a));
         when(usuarios.findById(transportistaId)).thenReturn(Optional.of(transportista));
         when(traslados.save(any())).thenAnswer(i -> i.getArgument(0));
 
@@ -118,7 +118,7 @@ class TrasladoEntregaCompradorTest {
         CrearTrasladoRequest request = new CrearTrasladoRequest(a.getAntiguedadesId(), transportistaId,
                 TipoTraslado.ENTREGA_COMPRADOR, "Casa del propietario", "Casa del comprador",
                 LocalDate.now().plusDays(1), LocalTime.of(10, 0), LocalTime.of(12, 0), null);
-        when(antiguedades.findById(a.getAntiguedadesId())).thenReturn(Optional.of(a));
+        when(antiguedades.bloquearParaConfirmarPago(a.getAntiguedadesId())).thenReturn(Optional.of(a));
         when(usuarios.findById(transportistaId)).thenReturn(Optional.of(transportista));
 
         assertThrows(TransicionEstadoInvalidaException.class, () -> servicio.crearTraslado(request));

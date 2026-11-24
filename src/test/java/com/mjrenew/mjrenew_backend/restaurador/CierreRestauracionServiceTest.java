@@ -105,7 +105,7 @@ class CierreRestauracionServiceTest {
 
     private AntiguedadDetalleResponse detalle(EstadoAntiguedad estado, List<String> finales) {
         return new AntiguedadDetalleResponse(id, null, null, null, null, null, estado,
-                null, null, List.of(), finales);
+                null, null, List.of(), finales, null);
     }
 
     static List<MultipartFile> fotos() {

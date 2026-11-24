@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 
 import java.util.List;
 
@@ -36,6 +37,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> manejarFormatoNoCompatible(HttpMediaTypeNotSupportedException ex) {
         return construirRespuesta(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
                 "El formato del envío no es compatible con esta operación");
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> manejarSolicitudNoLegible(HttpMessageNotReadableException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, "Revisa los datos de la solicitud y los formatos de fecha y hora");
     }
 
     @ExceptionHandler(RecursoNoEncontradoException.class)

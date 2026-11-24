@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/usuario")
-@PreAuthorize("hasAnyRole('PROPIETARIO', 'COMPRADOR')")
+@PreAuthorize("hasAnyRole('PROPIETARIO', 'COMPRADOR', 'RESTAURADOR')")
 public class UsuarioPerfilController {
     private final UsuarioPerfilService perfilService;
 

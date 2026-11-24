@@ -47,6 +47,7 @@ class ProgramacionEntregaCompradorTest {
     @Mock UsuarioRepository usuarios;
     @Mock TrasladoMapper mapper;
     @Mock AlmacenamientoService almacenamiento;
+    @org.mockito.Spy com.mjrenew.mjrenew_backend.transportista.service.ValidadorVentanaEntrega ventanas = new com.mjrenew.mjrenew_backend.transportista.service.ValidadorVentanaEntrega();
     @InjectMocks TrasladoAntiguedadService servicio;
 
     private final UUID catalogoId = UUID.randomUUID();

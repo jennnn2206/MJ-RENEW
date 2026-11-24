@@ -7,12 +7,36 @@ Después de que el restaurador marca la pieza como `RESTAURACION_LISTA`, el prop
 | Acción | Endpoint | Estado siguiente |
 | --- | --- | --- |
 | Vender desde el taller | `POST /api/propietario/publicarEnCatalogo/{antiguedadId}` con `precioMxnCatalogo` y `direccionRecogidaTaller` | `EN_CATALOGO` |
-| Solicitar entrega a domicilio | `POST /api/propietario/solicitarDevolucionTaller/{antiguedadId}` | `SOLICITUD_DEVOLUCION_TALLER` |
+| Solicitar entrega a domicilio | `POST /api/propietario/solicitarDevolucionTaller/{antiguedadId}` con fecha y horario | `SOLICITUD_DEVOLUCION_TALLER` |
 | Confirmar recogida personal | `POST /api/propietario/confirmarRecogidaPersonal/{antiguedadId}` | `DEVUELTA_DESDE_TALLER` |
 
-El administrador solo puede crear un traslado `ENTREGA_PROPIETARIO` después de la
-solicitud. Si la entrega falla porque no hay nadie en casa, la pieza vuelve a
-`SOLICITUD_DEVOLUCION_TALLER` y se puede reagendar. Tras una entrega exitosa,
+El propietario registra fecha y horario mediante el siguiente cuerpo JSON.
+
+```json
+{
+  "fechaAcordadaTraslado": "2026-12-01",
+  "horaInicioAcordadaTraslado": "10:00",
+  "horaFinAcordadaTraslado": "12:00"
+}
+```
+
+La fecha y la hora de inicio deben ser futuras en la zona `America/Merida`.
+La solicitud guarda el horario y las direcciones de los perfiles, inicialmente sin
+transportista. Repetirla conserva el mismo intento. El propietario puede actualizar
+el horario mientras la solicitud esté sin asignar, incluso si la ventana anterior venció.
+El taller registra su dirección privada desde el perfil del restaurador y el
+propietario confirma su domicilio desde el formulario de entrega.
+
+Administración consulta `GET /api/administrador/obtenerEntregasPropietarioPendientesAsignacion`
+con paginación y asigna mediante
+`POST /api/administrador/asignarTransportistaEntregaPropietario/{trasladoId}`
+con `{"transportistaId":"UUID"}`. La asignación valida que el transportista esté
+activo y que el horario siga vigente. La antigüedad pasa a `HORARIO_ENTREGA_AGENDADO`.
+La operación `crearTraslado` exige usar esta asignación para las entregas al propietario.
+
+Si la entrega falla porque no hay nadie en casa, la antigüedad vuelve a
+`SOLICITUD_DEVOLUCION_TALLER` y el propietario elige otro horario. El tercer intento
+fallido pasa a `CANCELADA_ENTREGA`, según RF-018. Tras una entrega exitosa,
 el propietario confirma la recepción mediante
 `POST /api/propietario/conservarRestauracion/{antiguedadId}`. La confirmación pasa a
 `RESTAURACION_COMPLETADA` y autoriza la liberación al restaurador. Desde ese estado

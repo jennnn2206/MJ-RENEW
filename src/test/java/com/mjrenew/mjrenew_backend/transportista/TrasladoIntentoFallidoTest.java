@@ -49,6 +49,7 @@ class TrasladoIntentoFallidoTest {
     @Mock UsuarioRepository usuarioRepo;
     @Mock TrasladoMapper mapper;
     @Mock AlmacenamientoService almacenamiento;
+    @org.mockito.Spy com.mjrenew.mjrenew_backend.transportista.service.ValidadorVentanaEntrega ventanas = new com.mjrenew.mjrenew_backend.transportista.service.ValidadorVentanaEntrega();
     @InjectMocks TrasladoAntiguedadService servicio;
 
     private final UUID transportistaId = UUID.randomUUID();
@@ -66,7 +67,9 @@ class TrasladoIntentoFallidoTest {
         t.setAntiguedad(antiguedad);
         t.setTipoTraslado(tipo);
         t.setResultadoTraslado(ResultadoTraslado.PENDIENTE);
-        when(trasladoRepo.findById(t.getTrasladosAntiguedadId())).thenReturn(Optional.of(t));
+        when(trasladoRepo.buscarAntiguedadId(t.getTrasladosAntiguedadId())).thenReturn(Optional.of(antiguedad.getAntiguedadesId()));
+        when(antiguedadRepo.bloquearParaConfirmarPago(antiguedad.getAntiguedadesId())).thenReturn(Optional.of(antiguedad));
+        when(trasladoRepo.buscarParaAsignacion(t.getTrasladosAntiguedadId())).thenReturn(Optional.of(t));
         return t;
     }
 
@@ -142,29 +145,27 @@ class TrasladoIntentoFallidoTest {
         Antiguedad antiguedad = new Antiguedad();
         antiguedad.setAntiguedadesId(UUID.randomUUID());
         antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.SOLICITUD_DEVOLUCION_TALLER);
-        Usuario transportista = new Usuario();
-        transportista.setUsuariosId(transportistaId);
-        transportista.setTipoUsuario(TipoUsuario.TRANSPORTISTA);
-        transportista.setActivoUsuario(true);
-        CrearTrasladoRequest request = new CrearTrasladoRequest(antiguedad.getAntiguedadesId(), transportistaId,
-                TipoTraslado.ENTREGA_PROPIETARIO, "Taller", "Casa", LocalDate.now(),
-                LocalTime.of(10, 0), LocalTime.of(12, 0), null);
-
-        when(antiguedadRepo.findById(antiguedad.getAntiguedadesId())).thenReturn(Optional.of(antiguedad));
-        when(usuarioRepo.findById(transportistaId)).thenReturn(Optional.of(transportista));
-        // El intento #1 terminó en NADIE_EN_CASA: no hay uno PENDIENTE ni EXITOSO.
-        when(trasladoRepo.existsByAntiguedad_AntiguedadesIdAndTipoTrasladoAndResultadoTrasladoIn(
-                eq(antiguedad.getAntiguedadesId()), eq(TipoTraslado.ENTREGA_PROPIETARIO), anyCollection())).thenReturn(false);
+        Usuario propietario = new Usuario();
+        propietario.setUsuariosId(UUID.randomUUID());
+        propietario.setDireccionTextoUsuario("Casa");
+        Usuario restaurador = new Usuario();
+        restaurador.setDireccionTextoUsuario("Taller");
+        antiguedad.setPropietario(propietario);
+        antiguedad.setRestaurador(restaurador);
+        when(antiguedadRepo.bloquearDelPropietario(antiguedad.getAntiguedadesId(), propietario.getUsuariosId()))
+                .thenReturn(Optional.of(antiguedad));
         when(trasladoRepo.countByAntiguedad_AntiguedadesIdAndTipoTraslado(
                 antiguedad.getAntiguedadesId(), TipoTraslado.ENTREGA_PROPIETARIO)).thenReturn(1L);
         when(trasladoRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        servicio.crearTraslado(request);
+        servicio.solicitarEntregaPropietario(antiguedad.getAntiguedadesId(), propietario.getUsuariosId(),
+                LocalDate.now().plusDays(1), LocalTime.of(10, 0), LocalTime.of(12, 0));
 
         ArgumentCaptor<TrasladoAntiguedad> captor = ArgumentCaptor.forClass(TrasladoAntiguedad.class);
         verify(trasladoRepo).save(captor.capture());
         assertEquals((short) 2, captor.getValue().getNumeroIntentoTraslado());
-        assertEquals(EstadoAntiguedad.HORARIO_ENTREGA_AGENDADO, antiguedad.getEstadoActualAntiguedad());
+        assertNull(captor.getValue().getTransportista());
+        assertEquals(EstadoAntiguedad.SOLICITUD_DEVOLUCION_TALLER, antiguedad.getEstadoActualAntiguedad());
     }
 
     @Test
@@ -179,10 +180,9 @@ class TrasladoIntentoFallidoTest {
         CrearTrasladoRequest request = new CrearTrasladoRequest(antiguedad.getAntiguedadesId(), transportistaId,
                 TipoTraslado.ENTREGA_PROPIETARIO, "Taller", "Casa", LocalDate.now(),
                 LocalTime.of(10, 0), LocalTime.of(12, 0), null);
-        when(antiguedadRepo.findById(antiguedad.getAntiguedadesId())).thenReturn(Optional.of(antiguedad));
-        when(usuarioRepo.findById(transportistaId)).thenReturn(Optional.of(transportista));
+        when(antiguedadRepo.bloquearParaConfirmarPago(antiguedad.getAntiguedadesId())).thenReturn(Optional.of(antiguedad));
 
-        assertThrows(TransicionEstadoInvalidaException.class, () -> servicio.crearTraslado(request));
+        assertThrows(SolicitudInvalidaException.class, () -> servicio.crearTraslado(request));
         verify(trasladoRepo, never()).save(any());
         assertEquals(EstadoAntiguedad.RESTAURACION_LISTA, antiguedad.getEstadoActualAntiguedad());
     }

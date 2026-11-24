@@ -192,6 +192,21 @@ const Api = {
     aprobarRestaurador(restauradorId) {
         return this.post(`/api/administrador/aprobarRestaurador/${restauradorId}`);
     },
+    solicitarEntregaPropietario(antiguedadId, horario) {
+        return this.post(`/api/propietario/solicitarDevolucionTaller/${antiguedadId}`, horario);
+    },
+    obtenerMiDomicilio() {
+        return this.get('/api/usuario/obtenerMiDomicilio');
+    },
+    actualizarMiDomicilio(direccionTextoUsuario) {
+        return this.post('/api/usuario/actualizarMiDomicilio', { direccionTextoUsuario });
+    },
+    obtenerEntregasPropietarioPendientes(page = 0) {
+        return this.get(`/api/administrador/obtenerEntregasPropietarioPendientesAsignacion?page=${page}&size=20`);
+    },
+    asignarEntregaPropietario(trasladoId, transportistaId) {
+        return this.post(`/api/administrador/asignarTransportistaEntregaPropietario/${trasladoId}`, { transportistaId });
+    },
     obtenerDisputasAbiertas(page = 0, size = 50) {
         return this.get(`/api/administrador/obtenerDisputasAbiertas?page=${page}&size=${size}`);
     },

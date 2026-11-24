@@ -6,6 +6,7 @@ import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadDetalleResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadResumenResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.AvisoIntentoFallidoResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.DimensionResponse;
+import com.mjrenew.mjrenew_backend.propietario.dto.EntregaPropietarioResponse;
 import com.mjrenew.mjrenew_backend.propietario.entity.Dimension;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -41,8 +42,15 @@ public interface AntiguedadMapper {
     @Mapping(target = "dimension", source = "dimension")
     @Mapping(target = "fotosEstadoInicial", source = "fotosEstadoInicial")
     @Mapping(target = "fotosEstadoFinal", source = "fotosEstadoFinal")
+    @Mapping(target = "entregaPropietario", source = "entregaPropietario")
     AntiguedadDetalleResponse toDetalle(Antiguedad antiguedad, DimensionResponse dimension,
-                                      List<String> fotosEstadoInicial, List<String> fotosEstadoFinal);
+                                      List<String> fotosEstadoInicial, List<String> fotosEstadoFinal,
+                                      EntregaPropietarioResponse entregaPropietario);
+
+    default AntiguedadDetalleResponse toDetalle(Antiguedad antiguedad, DimensionResponse dimension,
+            List<String> fotosEstadoInicial, List<String> fotosEstadoFinal) {
+        return toDetalle(antiguedad, dimension, fotosEstadoInicial, fotosEstadoFinal, null);
+    }
 
     @Mapping(target = "altoCm", source = "altoCmAntiguedad")
     @Mapping(target = "anchoCm", source = "anchoCmAntiguedad")

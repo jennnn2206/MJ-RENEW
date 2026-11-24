@@ -22,6 +22,14 @@
         </div>
         <div>
             <div class="card-elevated" style="margin-bottom:16px">
+                <h4>Dirección de recogida del taller</h4>
+                <p>Administración y el transportista asignado usarán esta dirección para recoger las antigüedades.</p>
+                <label class="form-label" for="taller-direccion">Dirección completa</label>
+                <textarea class="form-control" id="taller-direccion" maxlength="300" required></textarea>
+                <div id="taller-error" class="form-error" role="alert"></div>
+                <button class="btn btn-primary" onclick="guardarDireccionTaller(this)">Guardar dirección del taller</button>
+            </div>
+            <div class="card-elevated" style="margin-bottom:16px">
                 <h4 style="font-family:'Playfair Display',serif;margin-bottom:12px">Disponibilidad</h4>
                 <p style="font-size:1rem;color:var(--ink2);margin-bottom:12px">Los propietarios solo pueden seleccionarte si estás disponible.</p>
                 <div class="form-group">

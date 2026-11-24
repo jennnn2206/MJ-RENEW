@@ -82,9 +82,14 @@
     <div id="section-traslados" class="dash-section" style="display:none">
       <div style="margin-bottom:24px">
         <h2 style="font-size:1.5rem">Crear traslado</h2>
-        <p style="color:var(--ink2)">Agenda la recolección o la entrega al propietario. Sin esto la pieza se queda
-          atascada en PAGO_EN_ESCROW (recolección) o RESTAURACION_LISTA (entrega) y nunca avanza.</p>
+        <p style="color:var(--ink2)">Agenda la recolección de una antigüedad. Asigna las entregas al propietario desde las solicitudes con horario confirmado.</p>
       </div>
+      <section class="card" style="margin-bottom:24px">
+        <h3>Entregas al propietario pendientes de asignación</h3>
+        <button class="btn btn-ghost" onclick="cargarEntregasPropietario()">Actualizar solicitudes</button>
+        <div id="entregas-propietario-list" aria-live="polite"></div>
+        <div id="entregas-propietario-paginacion"></div>
+      </section>
       <div class="card-elevated" style="max-width:640px">
         <div class="form-group">
           <label class="form-label">ID de la antigüedad</label>
@@ -98,8 +103,7 @@
           <label class="form-label">Tipo de traslado</label>
           <select class="form-control" id="ct-tipo">
             <option value="RECOLECCION">Recolección (de la casa del propietario al taller)</option>
-            <option value="ENTREGA_PROPIETARIO">Entrega al propietario (del taller a su casa)</option>
-          </select>
+            </select>
         </div>
         <div class="grid-2">
           <div class="form-group"><label class="form-label">Dirección origen</label><input type="text" class="form-control" id="ct-origen" placeholder="Calle, número, ciudad"></div>
@@ -154,6 +158,7 @@
 <script th:src="@{/js/data/panel-restaurador.js}"></script>
 <script th:src="@{/js/autenticacion.js}"></script>
 <script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/entregas-propietario.js}"></script>
 <script th:src="@{/js/utilidades.js}"></script>
 <script th:src="@{/js/notificaciones.js}"></script>
 <script th:src="@{/js/modal.js}"></script>
@@ -391,6 +396,7 @@
     }
   }
 
+  cargarEntregasPropietario();
   cargarRestauradoresPendientes();
   cargarDisputas();
   cargarUsuarios();

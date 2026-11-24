@@ -37,6 +37,7 @@ class DecisionEnTallerServiceTest {
     @Mock AntiguedadMapper antiguedadMapper;
     @Mock CatalogoAntiguedadRepository catalogos;
     @Mock CatalogoAntiguedadMapper catalogoMapper;
+    @Mock com.mjrenew.mjrenew_backend.transportista.repository.TrasladoAntiguedadRepository traslados;
     @InjectMocks AntiguedadService service;
 
     private final UUID piezaId = UUID.randomUUID();
@@ -61,14 +62,10 @@ class DecisionEnTallerServiceTest {
     }
 
     @Test
-    void solicitarDevolucionImpideElegirOtraRuta() {
-        Antiguedad pieza = piezaEn(EstadoAntiguedad.DECISION_EN_TALLER);
-
-        service.solicitarDevolucionTaller(piezaId, propietarioId);
-
-        assertEquals(EstadoAntiguedad.SOLICITUD_DEVOLUCION_TALLER, pieza.getEstadoActualAntiguedad());
-        assertThrows(TransicionEstadoInvalidaException.class,
-                () -> service.confirmarRecogidaPersonal(piezaId, propietarioId));
+    void solicitudDeDevolucionExigeLaFechaYElHorario() {
+        assertThrows(SolicitudInvalidaException.class,
+                () -> service.solicitarDevolucionTaller(piezaId, propietarioId, null));
+        verifyNoInteractions(antiguedades);
     }
 
     @Test

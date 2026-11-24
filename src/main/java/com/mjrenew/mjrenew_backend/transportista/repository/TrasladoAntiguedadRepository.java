@@ -18,6 +18,12 @@ import java.util.UUID;
 
 public interface TrasladoAntiguedadRepository extends JpaRepository<TrasladoAntiguedad, UUID> {
 
+    @Query("select t.antiguedad.antiguedadesId from TrasladoAntiguedad t where t.trasladosAntiguedadId = :trasladoId")
+    Optional<UUID> buscarAntiguedadId(@Param("trasladoId") UUID trasladoId);
+
+    Optional<TrasladoAntiguedad> findFirstByAntiguedad_AntiguedadesIdAndTipoTrasladoOrderByAgendadoEnTrasladoDesc(
+            UUID antiguedadId, TipoTraslado tipoTraslado);
+
     Page<TrasladoAntiguedad> findByTransportista_UsuariosId(UUID transportistaId, Pageable pageable);
 
     Page<TrasladoAntiguedad> findByTipoTrasladoAndTransportistaIsNullAndResultadoTraslado(

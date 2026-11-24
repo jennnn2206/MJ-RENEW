@@ -448,7 +448,28 @@
   }
 
   // ── MI PERFIL ──────────────────────────────────────────────────
+  async function cargarDireccionTaller() {
+    const error = document.getElementById('taller-error');
+    error.classList.remove('visible');
+    try {
+      const domicilio = await Api.obtenerMiDomicilio();
+      document.getElementById('taller-direccion').value = domicilio.direccionTextoUsuario || '';
+    } catch (err) { error.textContent = err.message; error.classList.add('visible'); }
+  }
+
+  async function guardarDireccionTaller(boton) {
+    const error = document.getElementById('taller-error');
+    error.classList.remove('visible');
+    boton.disabled = true;
+    try {
+      await Api.actualizarMiDomicilio(document.getElementById('taller-direccion').value.trim());
+      Toast.show('Dirección del taller guardada.', 'success');
+    } catch (err) { error.textContent = err.message; error.classList.add('visible'); }
+    finally { boton.disabled = false; }
+  }
+
   async function cargarPerfil() {
+    cargarDireccionTaller();
     try {
       const p = await Api.obtenerPerfilRestaurador();
       document.getElementById('perfil-especialidad').value = p.especialidadRestaurador || '';

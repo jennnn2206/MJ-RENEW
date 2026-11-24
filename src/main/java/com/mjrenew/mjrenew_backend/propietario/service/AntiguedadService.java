@@ -16,6 +16,10 @@ import com.mjrenew.mjrenew_backend.nucleo.enums.TipoFotografia;
 import com.mjrenew.mjrenew_backend.propietario.dto.AvisoIntentoFallidoResponse;
 import com.mjrenew.mjrenew_backend.transportista.entity.TrasladoAntiguedad;
 import com.mjrenew.mjrenew_backend.transportista.repository.TrasladoAntiguedadRepository;
+import com.mjrenew.mjrenew_backend.transportista.service.TrasladoAntiguedadService;
+import com.mjrenew.mjrenew_backend.nucleo.enums.TipoTraslado;
+import com.mjrenew.mjrenew_backend.propietario.dto.SolicitarEntregaPropietarioRequest;
+import com.mjrenew.mjrenew_backend.propietario.dto.EntregaPropietarioResponse;
 // MJRENEW-STRIPE: tipos propios del flujo bancario; no cadenas mágicas.
 import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoTransaccion;
 import com.mjrenew.mjrenew_backend.nucleo.enums.FlujoTransaccion;
@@ -79,6 +83,7 @@ public class AntiguedadService {
     private final StripeCheckoutService stripeCheckoutService;
     private final AlmacenamientoService almacenamientoService;
     private final TrasladoAntiguedadRepository trasladoRepository;
+    private final TrasladoAntiguedadService traslados;
 
     public AntiguedadService(
             AntiguedadRepository antiguedadRepository,
@@ -95,7 +100,8 @@ public class AntiguedadService {
             LiberacionRestauradorService liberaciones,
             StripeCheckoutService stripeCheckoutService,
             AlmacenamientoService almacenamientoService,
-            TrasladoAntiguedadRepository trasladoRepository
+            TrasladoAntiguedadRepository trasladoRepository,
+            TrasladoAntiguedadService traslados
     ) {
         this.antiguedadRepository = antiguedadRepository;
         this.fotografiaRepository = fotografiaRepository;
@@ -112,6 +118,7 @@ public class AntiguedadService {
         this.stripeCheckoutService = stripeCheckoutService;
         this.almacenamientoService = almacenamientoService;
         this.trasladoRepository = trasladoRepository;
+        this.traslados = traslados;
     }
 
     @Transactional
@@ -461,11 +468,12 @@ public class AntiguedadService {
     }
 
     @Transactional
-    public AntiguedadDetalleResponse solicitarDevolucionTaller(UUID antiguedadId, UUID propietarioId) {
-        Antiguedad antiguedad = bloquearDelPropietarioOFallar(antiguedadId, propietarioId);
-        validarEstado(antiguedad, EstadoAntiguedad.DECISION_EN_TALLER);
-        antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.SOLICITUD_DEVOLUCION_TALLER);
-        return construirDetalle(antiguedad);
+    public AntiguedadDetalleResponse solicitarDevolucionTaller(UUID antiguedadId, UUID propietarioId,
+            SolicitarEntregaPropietarioRequest request) {
+        if (request == null) throw new SolicitudInvalidaException("Selecciona la fecha y el horario de entrega");
+        traslados.solicitarEntregaPropietario(antiguedadId, propietarioId, request.fechaAcordadaTraslado(),
+                request.horaInicioAcordadaTraslado(), request.horaFinAcordadaTraslado());
+        return construirDetalle(buscarDelPropietarioOFallar(antiguedadId, propietarioId));
     }
 
     @Transactional
@@ -617,7 +625,12 @@ public class AntiguedadService {
                 obtenerFotosEstadoInicial(antiguedad),
                 fotografiaRepository.findByAntiguedad_AntiguedadesIdAndTipoFotografiaOrderBySubidaEnFotografiaAsc(
                         antiguedad.getAntiguedadesId(), TipoFotografia.ESTADO_FINAL)
-                        .stream().map(FotografiaAntiguedad::getUrlAlmacenFotografia).toList()
+                        .stream().map(FotografiaAntiguedad::getUrlAlmacenFotografia).toList(),
+                trasladoRepository.findFirstByAntiguedad_AntiguedadesIdAndTipoTrasladoOrderByAgendadoEnTrasladoDesc(
+                                antiguedad.getAntiguedadesId(), TipoTraslado.ENTREGA_PROPIETARIO)
+                        .map(t -> new EntregaPropietarioResponse(t.getTrasladosAntiguedadId(), t.getFechaAcordadaTraslado(),
+                                t.getHoraInicioAcordadaTraslado(), t.getHoraFinAcordadaTraslado(),
+                                t.getResultadoTraslado(), t.getTransportista() != null)).orElse(null)
         );
     }
 
