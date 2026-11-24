@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <title>Verificar correo — MJ Renew</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-card">
+    <div th:replace="~{fragmentos/logo-autenticacion :: logo-autenticacion('Verifica tu correo electrónico')}"></div>
+    <h3>Confirma tu correo</h3>
+    <p style="margin:16px 0;color:var(--ink2)">Tu cuenta necesita esta confirmación antes de iniciar sesión.
+      Revisa tu correo y la carpeta de spam. El enlace vence en 24 horas.</p>
+    <button id="verificar-btn" class="btn btn-primary" hidden>Verificar mi correo</button>
+    <p id="resultado" role="status" aria-live="polite" style="margin:16px 0"></p>
+    <form id="reenvio-form">
+      <div class="form-group">
+        <label class="form-label" for="email">Correo electrónico</label>
+        <input id="email" type="email" maxlength="150" class="form-control" autocomplete="email" required>
+      </div>
+      <button id="reenviar-btn" type="submit" class="btn btn-primary">Solicitar otro enlace</button>
+      <p style="margin-top:12px;color:var(--ink2)">Si solicitas otro enlace, usa el correo más reciente.
+        Espera un minuto entre solicitudes.</p>
+    </form>
+    <p style="margin-top:20px"><a th:href="@{/login}">Ir a iniciar sesión</a></p>
+  </div>
+</div>
+<script th:src="@{/js/autenticacion.js}"></script>
+<script th:src="@{/js/verificacion-correo.js}"></script>
+</body>
+</html>

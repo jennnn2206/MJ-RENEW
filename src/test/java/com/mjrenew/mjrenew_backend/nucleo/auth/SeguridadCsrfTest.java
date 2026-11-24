@@ -25,6 +25,7 @@ class SeguridadCsrfTest {
     @Autowired ObjectMapper json;
     @MockitoBean AuthService authService;
     @MockitoBean UsuarioMapper usuarioMapper;
+    @MockitoBean com.mjrenew.mjrenew_backend.nucleo.auth.service.VerificacionCorreoService verificacion;
 
     @Test
     void escrituraRequiereTokenDeLaMismaSesion() throws Exception {

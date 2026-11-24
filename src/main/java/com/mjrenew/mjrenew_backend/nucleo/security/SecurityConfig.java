@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -26,7 +27,7 @@ import org.springframework.security.web.context.SecurityContextRepository;
 public class SecurityConfig {
 
     private static final String[] RUTAS_PUBLICAS_VISTAS = {
-            "/", "/login", "/registro", "/catalogo", "/pieza",
+            "/", "/login", "/registro", "/verificar-correo", "/catalogo", "/pieza",
             "/comprador", "/propietario", "/restaurador",
             "/transportista", "/administrador",
             "/css/**", "/js/**"
@@ -34,6 +35,7 @@ public class SecurityConfig {
 
     private static final String[] RUTAS_PUBLICAS_API = {
             "/api/auth/csrf", "/api/auth/registrarUsuario", "/api/auth/iniciarSesion",
+            "/api/auth/verificarCorreo", "/api/auth/reenviarVerificacionCorreo",
             "/api/catalogo/explorarCatalogo", "/api/catalogo/obtenerDetallePiezaCatalogo/**",
             "/webhook/stripe"
     };
@@ -71,7 +73,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(RUTAS_PUBLICAS_VISTAS).permitAll()
                         .requestMatchers(RUTAS_PUBLICAS_API).permitAll()
-                        .requestMatchers("/api/**").authenticated()
+                        // También rechaza sesiones creadas antes de habilitar RF-002.
+                        .requestMatchers("/api/**").access((authentication, request) -> {
+                            var actual = authentication.get();
+                            return new AuthorizationDecision(actual != null && actual.isAuthenticated()
+                                    && actual.getPrincipal() instanceof UsuarioPrincipal principal
+                                    && Boolean.TRUE.equals(principal.getUsuario().getActivoUsuario())
+                                    && Boolean.TRUE.equals(principal.getUsuario().getCorreoVerificadoUsuario()));
+                        })
                         .anyRequest().permitAll()
                 )
                 .formLogin(form -> form.disable())

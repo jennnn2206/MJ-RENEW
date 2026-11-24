@@ -222,8 +222,8 @@
       const result = await Auth.register(nombre, email, password, tipo);
       if (result.success) {
         localStorage.removeItem('mjrenew_tipo_preselect');
-        const map = { propietario:'/propietario', restaurador:'/restaurador', comprador:'/comprador' };
-        window.location.href = map[tipo] || '/comprador';
+        sessionStorage.setItem('mjrenew_correo_verificacion', email);
+        window.location.href = '/verificar-correo';
       } else {
         document.getElementById('register-error').textContent = result.error;
         document.getElementById('register-error').classList.add('visible');

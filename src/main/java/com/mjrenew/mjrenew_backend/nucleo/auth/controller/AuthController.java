@@ -6,6 +6,9 @@ import com.mjrenew.mjrenew_backend.nucleo.usuario.dto.UsuarioResponse;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.mapper.UsuarioMapper;
 import com.mjrenew.mjrenew_backend.nucleo.security.UsuarioPrincipal;
 import com.mjrenew.mjrenew_backend.nucleo.auth.service.AuthService;
+import com.mjrenew.mjrenew_backend.nucleo.auth.service.VerificacionCorreoService;
+import com.mjrenew.mjrenew_backend.nucleo.auth.dto.VerificarCorreoRequest;
+import com.mjrenew.mjrenew_backend.nucleo.auth.dto.ReenviarVerificacionCorreoRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -24,10 +27,29 @@ public class AuthController {
 
     private final AuthService authService;
     private final UsuarioMapper usuarioMapper;
+    private final VerificacionCorreoService verificacionCorreoService;
 
-    public AuthController(AuthService authService, UsuarioMapper usuarioMapper) {
+    public AuthController(AuthService authService, UsuarioMapper usuarioMapper,
+                          VerificacionCorreoService verificacionCorreoService) {
         this.authService = authService;
         this.usuarioMapper = usuarioMapper;
+        this.verificacionCorreoService = verificacionCorreoService;
+    }
+
+    @PostMapping("/verificarCorreo")
+    public ResponseEntity<Map<String, String>> verificarCorreo(@Valid @RequestBody VerificarCorreoRequest request) {
+        verificacionCorreoService.verificar(request.token());
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(Map.of("mensaje", "Tu correo quedó verificado. Ya puedes iniciar sesión."));
+    }
+
+    @PostMapping("/reenviarVerificacionCorreo")
+    public ResponseEntity<Map<String, String>> reenviarVerificacionCorreo(
+            @Valid @RequestBody ReenviarVerificacionCorreoRequest request) {
+        verificacionCorreoService.reenviar(request.correoElectronico());
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(Map.of("mensaje",
+                "Si la cuenta está pendiente de verificación, recibirás un enlace. Revisa también tu carpeta de spam. "
+                        + "Espera un minuto antes de solicitar otro."));
     }
 
     @GetMapping("/csrf")

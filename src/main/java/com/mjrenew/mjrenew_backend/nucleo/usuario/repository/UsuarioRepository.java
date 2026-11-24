@@ -18,5 +18,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
 
     Optional<Usuario> findByCorreoElectronicoUsuario(String correoElectronicoUsuario);
 
+    @Query("select u.usuariosId from Usuario u where u.correoElectronicoUsuario = :correo")
+    Optional<UUID> buscarIdPorCorreo(@Param("correo") String correo);
+
     boolean existsByCorreoElectronicoUsuario(String correoElectronicoUsuario);
 }

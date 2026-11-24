@@ -21,6 +21,11 @@ public class PageController {
         return "pages/registro";
     }
 
+    @GetMapping("/verificar-correo")
+    public String verificarCorreo() {
+        return "pages/verificar-correo";
+    }
+
     @GetMapping("/catalogo")
     public String catalogo() {
         return "pages/catalogo";

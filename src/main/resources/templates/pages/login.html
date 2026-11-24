@@ -28,6 +28,9 @@
       </div>
 
       <div id="login-error" class="form-error" style="margin-bottom:12px"></div>
+      <div id="verificacion-pendiente" hidden style="margin-bottom:16px">
+        <a th:href="@{/verificar-correo}" id="reenviar-verificacion">Solicitar otro enlace de verificación</a>
+      </div>
 
       <button type="submit" class="btn btn-primary btn-lg" style="width:100%;justify-content:center" id="submit-btn">
         Iniciar sesión
@@ -81,6 +84,10 @@
   // Redirect if already logged in
   Auth.redirectIfLoggedIn();
 
+  document.getElementById('reenviar-verificacion').addEventListener('click', () => {
+    sessionStorage.setItem('mjrenew_correo_verificacion', document.getElementById('email').value.trim());
+  });
+
   function fillDemo(email, password) {
     document.getElementById('email').value = email;
     document.getElementById('password').value = password;
@@ -115,6 +122,7 @@
     const btn = document.getElementById('submit-btn');
     btn.disabled = true;
     btn.textContent = 'Verificando...';
+    document.getElementById('verificacion-pendiente').hidden = true;
 
     setTimeout(async () => {
       const result = await Auth.login(email, password);
@@ -125,6 +133,7 @@
         const errEl = document.getElementById('login-error');
         errEl.textContent = result.error;
         errEl.classList.add('visible');
+        document.getElementById('verificacion-pendiente').hidden = !result.requiereVerificacion;
         btn.disabled = false;
         btn.textContent = 'Iniciar sesión';
       }

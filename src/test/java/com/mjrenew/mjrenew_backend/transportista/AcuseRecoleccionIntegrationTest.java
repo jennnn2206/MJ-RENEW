@@ -252,7 +252,7 @@ class AcuseRecoleccionIntegrationTest {
         u.setContrasenaHashUsuario("hash-sin-login");
         u.setTipoUsuario(rol);
         u.setActivoUsuario(true);
-        u.setCorreoVerificadoUsuario(false);
+        u.setCorreoVerificadoUsuario(true);
         u.setRegistradoEnUsuario(OffsetDateTime.now());
         UUID id = usuarios.saveAndFlush(u).getUsuariosId();
         usuarioIds.add(id);

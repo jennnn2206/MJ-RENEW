@@ -16,7 +16,11 @@ const Auth = {
                 credentials: 'same-origin',
                 body: JSON.stringify({ correoElectronico: email, contrasena: password }),
             });
-            if (!res.ok) return { success: false, error: await extraerError(res, 'Correo o contraseña incorrectos.') };
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                return { success: false, error: body.mensaje || 'Correo o contraseña incorrectos.',
+                    requiereVerificacion: body.error === 'CORREO_NO_VERIFICADO' };
+            }
             const user = guardarSesionLocal(await res.json());
             return { success: true, user };
         } catch {
@@ -33,8 +37,31 @@ const Auth = {
                 body: JSON.stringify({ nombreCompleto: name, correoElectronico: email, contrasena: password, tipoUsuario: tipo.toUpperCase() }),
             });
             if (!res.ok) return { success: false, error: await extraerError(res, 'No se pudo crear la cuenta.') };
-            // TODO ERS RF-002: sustituir inicio automático por verificación real de correo.
-            return this.login(email, password);
+            await res.json();
+            localStorage.removeItem('mjrenew_user');
+            return { success: true, pendienteVerificacion: true };
+        } catch {
+            return { success: false, error: 'No se pudo conectar con el servidor. Intenta de nuevo.' };
+        }
+    },
+
+    async reenviarVerificacion(email) {
+        return this.solicitudVerificacion('/api/auth/reenviarVerificacionCorreo', { correoElectronico: email });
+    },
+
+    async verificarCorreo(token) {
+        return this.solicitudVerificacion('/api/auth/verificarCorreo', { token });
+    },
+
+    async solicitudVerificacion(url, datos) {
+        try {
+            const res = await fetch(url, {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', ...await this.csrfHeaders() },
+                body: JSON.stringify(datos),
+            });
+            if (!res.ok) return { success: false, error: await extraerError(res, 'No se pudo completar la solicitud.') };
+            return { success: true, ...await res.json() };
         } catch {
             return { success: false, error: 'No se pudo conectar con el servidor. Intenta de nuevo.' };
         }

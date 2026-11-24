@@ -27,6 +27,28 @@ public class GlobalExceptionHandler {
     // MJRENEW-FLUJO: registrar la causa raíz del 500 en la consola sin exponerla al frontend.
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> manejarMetodoNoPermitido(
+            org.springframework.web.HttpRequestMethodNotSupportedException ex) {
+        var respuesta = ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED);
+        if (ex.getSupportedHttpMethods() != null) {
+            respuesta.allow(ex.getSupportedHttpMethods().toArray(org.springframework.http.HttpMethod[]::new));
+        }
+        return respuesta.body(new ErrorResponse(405, "Method Not Allowed", "El método no está permitido para esta operación"));
+    }
+
+    @ExceptionHandler(CorreoNoVerificadoException.class)
+    public ResponseEntity<ErrorResponse> manejarCorreoNoVerificado(CorreoNoVerificadoException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse(403, "CORREO_NO_VERIFICADO", ex.getMessage()));
+    }
+
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> manejarCuentaNoDisponible(
+            org.springframework.security.core.AuthenticationException ex) {
+        return construirRespuesta(HttpStatus.UNAUTHORIZED, "Correo o contraseña incorrectos");
+    }
+
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ErrorResponse> manejarArchivosDemasiadoGrandes(MaxUploadSizeExceededException ex) {
         return construirRespuesta(HttpStatus.PAYLOAD_TOO_LARGE,

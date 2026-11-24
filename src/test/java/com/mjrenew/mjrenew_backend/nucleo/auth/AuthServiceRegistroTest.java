@@ -29,6 +29,7 @@ class AuthServiceRegistroTest {
     @Mock PasswordEncoder encoder;
     @Mock AuthenticationManager authenticationManager;
     @Mock SecurityContextRepository securityContextRepository;
+    @Mock com.mjrenew.mjrenew_backend.nucleo.auth.service.VerificacionCorreoService verificacion;
     @InjectMocks AuthService servicio;
 
     @ParameterizedTest
@@ -53,6 +54,7 @@ class AuthServiceRegistroTest {
         servicio.registrar(solicitud);
 
         verify(usuarios).save(usuario);
+        verify(verificacion).emitirParaRegistro(usuario);
         verify(encoder).encode("Password123");
     }
 }

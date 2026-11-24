@@ -89,6 +89,7 @@ class CierreRestauracionControllerTest {
         usuario.setUsuariosId(restauradorId);
         usuario.setTipoUsuario(rol);
         usuario.setActivoUsuario(true);
+        usuario.setCorreoVerificadoUsuario(true);
         usuario.setCorreoElectronicoUsuario("sesion@example.invalid");
         return new UsuarioPrincipal(usuario);
     }

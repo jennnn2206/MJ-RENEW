@@ -238,7 +238,7 @@ class EntregaPropietarioIntegrationTest {
         u.setContrasenaHashUsuario("hash-sin-login");
         u.setTipoUsuario(rol);
         u.setActivoUsuario(true);
-        u.setCorreoVerificadoUsuario(false);
+        u.setCorreoVerificadoUsuario(true);
         u.setRegistradoEnUsuario(OffsetDateTime.now());
         u.setDireccionTextoUsuario(rol == TipoUsuario.RESTAURADOR ? "Taller" : "Domicilio");
         UUID id = usuarios.saveAndFlush(u).getUsuariosId();

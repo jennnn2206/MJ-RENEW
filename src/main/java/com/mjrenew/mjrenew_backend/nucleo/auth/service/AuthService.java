@@ -34,17 +34,20 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
+    private final VerificacionCorreoService verificacionCorreoService;
 
     public AuthService(UsuarioRepository usuarioRepository,
                        UsuarioMapper usuarioMapper,
                        PasswordEncoder passwordEncoder,
                        AuthenticationManager authenticationManager,
-                       SecurityContextRepository securityContextRepository) {
+                       SecurityContextRepository securityContextRepository,
+                       VerificacionCorreoService verificacionCorreoService) {
         this.usuarioRepository = usuarioRepository;
         this.usuarioMapper = usuarioMapper;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.securityContextRepository = securityContextRepository;
+        this.verificacionCorreoService = verificacionCorreoService;
     }
 
     @Transactional
@@ -66,6 +69,7 @@ public class AuthService {
         usuario.setRegistradoEnUsuario(OffsetDateTime.now());
 
         Usuario guardado = usuarioRepository.save(usuario);
+        verificacionCorreoService.emitirParaRegistro(guardado);
         return usuarioMapper.toResponse(guardado);
     }
 
