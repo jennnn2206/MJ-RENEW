@@ -27,17 +27,21 @@ const Utils = {
     },
 
     mostrarFotosFinales(contenedor, fotos) {
+        this.mostrarGaleria(contenedor, fotos, 'Estado final de la restauración');
+    },
+
+    mostrarGaleria(contenedor, fotos, encabezado) {
         if (!fotos?.length) return;
         const seccion = document.createElement('section');
         const titulo = document.createElement('h4');
-        titulo.textContent = 'Estado final de la restauración';
+        titulo.textContent = encabezado;
         seccion.append(titulo);
         const galeria = document.createElement('div');
         galeria.className = 'modal-gallery';
         fotos.forEach(url => {
             const imagen = document.createElement('img');
             imagen.src = url;
-            imagen.alt = 'Fotografía de la antigüedad restaurada';
+            imagen.alt = encabezado;
             imagen.dataset.lightbox = '';
             imagen.loading = 'lazy';
             galeria.append(imagen);

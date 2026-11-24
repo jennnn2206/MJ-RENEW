@@ -71,6 +71,13 @@ public class AdminController {
                 trasladoId, request.transportistaId()));
     }
 
+    @GetMapping("/obtenerRecolecciones")
+    public ResponseEntity<Page<TrasladoAntiguedadDetalleResponse>> obtenerRecolecciones(Pageable pageable) {
+        Pageable pagina = PageRequest.of(Math.max(0, pageable.getPageNumber()),
+                Math.max(1, Math.min(pageable.getPageSize(), 50)), Sort.by(Sort.Direction.DESC, "agendadoEnTraslado"));
+        return ResponseEntity.ok(trasladoService.obtenerRecolecciones(pagina));
+    }
+
     @GetMapping("/obtenerEntregasPropietarioPendientesAsignacion")
     public ResponseEntity<Page<TrasladoAntiguedadDetalleResponse>> obtenerEntregasPropietarioPendientesAsignacion(Pageable pageable) {
         Pageable pagina = PageRequest.of(Math.max(0, pageable.getPageNumber()),

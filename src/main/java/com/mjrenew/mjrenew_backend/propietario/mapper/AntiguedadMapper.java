@@ -7,6 +7,7 @@ import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadResumenResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.AvisoIntentoFallidoResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.DimensionResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.EntregaPropietarioResponse;
+import com.mjrenew.mjrenew_backend.propietario.dto.RecoleccionPropietarioResponse;
 import com.mjrenew.mjrenew_backend.propietario.entity.Dimension;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -43,9 +44,16 @@ public interface AntiguedadMapper {
     @Mapping(target = "fotosEstadoInicial", source = "fotosEstadoInicial")
     @Mapping(target = "fotosEstadoFinal", source = "fotosEstadoFinal")
     @Mapping(target = "entregaPropietario", source = "entregaPropietario")
+    @Mapping(target = "recoleccion", source = "recoleccion")
     AntiguedadDetalleResponse toDetalle(Antiguedad antiguedad, DimensionResponse dimension,
                                       List<String> fotosEstadoInicial, List<String> fotosEstadoFinal,
-                                      EntregaPropietarioResponse entregaPropietario);
+                                      EntregaPropietarioResponse entregaPropietario,
+                                      RecoleccionPropietarioResponse recoleccion);
+
+    default AntiguedadDetalleResponse toDetalle(Antiguedad antiguedad, DimensionResponse dimension,
+            List<String> fotosEstadoInicial, List<String> fotosEstadoFinal, EntregaPropietarioResponse entrega) {
+        return toDetalle(antiguedad, dimension, fotosEstadoInicial, fotosEstadoFinal, entrega, null);
+    }
 
     default AntiguedadDetalleResponse toDetalle(Antiguedad antiguedad, DimensionResponse dimension,
             List<String> fotosEstadoInicial, List<String> fotosEstadoFinal) {

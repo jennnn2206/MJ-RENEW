@@ -8,6 +8,7 @@ import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadDetalleResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.AntiguedadResumenResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.PublicarEnCatalogoRequest;
 import com.mjrenew.mjrenew_backend.propietario.dto.SolicitarEntregaPropietarioRequest;
+import com.mjrenew.mjrenew_backend.propietario.dto.RecoleccionPropietarioResponse;
 import com.mjrenew.mjrenew_backend.propietario.dto.RechazarCotizacionRequest;
 import com.mjrenew.mjrenew_backend.propietario.dto.SeleccionarRestauradorRequest;
 import com.mjrenew.mjrenew_backend.propietario.service.AntiguedadService;
@@ -208,6 +209,14 @@ public class AntiguedadController {
                         pageable
                 )
         );
+    }
+
+    @PostMapping("/confirmarEntregaRecoleccion/{trasladoId}")
+    @PreAuthorize("hasRole('PROPIETARIO')")
+    public ResponseEntity<RecoleccionPropietarioResponse> confirmarEntregaRecoleccion(
+            @PathVariable UUID trasladoId, @AuthenticationPrincipal UsuarioPrincipal principal) {
+        return ResponseEntity.ok(antiguedadService.confirmarEntregaRecoleccion(
+                trasladoId, principal.getUsuario().getUsuariosId()));
     }
 
     @PostMapping("/abrirDecisionEnTaller/{antiguedadId}")

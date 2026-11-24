@@ -5,9 +5,19 @@ import com.mjrenew.mjrenew_backend.transportista.dto.TrasladoAntiguedadResumenRe
 import com.mjrenew.mjrenew_backend.transportista.entity.TrasladoAntiguedad;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import com.mjrenew.mjrenew_backend.propietario.dto.RecoleccionPropietarioResponse;
+import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface TrasladoMapper {
+
+    @Mapping(target = "trasladoId", source = "traslado.trasladosAntiguedadId")
+    @Mapping(target = "numeroIntento", source = "traslado.numeroIntentoTraslado")
+    @Mapping(target = "resultado", source = "traslado.resultadoTraslado")
+    @Mapping(target = "salidaConfirmadaEn", source = "traslado.salidaConfirmadaEnTraslado")
+    @Mapping(target = "entregaConfirmadaEn", source = "traslado.recoleccionConfirmadaEn")
+    @Mapping(target = "confirmadaPor", source = "traslado.recoleccionConfirmadaPor.usuariosId")
+    RecoleccionPropietarioResponse toRecoleccionPropietario(TrasladoAntiguedad traslado, List<String> fotos);
 
     @Mapping(target = "trasladoId", source = "trasladosAntiguedadId")
     @Mapping(target = "antiguedadId", source = "antiguedad.antiguedadesId")

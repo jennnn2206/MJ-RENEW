@@ -20,6 +20,7 @@ public record AntiguedadDetalleResponse(
         DimensionResponse dimension,
         List<String> fotosEstadoInicial,
         List<String> fotosEstadoFinal,
-        EntregaPropietarioResponse entregaPropietario
+        EntregaPropietarioResponse entregaPropietario,
+        RecoleccionPropietarioResponse recoleccion
 ) {
 }

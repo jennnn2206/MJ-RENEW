@@ -90,6 +90,12 @@
         <div id="entregas-propietario-list" aria-live="polite"></div>
         <div id="entregas-propietario-paginacion"></div>
       </section>
+      <section class="card" style="margin-bottom:24px">
+        <h3>Historial de recolecciones</h3>
+        <button class="btn btn-ghost" onclick="cargarHistorialRecolecciones()">Actualizar historial</button>
+        <div id="recolecciones-historial" aria-live="polite"></div>
+        <div id="recolecciones-paginacion"></div>
+      </section>
       <div class="card-elevated" style="max-width:640px">
         <div class="form-group">
           <label class="form-label">ID de la antigüedad</label>
@@ -396,6 +402,34 @@
     }
   }
 
+  async function cargarHistorialRecolecciones(pagina = 0) {
+    const cont = document.getElementById('recolecciones-historial');
+    const navegacion = document.getElementById('recolecciones-paginacion');
+    cont.textContent = 'Cargando historial...';
+    navegacion.replaceChildren();
+    try {
+      const resultado = await Api.obtenerRecolecciones(pagina);
+      cont.replaceChildren();
+      if (!resultado.content.length) cont.textContent = 'No hay recolecciones en esta página.';
+      resultado.content.forEach(t => {
+        const fila = document.createElement('p');
+        fila.textContent = `Antigüedad ${t.antiguedadId} · Intento ${t.numeroIntento} · ${t.resultadoTraslado} · Acuse del propietario: ${t.recoleccionConfirmadaEn ? new Date(t.recoleccionConfirmadaEn).toLocaleString('es-MX') : 'Sin registrar'}`;
+        cont.append(fila);
+      });
+      const controles = [ ['Anterior', pagina - 1, !resultado.first], ['Siguiente', pagina + 1, !resultado.last] ];
+      for (const [texto, destino, visible] of controles) {
+        if (visible) {
+          const boton = document.createElement('button');
+          boton.textContent = texto;
+          boton.className = 'btn btn-ghost';
+          boton.onclick = () => cargarHistorialRecolecciones(destino);
+          navegacion.append(boton);
+        }
+      }
+    } catch (err) { cont.textContent = err.message; }
+  }
+
+  cargarHistorialRecolecciones();
   cargarEntregasPropietario();
   cargarRestauradoresPendientes();
   cargarDisputas();

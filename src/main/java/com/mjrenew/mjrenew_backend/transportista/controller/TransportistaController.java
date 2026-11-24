@@ -8,6 +8,7 @@ import com.mjrenew.mjrenew_backend.transportista.dto.RegistrarIntentoFallidoRequ
 import com.mjrenew.mjrenew_backend.transportista.dto.TrasladoAntiguedadDetalleResponse;
 import com.mjrenew.mjrenew_backend.transportista.dto.TrasladoAntiguedadResumenResponse;
 import com.mjrenew.mjrenew_backend.transportista.service.TrasladoAntiguedadService;
+import com.mjrenew.mjrenew_backend.transportista.service.EvidenciaRecoleccionService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,9 +28,11 @@ import java.util.UUID;
 public class TransportistaController {
 
     private final TrasladoAntiguedadService trasladoService;
+    private final EvidenciaRecoleccionService evidenciaRecoleccion;
 
-    public TransportistaController(TrasladoAntiguedadService trasladoService) {
+    public TransportistaController(TrasladoAntiguedadService trasladoService, EvidenciaRecoleccionService evidenciaRecoleccion) {
         this.trasladoService = trasladoService;
+        this.evidenciaRecoleccion = evidenciaRecoleccion;
     }
 
     /*
@@ -62,7 +65,7 @@ public class TransportistaController {
     public ResponseEntity<TrasladoAntiguedadResumenResponse> confirmarSalidaRecoleccion(@PathVariable UUID trasladoId,
                                                                                         @RequestPart(value = "fotos", required = false) List<MultipartFile> fotos,
                                                                                         @AuthenticationPrincipal UsuarioPrincipal principal) {
-        return ResponseEntity.ok(trasladoService.confirmarSalidaRecoleccion(trasladoId, principal.getUsuario().getUsuariosId(), fotos));
+        return ResponseEntity.ok(evidenciaRecoleccion.confirmarSalida(trasladoId, principal.getUsuario().getUsuariosId(), fotos));
     }
 
     @PostMapping("/confirmarLlegadaTaller/{trasladoId}")

@@ -26,6 +26,8 @@ public interface TrasladoAntiguedadRepository extends JpaRepository<TrasladoAnti
 
     Page<TrasladoAntiguedad> findByTransportista_UsuariosId(UUID transportistaId, Pageable pageable);
 
+    Page<TrasladoAntiguedad> findByTipoTraslado(TipoTraslado tipoTraslado, Pageable pageable);
+
     Page<TrasladoAntiguedad> findByTipoTrasladoAndTransportistaIsNullAndResultadoTraslado(
             TipoTraslado tipoTraslado, ResultadoTraslado resultadoTraslado, Pageable pageable);
 

@@ -191,7 +191,10 @@
       accion = !t.salidaConfirmadaEn
         ? `<button class="btn btn-primary btn-sm" onclick="abrirModalFotos('${t.trasladoId}','salida-recoleccion')">Confirmar salida</button>
            <button class="btn btn-danger btn-sm" onclick="abrirIntentoFallido('${t.trasladoId}')">Registrar intento fallido</button>`
-        : `<button class="btn btn-primary btn-sm" onclick="confirmarLlegadaTaller('${t.trasladoId}')">Confirmar llegada al taller</button>`;
+        : t.recoleccionConfirmadaEn
+          ? `<button class="btn btn-primary btn-sm" onclick="confirmarLlegadaTaller('${t.trasladoId}')">Confirmar llegada al taller</button>`
+          : `<p>Esperando la confirmación del propietario.</p>
+             <button class="btn btn-ghost btn-sm" onclick="abrirModalFotos('${t.trasladoId}','salida-recoleccion')">Completar evidencias de recolección</button>`;
     } else {
       // Si nadie está en casa, se registra al llegar con la pieza.
       accion = !t.salidaConfirmadaEn
@@ -376,6 +379,7 @@
   }
 
   cargarTraslados();
+  setInterval(() => { if (!document.hidden) cargarTraslados(); }, 60000);
 </script>
 </body>
 </html>

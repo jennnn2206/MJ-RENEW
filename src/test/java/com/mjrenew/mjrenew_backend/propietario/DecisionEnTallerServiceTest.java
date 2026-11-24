@@ -38,6 +38,7 @@ class DecisionEnTallerServiceTest {
     @Mock CatalogoAntiguedadRepository catalogos;
     @Mock CatalogoAntiguedadMapper catalogoMapper;
     @Mock com.mjrenew.mjrenew_backend.transportista.repository.TrasladoAntiguedadRepository traslados;
+    @Mock com.mjrenew.mjrenew_backend.transportista.service.TrasladoAntiguedadService logistica;
     @InjectMocks AntiguedadService service;
 
     private final UUID piezaId = UUID.randomUUID();

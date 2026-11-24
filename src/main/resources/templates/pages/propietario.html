@@ -236,6 +236,20 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-acuse-recoleccion">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Entrega al transportista</h3>
+      <button class="modal-close" onclick="Modal.close('modal-acuse-recoleccion')">×</button>
+    </div>
+    <p>Revisa las fotografías y confirma únicamente cuando hayas entregado tu antigüedad al transportista.</p>
+    <div id="acuse-recoleccion-fotos"></div>
+    <label><input type="checkbox" id="acuse-recoleccion-entregada"> Entregué mi antigüedad y revisé las fotografías.</label>
+    <p id="acuse-recoleccion-error" role="alert"></p>
+    <button class="btn btn-primary" id="acuse-recoleccion-submit" onclick="confirmarAcuseRecoleccion()">Confirmar entrega al transportista</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-solicitud-entrega">
   <div class="modal-box modal-sm">
     <div class="modal-header">
@@ -347,6 +361,9 @@
     }
     if (p.estadoActualAntiguedad === 'PRESUPUESTO_PRESENTADO') {
       acciones += `<button class="btn btn-primary btn-sm" onclick="abrirCotizacion('${p.antiguedadId}')">Ver cotización</button>`;
+    }
+    if (p.estadoActualAntiguedad === 'EN_RECOLECCION') {
+      acciones += `<button class="btn btn-primary btn-sm" onclick="abrirAcuseRecoleccion('${p.antiguedadId}')">Revisar y confirmar entrega al transportista</button>`;
     }
     if (ESTADOS_CON_AVANCES.includes(p.estadoActualAntiguedad)) {
       acciones += `<button class="btn btn-ghost btn-sm" onclick="abrirAvances('${p.antiguedadId}')">Ver avances</button>`;
@@ -567,6 +584,15 @@
         </div>
       `;
       Utils.mostrarFotosFinales(cont, a.fotosEstadoFinal);
+      const recoleccion = a.recoleccion;
+      if (recoleccion) {
+        Utils.mostrarGaleria(cont, recoleccion.fotos, `Evidencias de recolección · Intento ${recoleccion.numeroIntento}`);
+        const acuse = document.createElement('p');
+        acuse.textContent = recoleccion.entregaConfirmadaEn
+          ? `Confirmaste la entrega al transportista el ${new Date(recoleccion.entregaConfirmadaEn).toLocaleString('es-MX')}.`
+          : 'Esta recolección todavía no tiene una confirmación tuya registrada.';
+        cont.append(acuse);
+      }
       const entrega = a.entregaPropietario;
       if (entrega) {
         const horario = document.createElement('p');
@@ -703,6 +729,54 @@
   }
 
   // ── PUBLICAR EN CATÁLOGO ──────────────────────────────────────────
+  let trasladoParaAcuse = null;
+  let consultaAcuse = 0;
+  async function abrirAcuseRecoleccion(antiguedadId) {
+    const consultaActual = ++consultaAcuse;
+    const cont = document.getElementById('acuse-recoleccion-fotos');
+    const error = document.getElementById('acuse-recoleccion-error');
+    const btn = document.getElementById('acuse-recoleccion-submit');
+    trasladoParaAcuse = null;
+    cont.textContent = 'Cargando evidencias...';
+    error.textContent = '';
+    document.getElementById('acuse-recoleccion-entregada').checked = false;
+    btn.disabled = true;
+    Modal.open('modal-acuse-recoleccion');
+    try {
+      const detalle = await Api.detalleAntiguedad(antiguedadId);
+      if (consultaActual !== consultaAcuse) return;
+      const recoleccion = detalle.recoleccion;
+      cont.replaceChildren();
+      if (!recoleccion) { error.textContent = 'No se encontró el intento de recolección.'; return; }
+      Utils.mostrarGaleria(cont, recoleccion.fotos, `Recolección · Intento ${recoleccion.numeroIntento}`);
+      if (recoleccion.entregaConfirmadaEn) { error.textContent = 'Ya confirmaste esta entrega al transportista.'; return; }
+      if (detalle.estadoActualAntiguedad !== 'EN_RECOLECCION' || recoleccion.resultado !== 'PENDIENTE'
+          || !recoleccion.salidaConfirmadaEn || recoleccion.fotos.length < 4) {
+        error.textContent = 'El transportista debe registrar la recolección con al menos cuatro fotografías.';
+        return;
+      }
+      trasladoParaAcuse = recoleccion.trasladoId;
+      btn.disabled = false;
+    } catch (err) { if (consultaActual === consultaAcuse) error.textContent = err.message; }
+  }
+
+  async function confirmarAcuseRecoleccion() {
+    const trasladoId = trasladoParaAcuse;
+    const btn = document.getElementById('acuse-recoleccion-submit');
+    const error = document.getElementById('acuse-recoleccion-error');
+    if (!trasladoId || !document.getElementById('acuse-recoleccion-entregada').checked) {
+      error.textContent = 'Confirma que entregaste tu antigüedad al transportista y revisaste las fotografías.';
+      return;
+    }
+    btn.disabled = true;
+    try {
+      await Api.confirmarEntregaRecoleccion(trasladoId);
+      Modal.close('modal-acuse-recoleccion');
+      Toast.show('Entrega al transportista confirmada. Tu acuse quedó registrado.', 'success');
+      await cargarMisPiezas();
+    } catch (err) { error.textContent = err.message; btn.disabled = false; }
+  }
+
   let antiguedadParaEntrega = null;
   async function abrirSolicitudEntrega(id) {
     antiguedadParaEntrega = id;

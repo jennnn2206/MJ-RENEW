@@ -74,6 +74,23 @@ public class TrasladoAntiguedad {
     @Column(name = "salida_confirmada_en_traslado")
     private OffsetDateTime salidaConfirmadaEnTraslado;
 
+    @Column(name = "recoleccion_confirmada_en")
+    private OffsetDateTime recoleccionConfirmadaEn;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recoleccion_confirmada_por")
+    private Usuario recoleccionConfirmadaPor;
+
+    public OffsetDateTime getRecoleccionConfirmadaEn() { return recoleccionConfirmadaEn; }
+    public Usuario getRecoleccionConfirmadaPor() { return recoleccionConfirmadaPor; }
+
+    public void confirmarEntregaRecoleccion(Usuario propietario, OffsetDateTime fecha) {
+        if (recoleccionConfirmadaEn == null) {
+            recoleccionConfirmadaPor = propietario;
+            recoleccionConfirmadaEn = fecha;
+        }
+    }
+
     public OffsetDateTime getSalidaConfirmadaEnTraslado() {
         return salidaConfirmadaEnTraslado;
     }

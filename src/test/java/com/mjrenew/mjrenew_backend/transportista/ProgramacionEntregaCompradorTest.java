@@ -89,7 +89,8 @@ class ProgramacionEntregaCompradorTest {
                 t.getDireccionOrigenTraslado(), t.getDireccionDestinoTraslado(),
                 t.getFechaAcordadaTraslado(), t.getHoraInicioAcordadaTraslado(), t.getHoraFinAcordadaTraslado(),
                 t.getNumeroIntentoTraslado(), t.getResultadoTraslado(), t.getCostoEstimadoMxnTraslado(),
-                t.getSalidaConfirmadaEnTraslado(), t.getEjecutadoEnTraslado(), t.getMotivoFalloTraslado());
+                t.getSalidaConfirmadaEnTraslado(), t.getEjecutadoEnTraslado(), t.getMotivoFalloTraslado(),
+                t.getRecoleccionConfirmadaEn());
     }
 
     private ProgramarEntregaCompraRequest ventanaFutura() {

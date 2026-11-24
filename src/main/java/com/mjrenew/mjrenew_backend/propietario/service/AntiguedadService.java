@@ -20,6 +20,7 @@ import com.mjrenew.mjrenew_backend.transportista.service.TrasladoAntiguedadServi
 import com.mjrenew.mjrenew_backend.nucleo.enums.TipoTraslado;
 import com.mjrenew.mjrenew_backend.propietario.dto.SolicitarEntregaPropietarioRequest;
 import com.mjrenew.mjrenew_backend.propietario.dto.EntregaPropietarioResponse;
+import com.mjrenew.mjrenew_backend.propietario.dto.RecoleccionPropietarioResponse;
 // MJRENEW-STRIPE: tipos propios del flujo bancario; no cadenas mágicas.
 import com.mjrenew.mjrenew_backend.nucleo.enums.EstadoTransaccion;
 import com.mjrenew.mjrenew_backend.nucleo.enums.FlujoTransaccion;
@@ -467,6 +468,10 @@ public class AntiguedadService {
         return construirDetalle(antiguedad);
     }
 
+    public RecoleccionPropietarioResponse confirmarEntregaRecoleccion(UUID trasladoId, UUID propietarioId) {
+        return traslados.confirmarEntregaRecoleccion(trasladoId, propietarioId);
+    }
+
     @Transactional
     public AntiguedadDetalleResponse solicitarDevolucionTaller(UUID antiguedadId, UUID propietarioId,
             SolicitarEntregaPropietarioRequest request) {
@@ -630,7 +635,8 @@ public class AntiguedadService {
                                 antiguedad.getAntiguedadesId(), TipoTraslado.ENTREGA_PROPIETARIO)
                         .map(t -> new EntregaPropietarioResponse(t.getTrasladosAntiguedadId(), t.getFechaAcordadaTraslado(),
                                 t.getHoraInicioAcordadaTraslado(), t.getHoraFinAcordadaTraslado(),
-                                t.getResultadoTraslado(), t.getTransportista() != null)).orElse(null)
+                                t.getResultadoTraslado(), t.getTransportista() != null)).orElse(null),
+                traslados.obtenerRecoleccionPropietario(antiguedad.getAntiguedadesId())
         );
     }
 

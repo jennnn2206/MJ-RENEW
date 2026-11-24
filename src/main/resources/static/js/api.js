@@ -195,6 +195,12 @@ const Api = {
     solicitarEntregaPropietario(antiguedadId, horario) {
         return this.post(`/api/propietario/solicitarDevolucionTaller/${antiguedadId}`, horario);
     },
+    confirmarEntregaRecoleccion(trasladoId) {
+        return this.post(`/api/propietario/confirmarEntregaRecoleccion/${trasladoId}`);
+    },
+    obtenerRecolecciones(page = 0) {
+        return this.get(`/api/administrador/obtenerRecolecciones?page=${page}&size=20`);
+    },
     obtenerMiDomicilio() {
         return this.get('/api/usuario/obtenerMiDomicilio');
     },

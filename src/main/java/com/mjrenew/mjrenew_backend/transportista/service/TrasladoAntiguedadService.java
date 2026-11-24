@@ -16,6 +16,7 @@ import com.mjrenew.mjrenew_backend.nucleo.exception.TransicionEstadoInvalidaExce
 import com.mjrenew.mjrenew_backend.nucleo.usuario.entity.Usuario;
 import com.mjrenew.mjrenew_backend.nucleo.usuario.repository.UsuarioRepository;
 import com.mjrenew.mjrenew_backend.propietario.entity.FotografiaAntiguedad;
+import com.mjrenew.mjrenew_backend.propietario.dto.RecoleccionPropietarioResponse;
 import com.mjrenew.mjrenew_backend.propietario.repository.FotografiaAntiguedadRepository;
 import com.mjrenew.mjrenew_backend.transportista.dto.ConfirmarLlegadaRequest;
 import com.mjrenew.mjrenew_backend.transportista.dto.ConfirmarSalidaRequest;
@@ -125,8 +126,12 @@ public class TrasladoAntiguedadService {
                     "Ya existe un traslado de tipo " + request.tipoTraslado() + " pendiente o completado para esta antigüedad");
         }
 
-        short numeroIntento = (short) (trasladoRepository.countByAntiguedad_AntiguedadesIdAndTipoTraslado(
-                request.antiguedadId(), request.tipoTraslado()) + 1);
+        long intentosPrevios = trasladoRepository.countByAntiguedad_AntiguedadesIdAndTipoTraslado(
+                request.antiguedadId(), request.tipoTraslado());
+        if (request.tipoTraslado() == TipoTraslado.RECOLECCION && intentosPrevios >= 3) {
+            throw new TransicionEstadoInvalidaException("Se alcanzaron los tres intentos de recolección");
+        }
+        short numeroIntento = (short) (intentosPrevios + 1);
 
         EstadoAntiguedad estadoDestino = validarOrigenYObtenerDestino(antiguedad, request.tipoTraslado());
 
@@ -384,30 +389,116 @@ public class TrasladoAntiguedadService {
         return trasladoMapper.toDetalle(buscarAsignadoOFallar(trasladoId, transportistaId));
     }
 
+    @Transactional(readOnly = true)
+    public RecoleccionPropietarioResponse obtenerRecoleccionPropietario(UUID antiguedadId) {
+        return trasladoRepository.findFirstByAntiguedad_AntiguedadesIdAndTipoTrasladoOrderByAgendadoEnTrasladoDesc(
+                antiguedadId, TipoTraslado.RECOLECCION).map(this::construirAcuseRecoleccion).orElse(null);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<TrasladoAntiguedadDetalleResponse> obtenerRecolecciones(Pageable pageable) {
+        return trasladoRepository.findByTipoTraslado(TipoTraslado.RECOLECCION, pageable).map(trasladoMapper::toDetalle);
+    }
+
     @Transactional
-    public TrasladoAntiguedadResumenResponse confirmarSalidaRecoleccion(UUID trasladoId, UUID transportistaId, List<MultipartFile> fotos) {
+    public RecoleccionPropietarioResponse confirmarEntregaRecoleccion(UUID trasladoId, UUID propietarioId) {
+        UUID antiguedadId = trasladoRepository.buscarAntiguedadId(trasladoId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("La recolección no existe"));
+        Antiguedad antiguedad = antiguedadRepository.bloquearDelPropietario(antiguedadId, propietarioId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("La recolección no pertenece al propietario autenticado"));
+        TrasladoAntiguedad traslado = trasladoRepository.buscarParaAsignacion(trasladoId).orElseThrow();
+        validarTipo(traslado, TipoTraslado.RECOLECCION);
+        // Un reenvío posterior a la llegada devuelve el acuse original.
+        if (traslado.getRecoleccionConfirmadaEn() != null) return construirAcuseRecoleccion(traslado);
+        validarPendiente(traslado);
+        validarEstadoOrigen(antiguedad, EstadoAntiguedad.EN_RECOLECCION);
+        validarEvidenciaRecoleccion(traslado);
+        traslado.confirmarEntregaRecoleccion(antiguedad.getPropietario(), OffsetDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MICROS));
+        return construirAcuseRecoleccion(traslado);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean requiereEvidenciaRecoleccion(UUID trasladoId, UUID transportistaId) {
         TrasladoAntiguedad traslado = buscarAsignadoOFallar(trasladoId, transportistaId);
         validarTipo(traslado, TipoTraslado.RECOLECCION);
-        validarEstadoOrigen(traslado.getAntiguedad(), EstadoAntiguedad.HORARIO_RECOLECCION_AGENDADO);
+        validarPendiente(traslado);
+        EstadoAntiguedad estado = traslado.getAntiguedad().getEstadoActualAntiguedad();
+        if (estado != EstadoAntiguedad.EN_RECOLECCION && estado != EstadoAntiguedad.HORARIO_RECOLECCION_AGENDADO) {
+            throw new TransicionEstadoInvalidaException("La antigüedad no está disponible para registrar su recolección");
+        }
+        return traslado.getSalidaConfirmadaEnTraslado() == null
+                || fotografiaRepository.countByTraslado_TrasladosAntiguedadIdAndTipoFotografia(
+                        trasladoId, TipoFotografia.TRASLADO_SALIDA) < FOTOS_MINIMAS;
+    }
 
-        guardarFotos(traslado, fotos, TipoFotografia.TRASLADO_SALIDA);
-        traslado.setSalidaConfirmadaEnTraslado(OffsetDateTime.now());
-        traslado.getAntiguedad().setEstadoActualAntiguedad(EstadoAntiguedad.EN_RECOLECCION);
-
+    @Transactional
+    public TrasladoAntiguedadResumenResponse registrarSalidaRecoleccion(UUID trasladoId, UUID transportistaId, List<String> urls) {
+        TrasladoAntiguedad traslado = bloquearAsignadoOFallar(trasladoId, transportistaId);
+        validarTipo(traslado, TipoTraslado.RECOLECCION);
+        validarPendiente(traslado);
+        Antiguedad antiguedad = traslado.getAntiguedad();
+        boolean enRecoleccion = antiguedad.getEstadoActualAntiguedad() == EstadoAntiguedad.EN_RECOLECCION;
+        if (enRecoleccion && traslado.getSalidaConfirmadaEnTraslado() != null
+                && fotografiaRepository.countByTraslado_TrasladosAntiguedadIdAndTipoFotografia(
+                        trasladoId, TipoFotografia.TRASLADO_SALIDA) >= FOTOS_MINIMAS) {
+            return trasladoMapper.toResumen(traslado);
+        }
+        // Permite completar evidencias vinculadas de un traslado antiguo aún en curso.
+        if (!enRecoleccion) validarEstadoOrigen(antiguedad, EstadoAntiguedad.HORARIO_RECOLECCION_AGENDADO);
+        if (urls == null || urls.size() < FOTOS_MINIMAS) {
+            throw new SolicitudInvalidaException("Se requieren al menos cuatro fotografías del traslado");
+        }
+        OffsetDateTime subidaEn = OffsetDateTime.now();
+        for (String url : urls) {
+            FotografiaAntiguedad foto = new FotografiaAntiguedad();
+            foto.setAntiguedad(antiguedad);
+            foto.setTraslado(traslado);
+            foto.setTipoFotografia(TipoFotografia.TRASLADO_SALIDA);
+            foto.setUrlAlmacenFotografia(url);
+            foto.setSubidaEnFotografia(subidaEn);
+            fotografiaRepository.save(foto);
+        }
+        if (traslado.getSalidaConfirmadaEnTraslado() == null) {
+            traslado.setSalidaConfirmadaEnTraslado(OffsetDateTime.now());
+        }
+        antiguedad.setEstadoActualAntiguedad(EstadoAntiguedad.EN_RECOLECCION);
         return guardarYResponder(traslado);
     }
 
     @Transactional
     public TrasladoAntiguedadResumenResponse confirmarLlegadaTaller(UUID trasladoId, UUID transportistaId, ConfirmarLlegadaRequest request) {
-        TrasladoAntiguedad traslado = buscarAsignadoOFallar(trasladoId, transportistaId);
+        TrasladoAntiguedad traslado = bloquearAsignadoOFallar(trasladoId, transportistaId);
         validarTipo(traslado, TipoTraslado.RECOLECCION);
+        // Conserva también las llegadas históricas completadas antes de exigir el acuse.
+        if (traslado.getResultadoTraslado() == ResultadoTraslado.EXITOSO) return trasladoMapper.toResumen(traslado);
+        validarPendiente(traslado);
         validarEstadoOrigen(traslado.getAntiguedad(), EstadoAntiguedad.EN_RECOLECCION);
-
+        if (traslado.getRecoleccionConfirmadaEn() == null || traslado.getRecoleccionConfirmadaPor() == null
+                || !traslado.getAntiguedad().getPropietario().getUsuariosId()
+                        .equals(traslado.getRecoleccionConfirmadaPor().getUsuariosId())) {
+            throw new TransicionEstadoInvalidaException("El propietario debe confirmar que entregó la antigüedad al transportista");
+        }
+        validarEvidenciaRecoleccion(traslado);
         traslado.setResultadoTraslado(ResultadoTraslado.EXITOSO);
         traslado.setEjecutadoEnTraslado(OffsetDateTime.now());
         traslado.getAntiguedad().setEstadoActualAntiguedad(EstadoAntiguedad.RECIBIDO_EN_TALLER);
-
         return guardarYResponder(traslado);
+    }
+
+    private void validarEvidenciaRecoleccion(TrasladoAntiguedad traslado) {
+        if (traslado.getSalidaConfirmadaEnTraslado() == null
+                || fotografiaRepository.countByTraslado_TrasladosAntiguedadIdAndTipoFotografia(
+                        traslado.getTrasladosAntiguedadId(), TipoFotografia.TRASLADO_SALIDA) < FOTOS_MINIMAS) {
+            throw new SolicitudInvalidaException("La recolección requiere cuatro fotografías vinculadas a este traslado y la salida registrada");
+        }
+    }
+
+    private RecoleccionPropietarioResponse construirAcuseRecoleccion(TrasladoAntiguedad traslado) {
+        List<String> fotos = fotografiaRepository
+                .findByTraslado_TrasladosAntiguedadIdAndTipoFotografiaOrderBySubidaEnFotografiaAsc(
+                        traslado.getTrasladosAntiguedadId(), TipoFotografia.TRASLADO_SALIDA)
+                .stream().map(FotografiaAntiguedad::getUrlAlmacenFotografia).toList();
+        return trasladoMapper.toRecoleccionPropietario(traslado, fotos);
     }
 
     @Transactional
@@ -515,7 +606,8 @@ public class TrasladoAntiguedadService {
         EstadoAntiguedad estadoDestino = switch (traslado.getTipoTraslado()) {
             case RECOLECCION -> {
                 validarEstadoOrigen(traslado.getAntiguedad(), EstadoAntiguedad.HORARIO_RECOLECCION_AGENDADO);
-                yield EstadoAntiguedad.PAGO_EN_ESCROW;
+                yield traslado.getNumeroIntentoTraslado() != null && traslado.getNumeroIntentoTraslado() >= 3
+                        ? EstadoAntiguedad.CANCELADA_RECOLECCION : EstadoAntiguedad.PAGO_EN_ESCROW;
             }
             case ENTREGA_PROPIETARIO -> {
                 validarEstadoOrigen(traslado.getAntiguedad(), EstadoAntiguedad.EN_DEVOLUCION_PROPIETARIO);
