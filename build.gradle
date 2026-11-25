@@ -37,4 +37,6 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	// Las pruebas no deben despachar pendientes reales aunque el entorno local habilite SMTP.
+	systemProperty 'mjrenew.notificaciones.correo-habilitado', 'false'
 }

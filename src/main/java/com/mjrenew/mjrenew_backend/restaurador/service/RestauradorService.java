@@ -45,6 +45,9 @@ import com.mjrenew.mjrenew_backend.restaurador.repository.CotizacionRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.context.ApplicationEventPublisher;
+import com.mjrenew.mjrenew_backend.nucleo.notificacion.TipoNotificacion;
+import com.mjrenew.mjrenew_backend.nucleo.notificacion.NotificacionRestauracionEmitida;
 
 @Service
 public class RestauradorService {
@@ -63,6 +66,7 @@ public class RestauradorService {
     private final AvanceRestauracionRepository avanceRestauracionRepository;
     private final AlmacenamientoService almacenamientoService;
     private final UsuarioRepository usuarioRepository;
+    private final ApplicationEventPublisher eventos;
 
 
     public RestauradorService(
@@ -75,7 +79,8 @@ public class RestauradorService {
             CotizacionRepository cotizacionRepository,
             AvanceRestauracionRepository avanceRestauracionRepository,
             AlmacenamientoService almacenamientoService,
-            UsuarioRepository usuarioRepository
+            UsuarioRepository usuarioRepository,
+            ApplicationEventPublisher eventos
     ) {
         this.antiguedadRepository = antiguedadRepository;
         this.fotografiaAntiguedadRepository = fotografiaAntiguedadRepository;
@@ -87,6 +92,7 @@ public class RestauradorService {
         this.avanceRestauracionRepository = avanceRestauracionRepository;
         this.almacenamientoService = almacenamientoService;
         this.usuarioRepository = usuarioRepository;
+        this.eventos = eventos;
     }
 
 
@@ -264,7 +270,7 @@ public class RestauradorService {
     ) {
 
         Antiguedad antiguedad =
-                buscarAsignadaOFallar(
+                bloquearAsignadaOFallar(
                         antiguedadId,
                         restauradorId
                 );
@@ -339,6 +345,9 @@ public class RestauradorService {
         antiguedad.setEstadoActualAntiguedad(
                 EstadoAntiguedad.PRESUPUESTO_PRESENTADO
         );
+
+        publicarNotificacion(TipoNotificacion.PRESUPUESTO_PRESENTADO,
+                antiguedad, cotizacionGuardada.getCotizacionesId());
 
 
         return restauradorMapper
@@ -455,6 +464,9 @@ public class RestauradorService {
                 EstadoAntiguedad.AVANCE_PUBLICADO
         );
 
+        publicarNotificacion(TipoNotificacion.AVANCE_PUBLICADO,
+                antiguedad, avanceGuardado.getAvancesRestauracionId());
+
         return restauradorMapper.toAvanceResumen(
                 avanceGuardado,
                 List.of(url)
@@ -520,7 +532,16 @@ public class RestauradorService {
                 EstadoAntiguedad.RESTAURACION_LISTA
         );
 
+        publicarNotificacion(TipoNotificacion.RESTAURACION_TERMINADA,
+                antiguedad, antiguedadId);
+
         return construirDetalle(antiguedad);
+    }
+
+    private void publicarNotificacion(TipoNotificacion tipo,
+                                      Antiguedad antiguedad, UUID referenciaId) {
+        eventos.publishEvent(new NotificacionRestauracionEmitida(
+                tipo, antiguedad.getAntiguedadesId(), referenciaId, antiguedad.getPropietario().getUsuariosId()));
     }
 
 

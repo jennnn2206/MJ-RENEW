@@ -1360,6 +1360,18 @@ p  { color: var(--ink2); line-height: 1.7; }
   justify-content: center;
   padding: 40px 20px;
 }
+
+/* RF-027: bandeja compartida de propietario y restaurador. */
+.notificaciones-panel { margin-bottom: 24px; }
+.notificaciones-panel[hidden] { display: none !important; }
+.notificaciones-panel summary { cursor: pointer; font-weight: 600; }
+.notificaciones-badge { display: inline-block; margin-left: 8px; padding: 3px 9px; border-radius: 16px; background: var(--bg2); font-size: .85rem; }
+.notificaciones-herramientas, .notificaciones-paginacion, .notificacion-acciones { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+.notificacion-item { padding: 16px; margin-top: 12px; border: 1px solid var(--bg3); border-radius: var(--radius-sm); overflow-wrap: anywhere; }
+.notificacion-no-leida { border-left: 4px solid var(--gold); background: var(--bg2); }
+.notificacion-item p { margin: 8px 0; }
+.notificacion-item time, .notificacion-acciones span { color: var(--ink2); font-size: .9rem; }
+.notificaciones-paginacion { justify-content: space-between; }
 .auth-card {
   background: var(--white);
   border-radius: var(--radius-lg);

@@ -230,6 +230,22 @@ class AcuseRecoleccionIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void intentoInmediatoNoQuedaAntesDeLaAgendaAlPersistirMicrosegundos() {
+        servicio.registrarIntentoFallido(trasladoId, transportistaId, new RegistrarIntentoFallidoRequest("No había nadie"), null);
+        OffsetDateTime agenda = OffsetDateTime.now().withNano(999_999_600);
+        OffsetDateTime ejecucion = agenda.plusNanos(100);
+        try (var reloj = mockStatic(OffsetDateTime.class, CALLS_REAL_METHODS)) {
+            reloj.when(OffsetDateTime::now).thenReturn(agenda);
+            trasladoId = servicio.crearTraslado(request()).trasladoId();
+            reloj.when(OffsetDateTime::now).thenReturn(ejecucion);
+            servicio.registrarIntentoFallido(trasladoId, transportistaId, new RegistrarIntentoFallidoRequest("No había nadie"), null);
+        }
+        var guardado = traslados.findById(trasladoId).orElseThrow();
+        assertEquals(ResultadoTraslado.NADIE_EN_CASA, guardado.getResultadoTraslado());
+        assertFalse(guardado.getEjecutadoEnTraslado().isBefore(guardado.getAgendadoEnTraslado()));
+    }
+
     private void recoger() {
         when(almacenamiento.subirArchivo(any(), eq("traslados")))
                 .thenAnswer(invocacion -> {

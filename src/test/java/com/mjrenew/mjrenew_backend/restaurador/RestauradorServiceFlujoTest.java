@@ -49,6 +49,7 @@ class RestauradorServiceFlujoTest {
     @Mock CotizacionRepository cotizacionRepo;
     @Mock AvanceRestauracionRepository avanceRepo;
     @Mock UsuarioRepository usuarioRepository;
+    @Mock org.springframework.context.ApplicationEventPublisher eventos;
     @InjectMocks RestauradorService servicio;
 
     @Test

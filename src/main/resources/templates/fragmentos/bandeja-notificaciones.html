@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<details th:fragment="bandeja-notificaciones" class="card notificaciones-panel" data-notificaciones hidden>
+  <summary>Notificaciones <span class="notificaciones-badge" data-notificaciones-contador aria-live="polite">0 sin leer</span></summary>
+  <div class="notificaciones-herramientas">
+    <label><input type="checkbox" data-notificaciones-filtro> Solo sin leer</label>
+    <button class="btn btn-ghost btn-sm" type="button" data-notificaciones-actualizar>Actualizar</button>
+  </div>
+  <p data-notificaciones-estado role="status" aria-live="polite"></p>
+  <div data-notificaciones-lista></div>
+  <nav class="notificaciones-paginacion" aria-label="Páginas de notificaciones">
+    <button type="button" class="btn btn-ghost btn-sm" data-notificaciones-anterior disabled>Anterior</button>
+    <span data-notificaciones-pagina></span>
+    <button type="button" class="btn btn-ghost btn-sm" data-notificaciones-siguiente disabled>Siguiente</button>
+  </nav>
+</details>
+</body>
+</html>

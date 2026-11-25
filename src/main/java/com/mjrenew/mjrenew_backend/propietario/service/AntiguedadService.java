@@ -58,6 +58,9 @@ import com.mjrenew.mjrenew_backend.restaurador.repository.PerfilRestauradorRepos
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.context.ApplicationEventPublisher;
+import com.mjrenew.mjrenew_backend.nucleo.notificacion.NotificacionRestauracionEmitida;
+import com.mjrenew.mjrenew_backend.nucleo.notificacion.TipoNotificacion;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -85,6 +88,7 @@ public class AntiguedadService {
     private final AlmacenamientoService almacenamientoService;
     private final TrasladoAntiguedadRepository trasladoRepository;
     private final TrasladoAntiguedadService traslados;
+    private final ApplicationEventPublisher eventos;
 
     public AntiguedadService(
             AntiguedadRepository antiguedadRepository,
@@ -102,7 +106,8 @@ public class AntiguedadService {
             StripeCheckoutService stripeCheckoutService,
             AlmacenamientoService almacenamientoService,
             TrasladoAntiguedadRepository trasladoRepository,
-            TrasladoAntiguedadService traslados
+            TrasladoAntiguedadService traslados,
+            ApplicationEventPublisher eventos
     ) {
         this.antiguedadRepository = antiguedadRepository;
         this.fotografiaRepository = fotografiaRepository;
@@ -120,6 +125,7 @@ public class AntiguedadService {
         this.almacenamientoService = almacenamientoService;
         this.trasladoRepository = trasladoRepository;
         this.traslados = traslados;
+        this.eventos = eventos;
     }
 
     @Transactional
@@ -253,10 +259,8 @@ public class AntiguedadService {
     ) {
 
         Antiguedad antiguedad =
-                buscarDelPropietarioOFallar(
-                        antiguedadId,
-                        propietarioId
-                );
+                antiguedadRepository.bloquearDelPropietario(antiguedadId, propietarioId)
+                        .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró la antigüedad"));
 
         if (antiguedad.getEstadoActualAntiguedad()
                 != EstadoAntiguedad.PIEZA_CAPTURADA) {
@@ -292,6 +296,9 @@ public class AntiguedadService {
         antiguedad.setEstadoActualAntiguedad(
                 EstadoAntiguedad.EN_EVALUACION
         );
+
+        eventos.publishEvent(new NotificacionRestauracionEmitida(TipoNotificacion.ANTIGUEDAD_ASIGNADA,
+                antiguedadId, antiguedadId, antiguedad.getRestaurador().getUsuariosId()));
 
         return construirDetalle(antiguedad);
     }

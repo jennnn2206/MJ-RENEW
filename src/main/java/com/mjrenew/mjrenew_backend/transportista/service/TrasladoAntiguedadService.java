@@ -147,7 +147,8 @@ public class TrasladoAntiguedadService {
         traslado.setCostoEstimadoMxnTraslado(request.costoEstimadoMxnTraslado());
         traslado.setNumeroIntentoTraslado(numeroIntento);
         traslado.setResultadoTraslado(ResultadoTraslado.PENDIENTE);
-        traslado.setAgendadoEnTraslado(OffsetDateTime.now());
+        // PostgreSQL persiste microsegundos; evitar que redondee la agenda por encima de una ejecución inmediata.
+        traslado.setAgendadoEnTraslado(OffsetDateTime.now().truncatedTo(ChronoUnit.MICROS));
 
         TrasladoAntiguedad guardado = trasladoRepository.save(traslado);
 
@@ -220,7 +221,7 @@ public class TrasladoAntiguedadService {
         traslado.setHoraFinAcordadaTraslado(horaFin);
         traslado.setNumeroIntentoTraslado((short) (intentosPrevios + 1));
         traslado.setResultadoTraslado(ResultadoTraslado.PENDIENTE);
-        traslado.setAgendadoEnTraslado(OffsetDateTime.now(ZoneOffset.UTC));
+        traslado.setAgendadoEnTraslado(OffsetDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MICROS));
 
         return trasladoMapper.toDetalle(trasladoRepository.save(traslado));
     }
@@ -268,7 +269,7 @@ public class TrasladoAntiguedadService {
             solicitud.setTipoTraslado(TipoTraslado.ENTREGA_PROPIETARIO);
             solicitud.setNumeroIntentoTraslado((short) (intentos + 1));
             solicitud.setResultadoTraslado(ResultadoTraslado.PENDIENTE);
-            solicitud.setAgendadoEnTraslado(OffsetDateTime.now(ZoneOffset.UTC));
+            solicitud.setAgendadoEnTraslado(OffsetDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MICROS));
         }
         // Las direcciones se obtienen del servidor y se conservan como fotografía de la solicitud.
         solicitud.setDireccionOrigenTraslado(origen.trim());
