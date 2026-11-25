@@ -9,6 +9,9 @@ import com.mjrenew.mjrenew_backend.nucleo.auth.service.AuthService;
 import com.mjrenew.mjrenew_backend.nucleo.auth.service.VerificacionCorreoService;
 import com.mjrenew.mjrenew_backend.nucleo.auth.dto.VerificarCorreoRequest;
 import com.mjrenew.mjrenew_backend.nucleo.auth.dto.ReenviarVerificacionCorreoRequest;
+import com.mjrenew.mjrenew_backend.nucleo.auth.dto.SolicitarRecuperacionContrasenaRequest;
+import com.mjrenew.mjrenew_backend.nucleo.auth.dto.RestablecerContrasenaRequest;
+import com.mjrenew.mjrenew_backend.nucleo.auth.service.RecuperacionContrasenaService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -28,12 +31,33 @@ public class AuthController {
     private final AuthService authService;
     private final UsuarioMapper usuarioMapper;
     private final VerificacionCorreoService verificacionCorreoService;
+    private final RecuperacionContrasenaService recuperacionContrasenaService;
 
     public AuthController(AuthService authService, UsuarioMapper usuarioMapper,
-                          VerificacionCorreoService verificacionCorreoService) {
+                          VerificacionCorreoService verificacionCorreoService,
+                          RecuperacionContrasenaService recuperacionContrasenaService) {
         this.authService = authService;
         this.usuarioMapper = usuarioMapper;
         this.verificacionCorreoService = verificacionCorreoService;
+        this.recuperacionContrasenaService = recuperacionContrasenaService;
+    }
+
+    @PostMapping("/solicitarRecuperacionContrasena")
+    public ResponseEntity<Map<String, String>> solicitarRecuperacionContrasena(
+            @Valid @RequestBody SolicitarRecuperacionContrasenaRequest request) {
+        recuperacionContrasenaService.solicitar(request.correoElectronico());
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(Map.of("mensaje",
+                "Si la cuenta puede recuperar su contraseña, recibirás un enlace. Revisa también la carpeta de spam. "
+                        + "Espera un minuto antes de solicitar otro."));
+    }
+
+    @PostMapping("/restablecerContrasena")
+    public ResponseEntity<Map<String, String>> restablecerContrasena(
+            @Valid @RequestBody RestablecerContrasenaRequest request) {
+        recuperacionContrasenaService.restablecer(request.token(), request.nuevaContrasena());
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(Map.of("mensaje",
+                "Tu contraseña quedó actualizada. Inicia sesión con la nueva contraseña. "
+                        + "Si tu correo sigue pendiente de verificación, tendrás que verificarlo."));
     }
 
     @PostMapping("/verificarCorreo")

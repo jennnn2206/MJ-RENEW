@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <title>Recuperar contraseña — MJ Renew</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<div class="auth-page">
+  <main class="auth-card">
+    <div th:replace="~{fragmentos/logo-autenticacion :: logo-autenticacion('Recupera el acceso a tu cuenta')}"></div>
+    <h3>¿Olvidaste tu contraseña?</h3>
+    <p class="auth-description">Ingresa el correo de tu cuenta para solicitar un enlace de recuperación.</p>
+    <form id="recuperacion-form">
+      <div class="form-group">
+        <label class="form-label" for="email">Correo electrónico</label>
+        <input type="email" id="email" class="form-control" maxlength="150" autocomplete="email" required>
+      </div>
+      <button type="submit" id="recuperacion-submit" class="btn btn-primary auth-submit">Solicitar enlace</button>
+    </form>
+    <p id="recuperacion-resultado" class="auth-feedback" role="status" aria-live="polite"></p>
+    <p class="auth-help">Revisa también tu carpeta de spam. Si solicitas otro enlace, utiliza el más reciente.</p>
+    <nav class="auth-actions"><a th:href="@{/login}">Volver a iniciar sesión</a></nav>
+  </main>
+</div>
+<script th:src="@{/js/autenticacion.js}"></script>
+<script th:src="@{/js/recuperacion-contrasena.js}"></script>
+</body>
+</html>

@@ -106,3 +106,9 @@ La nueva clase ejecuta 19 casos incluyendo parametrizaciones: registro, persiste
 También se ejecutó una comprobación del JavaScript con Node: registro sin login automático, reconocimiento del error de correo pendiente, cabeceras CSRF y confirmación desde la pantalla. SMTP se simuló con `JavaMailSender`; no se enviaron correos reales.
 
 Commit sugerido: `feat(auth): implementar verificación de correo según RF-002`.
+
+## Actualización del 25 de noviembre: RF-004
+
+La recuperación de contraseña quedó implementada y probada junto con RF-002. `TokenCuentaService` concentra ahora la generación y el hash; `CorreoCuentaService` concentra el transporte SMTP sin transacción. La verificación conserva sus rutas, tokens de 24 horas, bloqueo de acceso y evento posterior al commit.
+
+La suite completa pasó con 218 pruebas. Consultar `docs/implementaciones/recuperacion-contrasena/README.md` para el contrato nuevo, migración, revocación de sesiones y lista de archivos. La recepción de correos reales sigue pendiente de configurar SMTP.

@@ -21,5 +21,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
     @Query("select u.usuariosId from Usuario u where u.correoElectronicoUsuario = :correo")
     Optional<UUID> buscarIdPorCorreo(@Param("correo") String correo);
 
+    @Query("select (count(u) > 0) from Usuario u where u.usuariosId = :usuarioId "
+            + "and u.contrasenaHashUsuario = :hash and u.activoUsuario = true and u.correoVerificadoUsuario = true")
+    boolean conservaCredencialesActivas(@Param("usuarioId") UUID usuarioId, @Param("hash") String hash);
+
     boolean existsByCorreoElectronicoUsuario(String correoElectronicoUsuario);
 }

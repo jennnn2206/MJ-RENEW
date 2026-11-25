@@ -26,6 +26,12 @@ public class PageController {
         return "pages/verificar-correo";
     }
 
+    @GetMapping("/recuperar-contrasena")
+    public String recuperarContrasena() { return "pages/recuperar-contrasena"; }
+
+    @GetMapping("/restablecer-contrasena")
+    public String restablecerContrasena() { return "pages/restablecer-contrasena"; }
+
     @GetMapping("/catalogo")
     public String catalogo() {
         return "pages/catalogo";

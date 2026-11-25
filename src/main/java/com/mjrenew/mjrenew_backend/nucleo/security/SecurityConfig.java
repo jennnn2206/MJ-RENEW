@@ -14,6 +14,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
+import com.mjrenew.mjrenew_backend.nucleo.usuario.repository.UsuarioRepository;
 
 /**
  * Las vistas y recursos estáticos son públicos. La API exige autenticación,
@@ -28,6 +30,7 @@ public class SecurityConfig {
 
     private static final String[] RUTAS_PUBLICAS_VISTAS = {
             "/", "/login", "/registro", "/verificar-correo", "/catalogo", "/pieza",
+            "/recuperar-contrasena", "/restablecer-contrasena",
             "/comprador", "/propietario", "/restaurador",
             "/transportista", "/administrador",
             "/css/**", "/js/**"
@@ -36,6 +39,7 @@ public class SecurityConfig {
     private static final String[] RUTAS_PUBLICAS_API = {
             "/api/auth/csrf", "/api/auth/registrarUsuario", "/api/auth/iniciarSesion",
             "/api/auth/verificarCorreo", "/api/auth/reenviarVerificacionCorreo",
+            "/api/auth/solicitarRecuperacionContrasena", "/api/auth/restablecerContrasena",
             "/api/catalogo/explorarCatalogo", "/api/catalogo/obtenerDetallePiezaCatalogo/**",
             "/webhook/stripe"
     };
@@ -62,7 +66,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityContextRepository securityContextRepository) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityContextRepository securityContextRepository,
+                                                   UsuarioRepository usuarios) throws Exception {
         http
                 .csrf(csrf ->
                         csrf.ignoringRequestMatchers(
@@ -70,6 +75,7 @@ public class SecurityConfig {
                         )
                 )
                 .securityContext(context -> context.securityContextRepository(securityContextRepository))
+                .addFilterAfter(new SesionCredencialesFilter(usuarios), SecurityContextHolderFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(RUTAS_PUBLICAS_VISTAS).permitAll()
                         .requestMatchers(RUTAS_PUBLICAS_API).permitAll()

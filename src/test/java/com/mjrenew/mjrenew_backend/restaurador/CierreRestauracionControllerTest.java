@@ -8,6 +8,7 @@ import com.mjrenew.mjrenew_backend.restaurador.controller.RestauradorController;
 import com.mjrenew.mjrenew_backend.restaurador.service.CierreRestauracionService;
 import com.mjrenew.mjrenew_backend.restaurador.service.RestauradorService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -29,8 +30,14 @@ class CierreRestauracionControllerTest {
     @Autowired MockMvc mvc;
     @MockitoBean RestauradorService restauraciones;
     @MockitoBean CierreRestauracionService cierres;
+    @MockitoBean com.mjrenew.mjrenew_backend.nucleo.usuario.repository.UsuarioRepository usuarios;
     private final UUID id = UUID.randomUUID();
     private final UUID restauradorId = UUID.randomUUID();
+
+    @BeforeEach
+    void sesionConCredencialesActuales() {
+        when(usuarios.conservaCredencialesActivas(any(), any())).thenReturn(true);
+    }
 
     @Test
     void multipartConCuatroFotosUsaLaIdentidadDeLaSesion() throws Exception {

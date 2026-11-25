@@ -1372,6 +1372,15 @@ p  { color: var(--ink2); line-height: 1.7; }
   text-align: center;
   margin-bottom: 32px;
 }
+.auth-card [hidden] { display: none !important; }
+.auth-description { margin: 16px 0 24px; color: var(--ink2); }
+.auth-help { margin: 12px 0 20px; color: var(--ink2); }
+.auth-help a, .auth-actions a { color: var(--brown); font-weight: 600; }
+.auth-feedback { margin: 16px 0; overflow-wrap: anywhere; }
+.auth-feedback[data-state="error"] { color: var(--error); }
+.auth-feedback[data-state="success"] { color: var(--ink); }
+.auth-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+.auth-submit { width: 100%; justify-content: center; }
 .auth-logo h2 {
   font-size: 1.8rem;
   color: var(--brown);

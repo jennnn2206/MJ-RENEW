@@ -10,14 +10,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.OffsetDateTime;
-import java.util.Base64;
-import java.util.HexFormat;
 
 @Service
 public class VerificacionCorreoService {
@@ -25,15 +19,16 @@ public class VerificacionCorreoService {
     private final VerificacionCorreoRepository verificaciones;
     private final ApplicationEventPublisher eventos;
     private final Clock clock;
-    private final SecureRandom random = new SecureRandom();
+    private final TokenCuentaService tokens;
 
     public VerificacionCorreoService(UsuarioRepository usuarios, VerificacionCorreoRepository verificaciones,
                                     ApplicationEventPublisher eventos,
-                                    @Qualifier("verificacionCorreoClock") Clock clock) {
+                                    @Qualifier("verificacionCorreoClock") Clock clock, TokenCuentaService tokens) {
         this.usuarios = usuarios;
         this.verificaciones = verificaciones;
         this.eventos = eventos;
         this.clock = clock;
+        this.tokens = tokens;
     }
 
     /** Participa en la misma transacción que crea la cuenta. */
@@ -57,7 +52,7 @@ public class VerificacionCorreoService {
 
     @Transactional
     public void verificar(String token) {
-        String hash = hash(token);
+        String hash = tokens.hash(token);
         var encontrado = verificaciones.findByTokenHash(hash).orElseThrow(this::enlaceInvalido);
         var usuario = usuarios.bloquearPorId(encontrado.getUsuarioId()).orElseThrow(this::enlaceInvalido);
         // Volver a consultar después del bloqueo: otro hilo pudo reenviar o consumir el enlace.
@@ -69,12 +64,10 @@ public class VerificacionCorreoService {
     }
 
     private void emitir(Usuario usuario) {
-        byte[] bytes = new byte[32];
-        random.nextBytes(bytes);
-        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        String token = tokens.generar();
         var registro = verificaciones.findById(usuario.getUsuariosId()).orElseGet(VerificacionCorreo::new);
         registro.setUsuarioId(usuario.getUsuariosId());
-        registro.setTokenHash(hash(token));
+        registro.setTokenHash(tokens.hash(token));
         registro.setEmitidoEn(ahora());
         registro.setExpiraEn(registro.getEmitidoEn().plusHours(24));
         verificaciones.save(registro);
@@ -87,12 +80,4 @@ public class VerificacionCorreoService {
         return new SolicitudInvalidaException("El enlace no es válido o ya venció. Solicita uno nuevo.");
     }
 
-    private String hash(String token) {
-        try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-                    .digest(token.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException ex) {
-            throw new IllegalStateException("SHA-256 no está disponible", ex);
-        }
-    }
 }

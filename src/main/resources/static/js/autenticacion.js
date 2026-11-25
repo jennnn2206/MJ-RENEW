@@ -53,6 +53,14 @@ const Auth = {
         return this.solicitudVerificacion('/api/auth/verificarCorreo', { token });
     },
 
+    async solicitarRecuperacionContrasena(correoElectronico) {
+        return this.solicitudVerificacion('/api/auth/solicitarRecuperacionContrasena', { correoElectronico });
+    },
+
+    async restablecerContrasena(token, nuevaContrasena) {
+        return this.solicitudVerificacion('/api/auth/restablecerContrasena', { token, nuevaContrasena });
+    },
+
     async solicitudVerificacion(url, datos) {
         try {
             const res = await fetch(url, {
